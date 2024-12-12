@@ -15,11 +15,15 @@ package org.microbean.construct.element;
 
 import java.lang.annotation.Annotation;
 
+import java.lang.constant.Constable;
+import java.lang.constant.ConstantDesc;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import java.util.concurrent.locks.Lock;
@@ -50,11 +54,14 @@ import javax.lang.model.type.TypeMirror;
 
 import org.microbean.construct.Domain;
 
+import org.microbean.construct.constant.Constables;
+
 import org.microbean.construct.type.UniversalType;
 
 @SuppressWarnings("preview")
 public final class UniversalElement
-  implements ExecutableElement,
+  implements Constable,
+             ExecutableElement,
              ModuleElement,
              PackageElement,
              Parameterizable,
@@ -79,8 +86,9 @@ public final class UniversalElement
       default -> () -> {
         final Element unwrappedDelegate = unwrap(delegate);
         try (var lock = this.domain.lock()) {
-          // Eagerly complete symbols
+          // Complete symbols on first access
           unwrappedDelegate.getKind();
+          // A lock is no longer needed
           this.delegateSupplier = () -> unwrappedDelegate;
         }
         return unwrappedDelegate;
@@ -124,6 +132,11 @@ public final class UniversalElement
 
   public final Element delegate() {
     return this.delegateSupplier.get();
+  }
+
+  @Override // Constable
+  public final Optional<? extends ConstantDesc> describeConstable() {
+    return Constables.describe(unwrap(this.delegate()), this.domain);
   }
 
   @Override // RecordComponentElement

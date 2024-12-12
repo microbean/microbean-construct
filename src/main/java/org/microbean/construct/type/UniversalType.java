@@ -15,11 +15,15 @@ package org.microbean.construct.type;
 
 import java.lang.annotation.Annotation;
 
+import java.lang.constant.Constable;
+import java.lang.constant.ConstantDesc;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import java.util.concurrent.locks.Lock;
 
@@ -47,8 +51,11 @@ import org.microbean.construct.Domain;
 
 import org.microbean.construct.element.UniversalElement;
 
+import org.microbean.construct.constant.Constables;
+
 public final class UniversalType
   implements ArrayType,
+             Constable,
              ErrorType,
              ExecutableType,
              IntersectionType,
@@ -74,8 +81,9 @@ public final class UniversalType
       default -> () -> {
         final TypeMirror unwrappedDelegate = unwrap(delegate);
         try (var lock = this.domain.lock()) {
-          // Eagerly complete symbols
+          // Complete symbols on first access
           unwrappedDelegate.getKind();
+          // A lock is no longer needed
           this.delegateSupplier = () -> unwrappedDelegate;
         }
         return unwrappedDelegate;
@@ -83,7 +91,7 @@ public final class UniversalType
     };
   }
 
-  // @Override // TypeMirror
+  @Override // TypeMirror
   public final <R, P> R accept(final TypeVisitor<R, P> v, final P p) {
     return switch (this.getKind()) {
     case ARRAY        -> v.visitArray(this, p);
@@ -124,6 +132,11 @@ public final class UniversalType
 
   public final TypeMirror delegate() {
     return this.delegateSupplier.get();
+  }
+
+  @Override // Constable
+  public final Optional<? extends ConstantDesc> describeConstable() {
+    return Constables.describe(unwrap(this.delegate()), this.domain);
   }
 
   @Override // UnionType
@@ -187,7 +200,7 @@ public final class UniversalType
     return this.delegate().getKind();
   }
 
-    @Override // TypeVariable
+  @Override // TypeVariable
   public final UniversalType getLowerBound() {
     return switch (this.getKind()) {
     case TYPEVAR -> this.wrap(((TypeVariable)this.delegate()).getLowerBound());
@@ -279,7 +292,7 @@ public final class UniversalType
   public final String toString() {
     return unwrap(this.delegate()).toString();
   }
-  
+
   private final List<? extends UniversalType> wrap(final Collection<? extends TypeMirror> ts) {
     return of(ts, this.domain);
   }

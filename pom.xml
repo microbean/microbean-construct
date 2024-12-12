@@ -312,6 +312,9 @@
             </goals>
             <configuration>
               <rules>
+                <requireJavaVersion>
+                  <version>23</version>
+                </requireJavaVersion>
                 <requireMavenVersion>
                   <version>3.9.9</version>
                 </requireMavenVersion>
@@ -339,24 +342,6 @@
         </configuration>
       </plugin>
       <plugin>
-        <artifactId>maven-toolchains-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>toolchain</goal>
-            </goals>
-            <configuration>
-              <toolchains>
-                <jdk>
-                  <vendor>openjdk</vendor>
-                  <version>${maven.compiler.release}</version>
-                </jdk>
-              </toolchains>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.sonatype.plugins</groupId>
         <artifactId>nexus-staging-maven-plugin</artifactId>
       </plugin>
@@ -379,6 +364,7 @@
 
   <reporting>
     <plugins>
+      <!--
       <plugin>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <reportSets>
@@ -389,6 +375,7 @@
           </reportSet>
         </reportSets>
       </plugin>
+      -->
       <plugin>
         <artifactId>maven-javadoc-plugin</artifactId>
         <reportSets>

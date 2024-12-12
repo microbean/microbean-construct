@@ -13,8 +13,15 @@
  */
 package org.microbean.construct;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.Constable;
+import java.lang.constant.ConstantDesc;
+import java.lang.constant.DynamicConstantDesc;
+import java.lang.constant.MethodHandleDesc;
+
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -24,20 +31,28 @@ import java.util.function.Supplier;
 import javax.annotation.processing.ProcessingEnvironment;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.Name;
+import javax.lang.model.element.Parameterizable;
+import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 
 import org.microbean.construct.element.UniversalElement;
 
 import org.microbean.construct.type.UniversalType;
+
+import static java.lang.constant.ConstantDescs.BSM_INVOKE;
 
 /**
  * A {@linkplain Domain domain of Java constructs} that can be used at annotation processing time or at runtime.
@@ -49,7 +64,7 @@ import org.microbean.construct.type.UniversalType;
  * @see RuntimeProcessingEnvironment
  */
 @SuppressWarnings({ "try", "unchecked" })
-public class DefaultDomain implements Domain {
+public class DefaultDomain implements Constable, Domain {
 
   private final ProcessingEnvironment pe;
 
@@ -71,6 +86,8 @@ public class DefaultDomain implements Domain {
    * {@link RuntimeProcessingEnvironment#get()} will be used instead
    *
    * @see #DefaultDomain(ProcessingEnvironment, Lock)
+   *
+   * @see SymbolCompletionLock
    */
   public DefaultDomain(final ProcessingEnvironment pe) {
     this(pe, null);
@@ -79,10 +96,14 @@ public class DefaultDomain implements Domain {
   /**
    * Creates a new {@link DefaultDomain} <strong>for use at runtime</strong>.
    *
-   * @param lock a {@link Lock} to use to serialize symbol completion; may be {@code null} in which case this {@link
-   * DefaultDomain} will not be safe for concurrent use by multiple threads
+   * @param lock a {@link Lock} to use to serialize symbol completion; may be {@code null} in which case a global {@link
+   * ReentrantLock} will be used instead
    *
    * @see #DefaultDomain(ProcessingEnvironment, Lock)
+   *
+   * @see RuntimeProcessingEnvironment
+   *
+   * @see SymbolCompletionLock
    */
   public DefaultDomain(final Lock lock) {
     this(null, lock);
@@ -95,17 +116,19 @@ public class DefaultDomain implements Domain {
    * {@link RuntimeProcessingEnvironment#get()} will be used instead
    *
    * @param lock a {@link Lock} to use to serialize symbol completion; if {@code null} and {@code pe} is {@code null},
-   * then a new {@link ReentrantLock} will be used instead; if {@code null} and {@code pe} is non-{@code null}, then no
-   * serialization of symbol completion will occur and this {@link DefaultDomain} will not be safe for concurrent use by
-   * multiple threads
+   * then a global {@link ReentrantLock} will be used instead; if {@code null} and {@code pe} is non-{@code null}, then
+   * no serialization of symbol completion will occur and this {@link DefaultDomain} will not be safe for concurrent use
+   * by multiple threads
    *
    * @see RuntimeProcessingEnvironment
+   *
+   * @see SymbolCompletionLock
    */
   public DefaultDomain(final ProcessingEnvironment pe, final Lock lock) {
     super();
     if (pe == null) {
       this.pe = RuntimeProcessingEnvironment.get();
-      final Lock l = lock == null ? new ReentrantLock() : lock;
+      final Lock l = lock == null ? SymbolCompletionLock.INSTANCE : lock;
       this.locker = () -> {
         l.lock();
         return l::unlock;
@@ -151,6 +174,23 @@ public class DefaultDomain implements Domain {
   }
 
   @Override // Domain
+  public UniversalElement asElement(TypeMirror t) {
+    t = unwrap(t);
+    try (var lock = lock()) {
+      return UniversalElement.of(this.types().asElement(t), this);
+    }
+  }
+
+  @Override // Domain
+  public UniversalType asMemberOf(DeclaredType containingType, Element e) {
+    containingType = unwrap(containingType);
+    e = unwrap(e);
+    try (var lock = lock()) {
+      return UniversalType.of(this.types().asMemberOf(containingType, e), this);
+    }
+  }
+
+  @Override // Domain
   // Note the strange positioning of payload and receiver.
   public boolean assignable(TypeMirror payload, TypeMirror receiver) {
     payload = unwrap(payload);
@@ -164,6 +204,14 @@ public class DefaultDomain implements Domain {
   public Name binaryName(final TypeElement e) {
     // Does not cause symbol completion.
     return this.elements().getBinaryName(unwrap(e));
+  }
+
+  @Override // Domain
+  public UniversalElement box(PrimitiveType t) {
+    t = unwrap(t);
+    try (var lock = lock()) {
+      return UniversalElement.of(this.types().boxedClass(t), this);
+    }
   }
 
   @Override // Domain
@@ -181,6 +229,11 @@ public class DefaultDomain implements Domain {
     try (var lock = lock()) {
       return this.types().contains(t0, t1);
     }
+  }
+
+  @Override // Domain
+  public UniversalType declaredType(final CharSequence canonicalName) {
+    return UniversalType.of(Domain.super.declaredType(canonicalName), this);
   }
 
   @Override // Domain
@@ -203,6 +256,13 @@ public class DefaultDomain implements Domain {
     try (var lock = lock()) {
       return UniversalType.of(this.types().getDeclaredType(enclosingType, typeElement, typeArguments), this);
     }
+  }
+
+  @Override // Constable
+  public Optional<? extends ConstantDesc> describeConstable() {
+    return
+      Optional.of(DynamicConstantDesc.of(BSM_INVOKE,
+                                         MethodHandleDesc.ofConstructor(ClassDesc.of(this.getClass().getName()))));
   }
 
   @Override // Domain
@@ -234,10 +294,18 @@ public class DefaultDomain implements Domain {
   }
 
   @Override // Domain
-  public final UniversalElement javaLangObject() {
-    return UniversalElement.class.cast(Domain.super.javaLangObject());
+  public UniversalElement executableElement(final TypeElement declaringElement,
+                                            final TypeMirror returnType,
+                                            final CharSequence name,
+                                            final TypeMirror... parameterTypes) {
+    return UniversalElement.of(Domain.super.executableElement(declaringElement, returnType, name, parameterTypes), this);
   }
-  
+
+  @Override // Domain
+  public final UniversalElement javaLangObject() {
+    return UniversalElement.of(Domain.super.javaLangObject(), this);
+  }
+
   /**
    * Returns a non-{@code null} {@link Unlockable} that should be used in a {@code try}-with-resources block guarding
    * operations that might cause symbol completion.
@@ -273,8 +341,31 @@ public class DefaultDomain implements Domain {
   }
 
   @Override // Domain
+  public UniversalElement packageElement(final CharSequence canonicalName) {
+    try (var lock = lock()) {
+      return UniversalElement.of(this.elements().getPackageElement(canonicalName), this);
+    }
+  }
+
+  @Override // Domain
+  public UniversalElement packageElement(ModuleElement asSeenFrom, final CharSequence canonicalName) {
+    asSeenFrom = unwrap(asSeenFrom);
+    try (var lock = lock()) {
+      return UniversalElement.of(this.elements().getPackageElement(asSeenFrom, canonicalName), this);
+    }
+  }
+
+  @Override // Domain
   public UniversalType primitiveType(final TypeKind kind) {
     return UniversalType.of(this.types().getPrimitiveType(kind), this);
+  }
+
+  @Override // Domain
+  public RecordComponentElement recordComponent(ExecutableElement e) {
+    e = unwrap(e);
+    try (var lock = lock()) {
+      return UniversalElement.of(this.elements().recordComponentFor(e), this);
+    }
   }
 
   @Override // Domain
@@ -288,6 +379,15 @@ public class DefaultDomain implements Domain {
     t1 = unwrap(t1);
     try (var lock = lock()) {
       return this.types().isSameType(t0, t1);
+    }
+  }
+
+  @Override // Domain
+  public boolean subsignature(ExecutableType t0, ExecutableType t1) {
+    t0 = unwrap(t0);
+    t1 = unwrap(t1);
+    try (var lock = lock()) {
+      return this.types().isSubsignature(t0, t1);
     }
   }
 
@@ -309,16 +409,37 @@ public class DefaultDomain implements Domain {
 
   @Override // Domain
   public UniversalElement typeElement(ModuleElement asSeenFrom, final CharSequence canonicalName) {
-    if (asSeenFrom != null) {
-      asSeenFrom = unwrap(asSeenFrom);
-    }
+    asSeenFrom = unwrap(asSeenFrom);
     try (var lock = lock()) {
       return UniversalElement.of(this.elements().getTypeElement(asSeenFrom, canonicalName), this);
     }
   }
 
+  @Override // Domain
+  public UniversalElement typeParameterElement(Parameterizable p, final CharSequence name) {
+    return UniversalElement.of(Domain.super.typeParameterElement(p, name), this);
+  }
+
   private final Types types() {
     return this.pe.getTypeUtils();
+  }
+
+  @Override // Domain
+  public UniversalType unbox(TypeElement e) {
+    e = unwrap(e);
+    try (var lock = lock()) {
+      return UniversalType.of(this.types().unboxedType(e.asType()), this);
+    }
+  }
+
+  @Override // Domain
+  public UniversalElement variableElement(Element e, final CharSequence name) {
+    return UniversalElement.of(Domain.super.variableElement(e, name), this);
+  }
+
+  @Override // Domain
+  public UniversalType wildcardType() {
+    return this.wildcardType(null, null);
   }
 
   @Override // Domain
