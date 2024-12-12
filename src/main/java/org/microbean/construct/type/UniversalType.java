@@ -53,6 +53,9 @@ import org.microbean.construct.element.UniversalElement;
 
 import org.microbean.construct.constant.Constables;
 
+import static javax.lang.model.type.TypeKind.NONE;
+import static javax.lang.model.type.TypeKind.VOID;
+
 public final class UniversalType
   implements ArrayType,
              Constable,
@@ -80,6 +83,7 @@ public final class UniversalType
       case UniversalType ut -> () -> ut;
       default -> () -> {
         final TypeMirror unwrappedDelegate = unwrap(delegate);
+        assert !(unwrappedDelegate instanceof UniversalType);
         try (var lock = this.domain.lock()) {
           // Complete symbols on first access
           unwrappedDelegate.getKind();
@@ -136,7 +140,8 @@ public final class UniversalType
 
   @Override // Constable
   public final Optional<? extends ConstantDesc> describeConstable() {
-    return Constables.describe(unwrap(this.delegate()), this.domain);
+    assert !(this.delegate() instanceof UniversalType);
+    return Constables.describe(this.delegate(), this.domain);
   }
 
   @Override // UnionType
@@ -175,7 +180,7 @@ public final class UniversalType
   public final UniversalType getComponentType() {
     return switch (this.getKind()) {
     case ARRAY -> this.wrap(((ArrayType)this.delegate()).getComponentType());
-    default    -> this.wrap(this.domain.noType(TypeKind.NONE));
+    default    -> this.wrap(this.domain.noType(NONE));
     };
   }
 
@@ -183,7 +188,7 @@ public final class UniversalType
   public final UniversalType getEnclosingType() {
     return switch(this.getKind()) {
     case DECLARED -> this.wrap(((DeclaredType)this.delegate()).getEnclosingType());
-    default       -> this.wrap(this.domain.noType(TypeKind.NONE));
+    default       -> this.wrap(this.domain.noType(NONE));
     };
   }
 
@@ -228,7 +233,7 @@ public final class UniversalType
   public final UniversalType getReceiverType() {
     return switch (this.getKind()) {
     case EXECUTABLE -> this.wrap(((ExecutableType)this.delegate()).getReceiverType());
-    default         -> this.wrap(this.domain.noType(TypeKind.NONE));
+    default         -> this.wrap(this.domain.noType(NONE));
     };
   }
 
@@ -236,7 +241,7 @@ public final class UniversalType
   public final UniversalType getReturnType() {
     return switch (this.getKind()) {
     case EXECUTABLE -> this.wrap(((ExecutableType)this.delegate()).getReturnType());
-    default         -> this.wrap(this.domain.noType(TypeKind.VOID));
+    default         -> this.wrap(this.domain.noType(VOID));
     };
   }
 
@@ -274,7 +279,7 @@ public final class UniversalType
 
   @Override // TypeMirror
   public final int hashCode() {
-    return unwrap(this.delegate()).hashCode();
+    return this.delegate().hashCode();
   }
 
   @Override // TypeMirror
@@ -290,7 +295,7 @@ public final class UniversalType
 
   @Override // TypeMirror
   public final String toString() {
-    return unwrap(this.delegate()).toString();
+    return this.delegate().toString();
   }
 
   private final List<? extends UniversalType> wrap(final Collection<? extends TypeMirror> ts) {

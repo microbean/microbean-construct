@@ -16,7 +16,9 @@ package org.microbean.construct;
 import java.lang.System.Logger;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CountDownLatch;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.annotation.processing.ProcessingEnvironment;
 
@@ -37,13 +39,34 @@ import static java.lang.System.Logger.Level.ERROR;
  */
 public final class RuntimeProcessingEnvironment {
 
+
+  /*
+   * Static fields.
+   */
+
+
   private static final Logger LOGGER = getLogger(RuntimeProcessingEnvironment.class.getName());
 
-  private static volatile ProcessingEnvironment pe;
+  private static final CountDownLatch processorLatch = new CountDownLatch(1);
+
+  private static final AtomicReference<CompletableFuture<ProcessingEnvironment>> r =
+    new AtomicReference<>(startBlockingCompilationTask());
+
+
+  /*
+   * Constructors.
+   */
+
 
   private RuntimeProcessingEnvironment() {
     super();
   }
+
+
+  /*
+   * Static methods.
+   */
+
 
   /**
    * Returns a non-{@code null} {@link ProcessingEnvironment} suitable for use at runtime.
@@ -53,35 +76,37 @@ public final class RuntimeProcessingEnvironment {
    *
    * @return a non-{@code null} {@link ProcessingEnvironment}
    *
-   * @exception IllegalStateException if an error occurs
+   * @exception java.util.concurrent.CancellationException if the task of setting up the {@link ProcessingEnvironment}
+   * was cancelled
+   *
+   * @exception java.util.concurrent.CompletionException if an error occurs
    *
    * @see ProcessingEnvironment
    *
    * @see Domain
    */
   public static final ProcessingEnvironment get() {
-    if (pe == null) { // volatile read
-      final CompletableFuture<ProcessingEnvironment> f = new CompletableFuture<>();
-      // Use a virtual thread since it will spend its entire time blocked/parked once it has completed the future.
-      Thread.ofVirtual()
-        .name(RuntimeProcessingEnvironment.class.getName())
-        .uncaughtExceptionHandler((t, e) -> {
-            f.completeExceptionally(e);
-            if (LOGGER.isLoggable(ERROR)) {
-              LOGGER.log(ERROR, e.getMessage(), e);
-            }
-          })
-        .start(new BlockingCompilationTask(f));
-      try {
-        pe = f.get(); // volatile write
-      } catch (final ExecutionException e) {
-        throw new IllegalStateException(e.getMessage(), e);
-      } catch (final InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new IllegalStateException(e.getMessage(), e);
-      }
-    }
-    return pe; // volatile read
+    return r.get().join();
+  }
+
+  private static final CompletableFuture<ProcessingEnvironment> startBlockingCompilationTask() {
+    final CompletableFuture<ProcessingEnvironment> f = new CompletableFuture<>();
+    // Use a virtual thread since the BlockingCompilationTask will spend its entire time blocked/parked once it has
+    // completed the CompletableFuture.
+    //
+    // There may be two (or more) threads involved here, depending on the compiler implementation: this virtual one that
+    // offloads the setup of the compiler/annotation processing machinery, and the thread that said machinery may use to
+    // run the actual compilation task (which blocks forever) (see CompilationTask#call()).
+    Thread.ofVirtual()
+      .name(RuntimeProcessingEnvironment.class.getName())
+      .uncaughtExceptionHandler((thread, exception) -> {
+          f.completeExceptionally(exception);
+          if (LOGGER.isLoggable(ERROR)) {
+            LOGGER.log(ERROR, exception.getMessage(), exception);
+          }
+        })
+      .start(new BlockingCompilationTask(f, processorLatch));
+    return f;
   }
 
 }

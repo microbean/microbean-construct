@@ -13,37 +13,31 @@
  */
 package org.microbean.construct.constant;
 
-import java.lang.constant.ConstantDesc;
+import java.lang.constant.ClassDesc;
 
-import java.lang.invoke.MethodHandles;
-
-import javax.lang.model.element.Name;
-
-import java.util.Optional;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 import org.junit.jupiter.api.Test;
 
-import org.microbean.construct.DefaultDomain;
-import org.microbean.construct.Domain;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-final class TestConstables {
+final class TestConstantDescs {
 
-  private static final Domain domain = new DefaultDomain();
-  
-  private TestConstables() {
+  private TestConstantDescs() {
     super();
   }
 
   @Test
-  final void testDescribeName() throws ReflectiveOperationException {
-    Name n = domain.name("foo");
-    assertNotNull(n);
-    final ConstantDesc cd = Constables.describe(n, domain).orElse(null);
-    assertNotNull(cd);
-    assertTrue(n.contentEquals((Name)cd.resolveConstantDesc(MethodHandles.lookup())));
+  final void testConstantDescs() throws ClassNotFoundException, IllegalAccessException {
+    for (final Field f : ConstantDescs.class.getDeclaredFields()) {
+      assertTrue(f.trySetAccessible());
+      assertSame(ClassDesc.class, f.getType());
+      assertTrue(Modifier.isStatic(f.getModifiers()));
+      final ClassDesc cd = (ClassDesc)f.get(null);
+      Class.forName(cd.packageName() + "." + cd.displayName());
+    }
   }
 
 }

@@ -85,6 +85,7 @@ public final class UniversalElement
       case UniversalElement ue -> () -> ue;
       default -> () -> {
         final Element unwrappedDelegate = unwrap(delegate);
+        assert !(unwrappedDelegate instanceof UniversalElement);
         try (var lock = this.domain.lock()) {
           // Complete symbols on first access
           unwrappedDelegate.getKind();
@@ -136,7 +137,8 @@ public final class UniversalElement
 
   @Override // Constable
   public final Optional<? extends ConstantDesc> describeConstable() {
-    return Constables.describe(unwrap(this.delegate()), this.domain);
+    assert !(this.delegate() instanceof UniversalElement);
+    return Constables.describe(this.delegate(), this.domain);
   }
 
   @Override // RecordComponentElement
@@ -254,7 +256,7 @@ public final class UniversalElement
   public final Name getQualifiedName() {
     return switch (this.getKind()) {
     case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, MODULE, PACKAGE, RECORD ->
-      this.domain.name(((QualifiedNameable)this.delegate()).getQualifiedName());
+      ((QualifiedNameable)this.delegate()).getQualifiedName();
     default -> this.domain.unnamedName();
     };
   }
@@ -346,17 +348,23 @@ public final class UniversalElement
 
   @Override // Element
   public final int hashCode() {
-    return unwrap(this.delegate()).hashCode();
+    return this.delegate().hashCode();
   }
 
   @Override // Element
   public final boolean equals(final Object other) {
-    return this == other || Objects.equals(unwrap(this.delegate()), other);
+    if (this == other) {
+      return true;
+    } else if (other != null && other.getClass() == this.getClass()) {
+      return this.delegate().equals(((UniversalElement)other).delegate());
+    } else {
+      return false;
+    }
   }
 
   @Override // Element
   public final String toString() {
-    return unwrap(this.delegate()).toString();
+    return this.delegate().toString();
   }
 
   private final UniversalElement wrap(final Element e) {
