@@ -65,7 +65,9 @@ public final class Signatures {
         STATIC_INIT -> methodSignature((ExecutableElement)e, d);
       case
         ENUM_CONSTANT,
-        FIELD -> fieldSignature(e);
+        FIELD,
+        PARAMETER,
+        RECORD_COMPONENT -> fieldSignature(e, d);
       case
         ANNOTATION_TYPE,
         BINDING_VARIABLE,
@@ -74,11 +76,9 @@ public final class Signatures {
         MODULE,
         OTHER,
         PACKAGE,
-        PARAMETER,
-        RECORD_COMPONENT,
         RESOURCE_VARIABLE,
         TYPE_PARAMETER ->
-        throw new IllegalArgumentException("e: " + e);
+        throw new IllegalArgumentException("e: " + e + "; kind: " + e.getKind());
       };
     }
   }
@@ -111,7 +111,7 @@ public final class Signatures {
     // Precondition: under domain lock
     switch (e.getKind()) {
     case CLASS, ENUM, INTERFACE, RECORD -> { // note: no ANNOTATION_TYPE on purpose
-      typeParameters(e.getTypeParameters(), sb);
+      typeParameters(e.getTypeParameters(), sb, d);
       final List<? extends TypeMirror> directSupertypes = d.directSupertypes(e.asType());
       if (directSupertypes.isEmpty()) {
         assert e.getQualifiedName().contentEquals("java.lang.Object") : "DeclaredType with no supertypes: " + e.asType();
@@ -122,8 +122,8 @@ public final class Signatures {
         // returned." Therefore in all situations, given a non-empty list of direct supertypes, the first element will
         // always be a non-interface class.
         assert !((TypeElement)firstSupertype.asElement()).getKind().isInterface() : "Contract violation";
-        superclassSignature(firstSupertype, sb);
-        superinterfaceSignatures(directSupertypes.subList(1, directSupertypes.size()), sb);
+        superclassSignature(firstSupertype, sb, d);
+        superinterfaceSignatures(directSupertypes.subList(1, directSupertypes.size()), sb, d);
       }
       break;
     }
@@ -173,38 +173,41 @@ public final class Signatures {
         }
       }
       final StringBuilder sb = new StringBuilder();
-      methodSignature(e, sb, throwsClauseRequired);
+      methodSignature(e, sb, throwsClauseRequired, d);
       return sb.toString();
     } else {
       throw new IllegalArgumentException("e: " + e + "; kind: " + e.getKind());
     }
   }
 
-  private static final void methodSignature(final ExecutableElement e, final StringBuilder sb, final boolean throwsClauseRequired) {
+  private static final void methodSignature(final ExecutableElement e,
+                                            final StringBuilder sb,
+                                            final boolean throwsClauseRequired,
+                                            final Domain d) {
     // Precondition: under domain lock
     if (!e.getKind().isExecutable()) {
       throw new IllegalArgumentException("e: " + e + "; kind: " + e.getKind());
     }
-    typeParameters(e.getTypeParameters(), sb);
+    typeParameters(e.getTypeParameters(), sb, d);
     sb.append('(');
-    parameterSignatures(e.getParameters(), sb);
+    parameterSignatures(e.getParameters(), sb, d);
     sb.append(')');
     final TypeMirror returnType = e.getReturnType();
     if (returnType.getKind() == TypeKind.VOID) {
       sb.append('V');
     } else {
-      typeSignature(returnType, sb);
+      typeSignature(returnType, sb, d);
     }
     if (throwsClauseRequired) {
-      throwsSignatures(e.getThrownTypes(), sb);
+      throwsSignatures(e.getThrownTypes(), sb, d);
     }
   }
 
   @SuppressWarnings("fallthrough")
-  private static final String fieldSignature(final Element e) {
+  private static final String fieldSignature(final Element e, final Domain d) {
     // Precondition: under domain lock
     return switch (e.getKind()) {
-    case ENUM_CONSTANT, FIELD, LOCAL_VARIABLE, PARAMETER, RECORD_COMPONENT -> {
+    case ENUM_CONSTANT, FIELD, PARAMETER, RECORD_COMPONENT -> {
       final TypeMirror t = e.asType();
       switch (t.getKind()) {
       case DECLARED:
@@ -217,7 +220,7 @@ public final class Signatures {
         // fall through
       case TYPEVAR:
         final StringBuilder sb = new StringBuilder();
-        fieldSignature(e, sb);
+        fieldSignature(e, sb, d);
         yield sb.toString();
       default:
         // TODO: is this sufficient? Or do we, for example, have to examine the type's supertypes to see if *they*
@@ -230,42 +233,46 @@ public final class Signatures {
     };
   }
 
-  private static final void fieldSignature(final Element e, final StringBuilder sb) {
+  private static final void fieldSignature(final Element e, final StringBuilder sb, final Domain d) {
     // Precondition: under domain lock
     switch (e.getKind()) {
-    case ENUM_CONSTANT, FIELD, LOCAL_VARIABLE, PARAMETER, RECORD_COMPONENT -> typeSignature(e.asType(), sb);
+    case ENUM_CONSTANT, FIELD, PARAMETER, RECORD_COMPONENT -> typeSignature(e.asType(), sb, d);
     default -> throw new IllegalArgumentException("e: " + e);
     }
   }
 
-  private static final void parameterSignatures(final List<? extends VariableElement> ps, final StringBuilder sb) {
+  private static final void parameterSignatures(final List<? extends VariableElement> ps,
+                                                final StringBuilder sb,
+                                                final Domain d) {
     // Precondition: under domain lock
     for (final VariableElement p : ps) {
       if (p.getKind() != ElementKind.PARAMETER) {
         throw new IllegalArgumentException("ps: " + ps);
       }
-      typeSignature(p.asType(), sb);
+      typeSignature(p.asType(), sb, d);
     }
   }
 
-  private static final void throwsSignatures(final List<? extends TypeMirror> ts, final StringBuilder sb) {
+  private static final void throwsSignatures(final List<? extends TypeMirror> ts, final StringBuilder sb, final Domain d) {
     // Precondition: under domain lock
     for (final TypeMirror t : ts) {
       sb.append(switch (t.getKind()) {
-        case DECLARED, TYPEVAR -> "^";
-          default -> throw new IllegalArgumentException("ts: " + ts);
+        case DECLARED, TYPEVAR -> '^';
+        default -> throw new IllegalArgumentException("ts: " + ts);
         });
-      typeSignature(t, sb);
+      typeSignature(t, sb, d);
     }
   }
 
-  private static final void typeParameters(final List<? extends TypeParameterElement> tps, final StringBuilder sb) {
+  private static final void typeParameters(final List<? extends TypeParameterElement> tps,
+                                           final StringBuilder sb,
+                                           final Domain d) {
     if (!tps.isEmpty()) {
       sb.append('<');
       // Precondition: under domain lock
       for (final TypeParameterElement tp : tps) {
         switch (tp.getKind()) {
-        case TYPE_PARAMETER -> typeParameter(tp, sb);
+        case TYPE_PARAMETER -> typeParameter(tp, sb, d);
         default -> throw new IllegalArgumentException("tps: " + tps);
         }
       }
@@ -273,45 +280,44 @@ public final class Signatures {
     }
   }
 
-  private static final void typeParameter(final TypeParameterElement e, final StringBuilder sb) {
+  private static final void typeParameter(final TypeParameterElement e, final StringBuilder sb, final Domain d) {
     // Precondition: under domain lock
     if (e.getKind() != ElementKind.TYPE_PARAMETER) {
       throw new IllegalArgumentException("e: " + e);
     }
     final List<? extends TypeMirror> bounds = e.getBounds();
-    sb.append(e.getSimpleName());
+    sb.append(e.getSimpleName()).append(':');
     if (bounds.isEmpty()) {
-      sb.append(":java.lang.Object");
+      sb.append("java.lang.Object");
     } else {
-      sb.append(':');
-      classBound(bounds.get(0), sb);
+      classBound(bounds.get(0), sb, d);
     }
-    interfaceBounds(bounds.subList(1, bounds.size()), sb);
+    interfaceBounds(bounds.subList(1, bounds.size()), sb, d);
   }
 
-  private static final void classBound(final TypeMirror t, final StringBuilder sb) {
+  private static final void classBound(final TypeMirror t, final StringBuilder sb, final Domain d) {
     // Precondition: under domain lock
     if (t.getKind() != TypeKind.DECLARED) {
       throw new IllegalArgumentException("t: " + t);
     }
-    typeSignature(t, sb);
+    typeSignature(t, sb, d);
   }
 
-  private static final void interfaceBounds(final List<? extends TypeMirror> ts, final StringBuilder sb) {
+  private static final void interfaceBounds(final List<? extends TypeMirror> ts, final StringBuilder sb, final Domain d) {
     // Precondition: under domain lock
     for (final TypeMirror t : ts) {
-      interfaceBound(t, sb);
+      interfaceBound(t, sb, d);
     }
   }
 
   @SuppressWarnings("fallthrough")
-  private static final void interfaceBound(final TypeMirror t, final StringBuilder sb) {
+  private static final void interfaceBound(final TypeMirror t, final StringBuilder sb, final Domain d) {
     // Precondition: under domain lock
     switch (t.getKind()) {
     case DECLARED:
       if (((DeclaredType)t).asElement().getKind().isInterface()) {
         sb.append(':');
-        typeSignature(t, sb);
+        typeSignature(t, sb, d);
         return;
       }
       // fall through
@@ -320,24 +326,26 @@ public final class Signatures {
     }
   }
 
-  private static final void superclassSignature(final TypeMirror t, final StringBuilder sb) {
-    classTypeSignature(t, sb);
+  private static final void superclassSignature(final TypeMirror t, final StringBuilder sb, final Domain d) {
+    classTypeSignature(t, sb, d);
   }
 
-  private static final void superinterfaceSignatures(final List<? extends TypeMirror> ts, final StringBuilder sb) {
+  private static final void superinterfaceSignatures(final List<? extends TypeMirror> ts,
+                                                     final StringBuilder sb,
+                                                     final Domain d) {
     // Precondition: under domain lock
     for (final TypeMirror t : ts) {
-      superinterfaceSignature(t, sb);
+      superinterfaceSignature(t, sb, d);
     }
   }
 
   @SuppressWarnings("fallthrough")
-  private static final void superinterfaceSignature(final TypeMirror t, final StringBuilder sb) {
+  private static final void superinterfaceSignature(final TypeMirror t, final StringBuilder sb, final Domain d) {
     // Precondition: under domain lock
     switch (t.getKind()) {
     case DECLARED:
       if (((DeclaredType)t).asElement().getKind().isInterface()) {
-        classTypeSignature(t, sb);
+        classTypeSignature(t, sb, d);
         return;
       }
       // fall through
@@ -349,30 +357,30 @@ public final class Signatures {
   public static final String signature(final TypeMirror t, final Domain d) {
     final StringBuilder sb = new StringBuilder();
     try (var lock = d.lock()) {
-      typeSignature(t, sb);
+      typeSignature(t, sb, d);
     }
     return sb.toString();
   }
 
-  private static final void typeSignature(final TypeMirror t, final StringBuilder sb) {
+  private static final void typeSignature(final TypeMirror t, final StringBuilder sb, final Domain d) {
     // Precondition: under domain lock
     switch (t.getKind()) {
-    case ARRAY    -> typeSignature(((ArrayType)t).getComponentType(), sb.append("[")); // recursive
-    case BOOLEAN  -> sb.append("Z");
-    case BYTE     -> sb.append("B");
-    case CHAR     -> sb.append("C");
-    case DECLARED -> classTypeSignature((DeclaredType)t, sb);
-    case DOUBLE   -> sb.append("D");
-    case FLOAT    -> sb.append("F");
-    case INT      -> sb.append("I");
-    case LONG     -> sb.append("J");
-    case SHORT    -> sb.append("S");
-    case TYPEVAR  -> sb.append("T").append(((TypeVariable)t).asElement().getSimpleName()).append(';');
+    case ARRAY    -> typeSignature(((ArrayType)t).getComponentType(), sb.append('['), d); // recursive
+    case BOOLEAN  -> sb.append('Z');
+    case BYTE     -> sb.append('B');
+    case CHAR     -> sb.append('C');
+    case DECLARED -> classTypeSignature((DeclaredType)t, sb, d);
+    case DOUBLE   -> sb.append('D');
+    case FLOAT    -> sb.append('F');
+    case INT      -> sb.append('I');
+    case LONG     -> sb.append('J');
+    case SHORT    -> sb.append('S');
+    case TYPEVAR  -> sb.append('T').append(((TypeVariable)t).asElement().getSimpleName()).append(';');
     default       -> throw new IllegalArgumentException("t: " + t);
     }
   }
 
-  private static final void classTypeSignature(final TypeMirror t, final StringBuilder sb) {
+  private static final void classTypeSignature(final TypeMirror t, final StringBuilder sb, final Domain d) {
     // Precondition: under domain lock
     switch (t.getKind()) {
     case NONE:
@@ -392,7 +400,7 @@ public final class Signatures {
       e = e.getEnclosingElement();
     }
 
-    sb.append("L");
+    sb.append('L');
 
     final Iterator<Element> i = dq.iterator();
     while (i.hasNext()) {
@@ -435,18 +443,18 @@ public final class Signatures {
           if (superBound == null) {
             final TypeMirror extendsBound = w.getExtendsBound();
             if (extendsBound == null) {
-              sb.append("*"); // I guess?
+              sb.append('*'); // I guess?
             } else {
-              sb.append("+");
-              typeSignature(extendsBound, sb);
+              sb.append('+');
+              typeSignature(extendsBound, sb, d);
             }
           } else {
-            sb.append("-");
-            typeSignature(superBound, sb);
+            sb.append('-');
+            typeSignature(superBound, sb, d);
           }
           break;
         default:
-          typeSignature(ta, sb);
+          typeSignature(ta, sb, d);
           break;
         }
       }

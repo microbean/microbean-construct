@@ -41,58 +41,58 @@ import static java.lang.constant.ConstantDescs.CD_short;
 import static java.lang.constant.ConstantDescs.CD_void;
 
 /**
- * A utility class that provides <dfn>decsriptors</dfn> for {@link TypeMirror}s.
+ * A utility class that provides {@link TypeDescriptor}s for {@link TypeMirror}s.
  *
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
  *
- * @see #descriptor(TypeMirror, Domain)
+ * @see #typeDescriptor(TypeMirror, Domain)
  *
  * @see TypeDescriptor#descriptorString()
  *
  * @spec https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-4.html#jvms-4.3 Java Virtual Machine Specification,
  * section 4.3
  */
-public final class Descriptors {
+public final class TypeDescriptors {
 
   private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = new ClassDesc[0];
-  
-  private Descriptors() {
+
+  private TypeDescriptors() {
     super();
   }
 
   @SuppressWarnings("try")
-  public static final String descriptor(final TypeMirror t, final Domain d) {
+  public static final TypeDescriptor typeDescriptor(final TypeMirror t, final Domain d) {
     try (var lock = d.lock()) {
-      return typeDescriptor(t, d).descriptorString();
+      return typeDescriptor0(t, d);
     }
   }
 
-  private static final TypeDescriptor typeDescriptor(final TypeMirror t, final Domain d) {
+  private static final TypeDescriptor typeDescriptor0(final TypeMirror t, final Domain d) {
     // Precondition: under domain lock
     return switch (t.getKind()) {
-    case ARRAY -> typeDescriptor(((ArrayType)t).getComponentType(), d); // recursive
+    case ARRAY -> typeDescriptor0(((ArrayType)t).getComponentType(), d); // recursive
     case BOOLEAN -> CD_boolean;
     case BYTE -> CD_byte;
     case CHAR -> CD_char;
-    case DECLARED -> ClassDesc.of(d.binaryName((TypeElement)((DeclaredType)t).asElement()).toString());
+    case DECLARED -> ClassDesc.of(d.toString(d.binaryName((TypeElement)((DeclaredType)t).asElement())));
     case EXECUTABLE -> {
       final ExecutableType et = (ExecutableType)t;
       final List<? extends TypeMirror> pts = et.getParameterTypes();
       if (pts.isEmpty()) {
-        yield MethodTypeDesc.of((ClassDesc)typeDescriptor(et.getReturnType(), d), EMPTY_CLASSDESC_ARRAY);
+        yield MethodTypeDesc.of((ClassDesc)typeDescriptor0(et.getReturnType(), d), EMPTY_CLASSDESC_ARRAY);
       }
       final List<ClassDesc> ptcds = new ArrayList<>(pts.size());
       for (final TypeMirror pt : pts) {
-        ptcds.add((ClassDesc)typeDescriptor(pt, d)); // recursive
+        ptcds.add((ClassDesc)typeDescriptor0(pt, d)); // recursive
       }
-      yield MethodTypeDesc.of((ClassDesc)typeDescriptor(et.getReturnType(), d), ptcds);
+      yield MethodTypeDesc.of((ClassDesc)typeDescriptor0(et.getReturnType(), d), ptcds); // recursive
     }
     case DOUBLE -> CD_double;
     case FLOAT -> CD_float;
     case INT -> CD_int;
     case LONG -> CD_long;
     case SHORT -> CD_short;
-    case TYPEVAR -> typeDescriptor(d.erasure(t), d); // recursive
+    case TYPEVAR -> typeDescriptor0(d.erasure(t), d); // recursive
     case VOID -> CD_void;
     default -> throw new IllegalArgumentException("t: " + t);
     };
