@@ -35,9 +35,9 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.Parameterizable;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -48,6 +48,7 @@ import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 
+import org.microbean.construct.element.StringName;
 import org.microbean.construct.element.UniversalElement;
 
 import org.microbean.construct.type.UniversalType;
@@ -201,16 +202,10 @@ public class DefaultDomain implements Constable, Domain {
   }
 
   @Override // Domain
-  public Name binaryName(final TypeElement e) {
-    // Does not cause symbol completion.
-    return this.elements().getBinaryName(unwrap(e));
-  }
-
-  @Override // Domain
-  public UniversalElement box(PrimitiveType t) {
-    t = unwrap(t);
+  public StringName binaryName(TypeElement e) {
+    e = unwrap(e);
     try (var lock = lock()) {
-      return UniversalElement.of(this.types().boxedClass(t), this);
+      return StringName.of(this.elements().getBinaryName(e).toString(), this);
     }
   }
 
@@ -231,6 +226,7 @@ public class DefaultDomain implements Constable, Domain {
     }
   }
 
+  // (Convenience.)
   @Override // Domain
   public UniversalType declaredType(final CharSequence canonicalName) {
     return UniversalType.of(Domain.super.declaredType(canonicalName), this);
@@ -285,6 +281,19 @@ public class DefaultDomain implements Constable, Domain {
     return this.pe.getElementUtils();
   }
 
+  @Override // Object
+  public boolean equals(final Object other) {
+    if (this == other) {
+      return true;
+    } else if (other != null && other.getClass() == this.getClass()) {
+      return
+        Objects.equals(this.pe, ((DefaultDomain)other).pe) &&
+        Objects.equals(this.locker, ((DefaultDomain)other).locker);
+    } else {
+      return false;
+    }
+  }
+
   @Override // Domain
   public UniversalType erasure(TypeMirror t) {
     t = unwrap(t);
@@ -293,6 +302,7 @@ public class DefaultDomain implements Constable, Domain {
     }
   }
 
+  // (Convenience.)
   @Override // Domain
   public UniversalElement executableElement(final TypeElement declaringElement,
                                             final TypeMirror returnType,
@@ -301,6 +311,12 @@ public class DefaultDomain implements Constable, Domain {
     return UniversalElement.of(Domain.super.executableElement(declaringElement, returnType, name, parameterTypes), this);
   }
 
+  @Override // Object
+  public int hashCode() {
+    return this.pe.hashCode() ^ this.locker.hashCode();
+  }
+
+  // (Convenience.)
   @Override // Domain
   public final UniversalElement javaLangObject() {
     return UniversalElement.of(Domain.super.javaLangObject(), this);
@@ -318,6 +334,7 @@ public class DefaultDomain implements Constable, Domain {
     return this.locker.get();
   }
 
+  // (Canonical.)
   @Override // Domain
   public UniversalElement moduleElement(final CharSequence canonicalName) {
     try (var lock = lock()) {
@@ -325,21 +342,33 @@ public class DefaultDomain implements Constable, Domain {
     }
   }
 
+  // (Canonical.)
   @Override // Domain
-  public Name name(final CharSequence name) {
-    return this.elements().getName(name);
+  public StringName name(final CharSequence name) {
+    return switch (name) {
+    case StringName sn -> sn;
+    // You will be tempted to add other efficient cases here. Do not.
+    default -> {
+      try (var lock = lock()) {
+        yield StringName.of(this.elements().getName(name).toString(), this);
+      }
+    }
+    };
   }
 
+  // (Canonical.)
   @Override // Domain
   public UniversalType noType(final TypeKind kind) {
     return UniversalType.of(this.types().getNoType(kind), this);
   }
 
+  // (Canonical.)
   @Override // Domain
   public UniversalType nullType() {
     return UniversalType.of(this.types().getNullType(), this);
   }
 
+  // (Canonical.)
   @Override // Domain
   public UniversalElement packageElement(final CharSequence canonicalName) {
     try (var lock = lock()) {
@@ -347,6 +376,7 @@ public class DefaultDomain implements Constable, Domain {
     }
   }
 
+  // (Canonical.)
   @Override // Domain
   public UniversalElement packageElement(ModuleElement asSeenFrom, final CharSequence canonicalName) {
     asSeenFrom = unwrap(asSeenFrom);
@@ -355,13 +385,39 @@ public class DefaultDomain implements Constable, Domain {
     }
   }
 
+  // (Canonical.)
   @Override // Domain
   public UniversalType primitiveType(final TypeKind kind) {
     return UniversalType.of(this.types().getPrimitiveType(kind), this);
   }
 
+  // (Convenience.)
+  // (Unboxing.)
   @Override // Domain
-  public RecordComponentElement recordComponent(ExecutableElement e) {
+  public UniversalType primitiveType(final CharSequence canonicalName) {
+    return UniversalType.of(Domain.super.primitiveType(canonicalName), this);
+  }
+
+  // (Convenience.)
+  // (Unboxing.)
+  @Override // Domain
+  public UniversalType primitiveType(final QualifiedNameable qn) {
+    return UniversalType.of(Domain.super.primitiveType(qn), this);
+  }
+
+  // (Canonical.)
+  // (Unboxing.)
+  @Override // Domain
+  public UniversalType primitiveType(TypeMirror t) {
+    t = unwrap(t);
+    try (var lock = lock()) {
+      return UniversalType.of(this.types().unboxedType(t), this);
+    }
+  }
+
+  // (Canonical.)
+  @Override // Domain
+  public RecordComponentElement recordComponentElement(ExecutableElement e) {
     e = unwrap(e);
     try (var lock = lock()) {
       return UniversalElement.of(this.elements().recordComponentFor(e), this);
@@ -401,22 +457,77 @@ public class DefaultDomain implements Constable, Domain {
   }
 
   @Override // Domain
+  public String toString(final CharSequence name) {
+    return switch (name) {
+    case null -> null;
+    case String s -> s;
+    case StringName sn -> sn.value();
+    case Name n -> {
+      try (var lock = lock()) {
+        yield n.toString();
+      }
+    }
+    default -> name.toString();
+    };
+  }
+
+  // (Canonical.)
+  @Override // Domain
   public UniversalElement typeElement(final CharSequence canonicalName) {
     try (var lock = lock()) {
-      return UniversalElement.of(this.elements().getTypeElement(canonicalName), this);
+      return UniversalElement.of(this.elements().getTypeElement(switch (canonicalName.toString()) {
+          case "boolean" -> "java.lang.Boolean";
+          case "byte" -> "java.lang.Byte";
+          case "char" -> "java.lang.Character";
+          case "double" -> "java.lang.Double";
+          case "float" -> "java.lang.Float";
+          case "int" -> "java.lang.Integer";
+          case "long" -> "java.lang.Long";
+          case "short" -> "java.lang.Short";
+          default -> canonicalName;
+          }), this);
     }
   }
 
+  // (Canonical.)
   @Override // Domain
   public UniversalElement typeElement(ModuleElement asSeenFrom, final CharSequence canonicalName) {
     asSeenFrom = unwrap(asSeenFrom);
     try (var lock = lock()) {
-      return UniversalElement.of(this.elements().getTypeElement(asSeenFrom, canonicalName), this);
+      return UniversalElement.of(this.elements().getTypeElement(asSeenFrom, switch (canonicalName.toString()) {
+          case "boolean" -> "java.lang.Boolean";
+          case "byte" -> "java.lang.Byte";
+          case "char" -> "java.lang.Character";
+          case "double" -> "java.lang.Double";
+          case "float" -> "java.lang.Float";
+          case "int" -> "java.lang.Integer";
+          case "long" -> "java.lang.Long";
+          case "short" -> "java.lang.Short";
+          default -> canonicalName;
+          }), this);
     }
   }
 
+  // (Canonical.)
+  // (Boxing.)
   @Override // Domain
-  public UniversalElement typeParameterElement(Parameterizable p, final CharSequence name) {
+  public UniversalElement typeElement(PrimitiveType t) {
+    t = unwrap(t);
+    try (var lock = lock()) {
+      return UniversalElement.of(this.types().boxedClass(t), this);
+    }
+  }
+
+  // (Convenience.)
+  // (Boxing.)
+  @Override // Domain
+  public UniversalElement typeElement(final TypeKind primitiveTypeKind) {
+    return UniversalElement.of(Domain.super.typeElement(primitiveTypeKind), this);
+  }
+
+  // (Convenience.)
+  @Override // Domain
+  public UniversalElement typeParameterElement(final Parameterizable p, final CharSequence name) {
     return UniversalElement.of(Domain.super.typeParameterElement(p, name), this);
   }
 
@@ -424,16 +535,15 @@ public class DefaultDomain implements Constable, Domain {
     return this.pe.getTypeUtils();
   }
 
+  // (Convenience.)
   @Override // Domain
-  public UniversalType unbox(TypeElement e) {
-    e = unwrap(e);
-    try (var lock = lock()) {
-      return UniversalType.of(this.types().unboxedType(e.asType()), this);
-    }
+  public UniversalType typeVariable(final Parameterizable p, final CharSequence name) {
+    return UniversalType.of(Domain.super.typeVariable(p, name), this);
   }
 
+  // (Convenience.)
   @Override // Domain
-  public UniversalElement variableElement(Element e, final CharSequence name) {
+  public UniversalElement variableElement(final Element e, final CharSequence name) {
     return UniversalElement.of(Domain.super.variableElement(e, name), this);
   }
 

@@ -26,7 +26,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import java.util.concurrent.locks.Lock;
 
 import java.util.function.Supplier;
 
@@ -39,7 +38,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.ModuleElement.Directive;
-import javax.lang.model.element.Name;
 import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.Parameterizable;
@@ -253,11 +251,15 @@ public final class UniversalElement
   }
 
   @Override // ModuleElement, PackageElement, TypeElement
-  public final Name getQualifiedName() {
+  @SuppressWarnings("try")
+  public final StringName getQualifiedName() {
     return switch (this.getKind()) {
-    case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, MODULE, PACKAGE, RECORD ->
-      ((QualifiedNameable)this.delegate()).getQualifiedName();
-    default -> this.domain.unnamedName();
+    case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, MODULE, PACKAGE, RECORD -> {
+      try (var lock = this.domain.lock()) {
+        yield StringName.of(((QualifiedNameable)this.delegate()).getQualifiedName().toString(), this.domain);
+      }
+    }
+    default -> StringName.ofUnnamed(this.domain);
     };
   }
 
@@ -283,8 +285,11 @@ public final class UniversalElement
   }
 
   @Override // Element
-  public final Name getSimpleName() {
-    return this.domain.name(this.delegate().getSimpleName());
+  @SuppressWarnings("try")
+  public final StringName getSimpleName() {
+    try (var lock = this.domain.lock()) {
+      return new StringName(this.delegate().getSimpleName().toString(), this.domain);
+    }
   }
 
   @Override // TypeElement

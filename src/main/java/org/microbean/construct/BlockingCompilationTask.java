@@ -27,7 +27,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 import java.util.concurrent.CompletableFuture;
@@ -44,7 +43,6 @@ import javax.tools.DiagnosticListener;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
 
 import static java.lang.Boolean.TRUE;
 
@@ -53,7 +51,6 @@ import static java.lang.System.lineSeparator;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
-import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.Logger.Level.WARNING;
 
 import static java.nio.charset.Charset.defaultCharset;
@@ -126,7 +123,7 @@ final class BlockingCompilationTask implements Runnable {
     options.add("-Werror");
 
     // Be verbose if necessary. Output will go to this class' Logger.
-    if (Boolean.getBoolean("org.microbean.construct.verbose")) {
+    if (LOGGER.isLoggable(DEBUG)) {
       options.add("-verbose");
     }
 
@@ -243,47 +240,80 @@ final class BlockingCompilationTask implements Runnable {
   }
 
   private static final void installNameTableOptions(final Consumer<? super String> c) {
+
     // See
     // https://github.com/openjdk/jdk/blob/jdk-21%2B35/src/jdk.compiler/share/classes/com/sun/tools/javac/util/Names.java#L430-L436
     // in JDK 21; JDK 22+ changes things dramatically.
     //
-    // This turns out to be a critical option to get right. The default name table in javac (21 and earlier) is shared
-    // and unsynchronized such that, given a Name, calling its toString() method may involve reading a shared byte array
-    // that is being updated in another thread (by symbol completion?). By contrast, the unshared name table creates
-    // Names whose contents are not shared, so toString() invocations on them are not problematic.
+    // This turns out to be a critical option to get right.
     //
-    // In JDK 22+, there is a String-based name table that is used by default; see
+    // The default name table in javac (11-21) is shared and unsynchronized. Without a global lock on symbol completion,
+    // a Name's toString() invocation may collide with another Name's toString() invocation, as both operations may
+    // update the same shared byte[] without synchronization. With a global lock on symbol completion, this name table
+    // implementation seems to work in multithreaded scenarios (perhaps not by design). Update: no, it does not.
+    //
+    // There is also an unshared name table that also works on byte[] arrays but does not share them. This table also
+    // appears to work in multithreaded scenarios, possibly even without a global symbol completion lock.
+    //
+    // Finally, in JDK 22+, there is a String-based name table that is used by default; see
     // https://github.com/openjdk/jdk/pull/15470. However note that this is also not thread-safe:
     // https://github.com/openjdk/jdk/blob/jdk-22%2B36/src/jdk.compiler/share/classes/com/sun/tools/javac/util/StringNameTable.java#L65
-    // It is also not thread-safe.
-    if (Runtime.version().feature() >= 22 && Boolean.getBoolean("useStringTable")) {
-      if (LOGGER.isLoggable(WARNING)) {
-        LOGGER.log(WARNING, "Using string name table");
-      }
-      c.accept("-XDuseStringTable");
-      if (Boolean.getBoolean("internStringTable")) {
+    // It is the worst of these options, is not thread-safe, and should not be used in multithreaded scenarios, even
+    // with a global symbol completion lock, since it stores entries in a HashMap which can be concurrently modified at
+    // any point.
+    //
+    // There is a unit test (TestNames) to check the name table in use for concurrency problems.
+
+    if (Runtime.version().feature() >= 22) {
+
+      if (Boolean.getBoolean("useSharedTable")) {
         if (LOGGER.isLoggable(DEBUG)) {
-          LOGGER.log(DEBUG, "Interning string name table strings");
+          LOGGER.log(DEBUG, "Using shared name table");
         }
-        c.accept("-XDinternStringTable");
+        // Available only in JDK 22+
+        c.accept("-XDuseSharedTable");
+        return;
       }
-      return;
-    } else if (Boolean.getBoolean("useSharedTable")) {
-      // Yikes
-      if (LOGGER.isLoggable(WARNING)) {
-        LOGGER.log(WARNING, "Using shared name table");
+
+      if (Boolean.getBoolean("useStringTable")) {
+        if (LOGGER.isLoggable(WARNING)) {
+          LOGGER.log(WARNING, "Using string name table");
+        }
+        // Available only in JDK 22+
+        c.accept("-XDuseStringTable");
+        if (Boolean.getBoolean("internStringTable")) {
+          if (LOGGER.isLoggable(DEBUG)) {
+            LOGGER.log(DEBUG, "Interning string name table strings");
+          }
+          // Available only in JDK 22+
+          c.accept("-XDinternStringTable");
+        }
+        return;
       }
-      c.accept("-XDuseSharedTable");
-      return;
+
+      if (Boolean.parseBoolean(System.getProperty("useUnsharedTable", "true"))) {
+        if (LOGGER.isLoggable(DEBUG)) {
+          LOGGER.log(DEBUG, "Using unshared name table");
+        }
+        // Available only in JDK 22+
+        c.accept("-XDuseSharedTable");
+        return;
+      }
+
     } else if (Boolean.parseBoolean(System.getProperty("useUnsharedTable", "true"))) {
+
       if (LOGGER.isLoggable(DEBUG)) {
         LOGGER.log(DEBUG, "Using unshared name table");
       }
       c.accept("-XDuseUnsharedTable");
       return;
+
     }
+
     // The user explicitly said don't use anything (?!). Log that we're using the default, whatever it might be.
     if (LOGGER.isLoggable(DEBUG)) {
+      // Default in JDK 11-22: shared
+      // Default in JDK 22+: string
       LOGGER.log(DEBUG, "Using default name table");
     }
   }
@@ -299,8 +329,6 @@ final class BlockingCompilationTask implements Runnable {
   // Probably slower than dirt. Should only be needed when things go wrong or verbose output is on.
   private static final class LogWriter extends StringWriter {
 
-    private static final int lsLength = lineSeparator().length();
-
     private LogWriter() {
       super();
     }
@@ -309,15 +337,15 @@ final class BlockingCompilationTask implements Runnable {
     public final void flush() {
       super.flush();
       final StringBuffer buffer = this.getBuffer();
-      if (LOGGER.isLoggable(DEBUG)) {
-        // Chop off the line separator that, thanks to the wrapping PrintWriter, absolutely will be at the end of the
-        // buffer (like Perl's chop())
-        LOGGER.log(DEBUG, buffer.subSequence(0, buffer.length() - lsLength));
+      if (buffer.length() > 0) {
+        if (LOGGER.isLoggable(DEBUG)) {
+          final int lsIndex = buffer.lastIndexOf(lineSeparator());
+          LOGGER.log(DEBUG, lsIndex > 0 ? buffer.subSequence(0, lsIndex) : buffer);
+        }
+        buffer.setLength(0);
       }
-      buffer.setLength(0);
     }
 
   }
-
 
 }

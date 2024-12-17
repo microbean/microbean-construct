@@ -96,7 +96,6 @@
     <stagingProgressTimeoutMinutes>10</stagingProgressTimeoutMinutes>
     
     <!-- Other properties -->
-    <org.microbean.construct.verbose>false</org.microbean.construct.verbose>
     <project.build.sourceEncoding>UTF8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF8</project.reporting.outputEncoding>
 
@@ -335,7 +334,6 @@
           </properties>
           <systemPropertyVariables>
             <java.util.logging.config.file>${java.util.logging.config.file}</java.util.logging.config.file>
-            <org.microbean.construct.verbose>${org.microbean.construct.verbose}</org.microbean.construct.verbose>
             <project.build.directory>${project.build.directory}</project.build.directory>
             <project.build.testOutputDirectory>${project.build.testOutputDirectory}</project.build.testOutputDirectory>
           </systemPropertyVariables>

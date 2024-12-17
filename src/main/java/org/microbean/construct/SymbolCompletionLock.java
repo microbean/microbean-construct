@@ -13,24 +13,25 @@
  */
 package org.microbean.construct;
 
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * A class holding a {@link Lock} that should be used to serialize <dfn>symbol completion</dfn>.
+ * A class holding a {@link ReentrantLock} that should be used to serialize <dfn>symbol completion</dfn>.
  *
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
  *
  * @see #INSTANCE
+ *
+ * @see Domain#lock()
  */
 public final class SymbolCompletionLock {
 
   /**
-   * A non-{@code null} {@link Lock} that should be used to serialize symbol completion.
+   * A non-{@code null} {@link ReentrantLock} that should be used to serialize symbol completion.
    *
    * @see Domain#lock()
    */
-  public static final Lock INSTANCE = new ReentrantLock();
+  public static final ReentrantLock INSTANCE = new ReentrantLock();
 
   private SymbolCompletionLock() {
     super();

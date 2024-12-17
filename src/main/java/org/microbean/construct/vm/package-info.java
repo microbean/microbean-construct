@@ -11,18 +11,10 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-module org.microbean.construct {
 
-  exports org.microbean.construct;
-
-  exports org.microbean.construct.constant;
-
-  exports org.microbean.construct.element;
-
-  exports org.microbean.construct.type;
-
-  exports org.microbean.construct.vm;
-
-  requires transitive java.compiler;
-  
-}
+/**
+ * Provides classes and interfaces related to Java virtual machine constructs.
+ *
+ * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
+ */
+package org.microbean.construct.vm;

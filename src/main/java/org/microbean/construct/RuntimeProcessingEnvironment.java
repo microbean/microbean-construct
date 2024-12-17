@@ -17,6 +17,7 @@ import java.lang.System.Logger;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -50,7 +51,7 @@ public final class RuntimeProcessingEnvironment {
   private static final CountDownLatch processorLatch = new CountDownLatch(1);
 
   private static final AtomicReference<CompletableFuture<ProcessingEnvironment>> r =
-    new AtomicReference<>(startBlockingCompilationTask());
+    new AtomicReference<>(startBlockingCompilationTask(new CompletableFuture<>()));
 
 
   /*
@@ -86,11 +87,34 @@ public final class RuntimeProcessingEnvironment {
    * @see Domain
    */
   public static final ProcessingEnvironment get() {
-    return r.get().join();
+    CompletableFuture<ProcessingEnvironment> f = r.get();
+    if (f == null) {
+      f = new CompletableFuture<>();
+      if (r.compareAndSet(null, f)) {
+        startBlockingCompilationTask(f);
+      } else {
+        f = r.get();
+      }
+    }
+    return f.join();
   }
 
-  private static final CompletableFuture<ProcessingEnvironment> startBlockingCompilationTask() {
-    final CompletableFuture<ProcessingEnvironment> f = new CompletableFuture<>();
+  /**
+   * Closes and unblocks the machinery responsible for supplying {@link ProcessingEnvironment} instances.
+   */
+  public static final void close() {
+    final Future<?> f = r.get();
+    if (f != null) {
+      try {
+        f.cancel(true);
+      } finally {
+        r.set(null);
+        processorLatch.countDown();
+      }
+    }
+  }
+
+  private static final CompletableFuture<ProcessingEnvironment> startBlockingCompilationTask(final CompletableFuture<ProcessingEnvironment> f) {
     // Use a virtual thread since the BlockingCompilationTask will spend its entire time blocked/parked once it has
     // completed the CompletableFuture.
     //

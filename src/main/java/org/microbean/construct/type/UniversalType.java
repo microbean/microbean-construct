@@ -25,12 +25,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import java.util.concurrent.locks.Lock;
-
 import java.util.function.Supplier;
 
 import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.Element;
 
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;

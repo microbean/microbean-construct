@@ -18,6 +18,7 @@ import java.util.List;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Name;
 
+import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.microbean.construct.element.UniversalElement;
@@ -37,6 +39,30 @@ final class TestDefaultDomain {
 
   private TestDefaultDomain() {
     super();
+  }
+
+  @Test
+  final void testAssignablePathological() {
+    assertThrows(NullPointerException.class, () -> domain.assignable(null, null));
+    assertThrows(IllegalArgumentException.class,
+                 () -> domain.assignable(domain.executableElement(domain.typeElement(this.getClass().getName()),
+                                                                  domain.noType(TypeKind.VOID),
+                                                                  "testAssignablePathological").asType(),
+                                         domain.nullType()));
+  }
+  
+  @Test
+  final void testBoxPathological() {
+    assertThrows(NullPointerException.class, () -> domain.typeElement((PrimitiveType)null));
+    final UniversalType t = domain.declaredType("java.lang.Object");
+    // javax.lang.model.util.Types#boxedClass(PrimitiveType) just does a blind cast (undocumented).
+    assertThrows(ClassCastException.class, () -> domain.typeElement(t));
+  }
+  
+  @Test
+  final void testAsMemberOfPathological() {
+    assertThrows(NullPointerException.class, () -> domain.asMemberOf(null, domain.javaLangObject()));
+    assertThrows(NullPointerException.class, () -> domain.asMemberOf(null, null));
   }
   
   @Test
@@ -51,6 +77,37 @@ final class TestDefaultDomain {
     assertTrue(e.getQualifiedName().contentEquals("java.lang.String"));
   }
 
+  /*
+    With shared name table:
+    org.opentest4j.AssertionFailedError: expected: <true> but was: <false>
+    at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+    at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+    at org.junit.jupiter.api.AssertTrue.failNotTrue(AssertTrue.java:63)
+    at org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:36)
+    at org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:31)
+    at org.junit.jupiter.api.Assertions.assertTrue(Assertions.java:183)
+    at org.microbean.construct.TestDefaultDomain.testName(TestDefaultDomain.java:83)
+    at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+    at java.base/java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:507)
+    at java.base/java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(ForkJoinPool.java:1458)
+    at java.base/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2034)
+    at java.base/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:189)
+
+    With unshared name table:
+    org.opentest4j.AssertionFailedError: expected: <true> but was: <false>
+    at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
+    at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
+    at org.junit.jupiter.api.AssertTrue.failNotTrue(AssertTrue.java:63)
+    at org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:36)
+    at org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:31)
+    at org.junit.jupiter.api.Assertions.assertTrue(Assertions.java:183)
+    at org.microbean.construct.TestDefaultDomain.testName(TestDefaultDomain.java:99)
+    at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+    at java.base/java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:507)
+    at java.base/java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(ForkJoinPool.java:1458)
+    at java.base/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2034)
+    at java.base/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:189)
+  */
   @Test
   final void testName() {
     final Name name = domain.name("Hello");
@@ -76,14 +133,19 @@ final class TestDefaultDomain {
 
   @Test
   final void testBox() {
-    final UniversalElement e = domain.box(domain.primitiveType(TypeKind.INT));
+    UniversalElement e = domain.typeElement(domain.primitiveType(TypeKind.INT));
+    assertSame(ElementKind.CLASS, e.getKind());
+    assertTrue(e.getQualifiedName().contentEquals("java.lang.Integer"));
+    e = domain.typeElement(TypeKind.INT);
     assertSame(ElementKind.CLASS, e.getKind());
     assertTrue(e.getQualifiedName().contentEquals("java.lang.Integer"));
   }
 
   @Test
   final void testUnbox() {
-    final UniversalType t = domain.unbox(domain.typeElement("java.lang.Integer"));
+    UniversalType t = domain.primitiveType(domain.typeElement("java.lang.Integer"));
+    assertSame(TypeKind.INT, t.getKind());
+    t = domain.primitiveType("java.lang.Integer");
     assertSame(TypeKind.INT, t.getKind());
   }
 

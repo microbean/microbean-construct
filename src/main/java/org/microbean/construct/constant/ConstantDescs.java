@@ -41,6 +41,8 @@ final class ConstantDescs {
 
   static final ClassDesc CD_PrimitiveType = ClassDesc.of("javax.lang.model.type.PrimitiveType");
 
+  static final ClassDesc CD_RecordComponentElement = ClassDesc.of("javax.lang.model.element.RecordComponentElement");
+  
   static final ClassDesc CD_TypeElement = ClassDesc.of("javax.lang.model.element.TypeElement");
 
   static final ClassDesc CD_TypeParameterElement = ClassDesc.of("javax.lang.model.element.TypeParameterElement");
@@ -48,6 +50,8 @@ final class ConstantDescs {
   static final ClassDesc CD_TypeKind = ClassDesc.of("javax.lang.model.type.TypeKind");
 
   static final ClassDesc CD_TypeMirror = ClassDesc.of("javax.lang.model.type.TypeMirror");
+
+  static final ClassDesc CD_TypeVariable = ClassDesc.of("javax.lang.model.type.TypeVariable");
 
   static final ClassDesc CD_WildcardType = ClassDesc.of("javax.lang.model.type.WildcardType");
 

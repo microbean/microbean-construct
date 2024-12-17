@@ -19,9 +19,9 @@ import java.lang.invoke.MethodHandles;
 
 import javax.lang.model.element.Name;
 
-import java.util.Optional;
-
 import org.junit.jupiter.api.Test;
+
+import org.junit.jupiter.api.parallel.ResourceLock;
 
 import org.microbean.construct.DefaultDomain;
 import org.microbean.construct.Domain;
@@ -29,6 +29,9 @@ import org.microbean.construct.Domain;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import static org.junit.jupiter.api.parallel.ResourceAccessMode.READ;
+
+@ResourceLock(value = "RuntimeProcessingEnvironment", mode = READ)
 final class TestConstables {
 
   private static final Domain domain = new DefaultDomain();

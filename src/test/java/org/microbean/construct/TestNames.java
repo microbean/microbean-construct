@@ -13,8 +13,6 @@
  */
 package org.microbean.construct;
 
-import javax.lang.model.element.Name;
-
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.fail;

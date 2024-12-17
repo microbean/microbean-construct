@@ -28,6 +28,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.Name;
+import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
@@ -39,6 +40,7 @@ import javax.lang.model.type.NullType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 
 import org.microbean.construct.Domain;
@@ -60,12 +62,23 @@ import static org.microbean.construct.constant.ConstantDescs.CD_NullType;
 import static org.microbean.construct.constant.ConstantDescs.CD_PackageElement;
 import static org.microbean.construct.constant.ConstantDescs.CD_Parameterizable;
 import static org.microbean.construct.constant.ConstantDescs.CD_PrimitiveType;
+import static org.microbean.construct.constant.ConstantDescs.CD_RecordComponentElement;
 import static org.microbean.construct.constant.ConstantDescs.CD_TypeElement;
 import static org.microbean.construct.constant.ConstantDescs.CD_TypeKind;
 import static org.microbean.construct.constant.ConstantDescs.CD_TypeParameterElement;
 import static org.microbean.construct.constant.ConstantDescs.CD_TypeMirror;
+import static org.microbean.construct.constant.ConstantDescs.CD_TypeVariable;
 import static org.microbean.construct.constant.ConstantDescs.CD_WildcardType;
 
+/**
+ * A utility class that returns nominal descriptors for constructs.
+ *
+ * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
+ *
+ * @see #describe(Element, Domain)
+ *
+ * @see #describe(TypeMirror, Domain)
+ */
 @SuppressWarnings("try")
 public final class Constables {
 
@@ -73,6 +86,18 @@ public final class Constables {
     super();
   }
 
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param n the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final Name n, final Domain d) {
     return switch (n) {
     case null -> Optional.of(NULL);
@@ -86,10 +111,22 @@ public final class Constables {
                                                                           MethodTypeDesc.of(CD_Name,
                                                                                             CD_CharSequence)),
                                                 domainDesc,
-                                                n.toString()));
+                                                d.toString(n)));
     };
   }
 
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param e the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final Element e, final Domain d) {
     return switch (e) {
     case null -> Optional.of(NULL);
@@ -99,12 +136,14 @@ public final class Constables {
       try (var lock = d.lock()) {
         yield switch (e.getKind()) {
         case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD -> describe((TypeElement)e, d);
-        case BINDING_VARIABLE, EXCEPTION_PARAMETER, LOCAL_VARIABLE, OTHER, RESOURCE_VARIABLE -> Optional.empty();
+        case BINDING_VARIABLE, EXCEPTION_PARAMETER, LOCAL_VARIABLE, OTHER, RESOURCE_VARIABLE ->
+          // No way to get these from javax.lang.model.Elements
+          Optional.empty();
         case CONSTRUCTOR, INSTANCE_INIT, METHOD, STATIC_INIT -> describe((ExecutableElement)e, d);
         case ENUM_CONSTANT, FIELD, PARAMETER -> describe((VariableElement)e, d);
         case MODULE -> describe((ModuleElement)e, d);
         case PACKAGE -> describe((PackageElement)e, d);
-        case RECORD_COMPONENT -> throw new UnsupportedOperationException();
+        case RECORD_COMPONENT -> describe((RecordComponentElement)e, d);
         case TYPE_PARAMETER -> describe((TypeParameterElement)e, d);
         };
       }
@@ -112,6 +151,18 @@ public final class Constables {
     };
   }
 
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param e the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final ExecutableElement e, final Domain d) {
     return switch (e) {
     case null -> Optional.of(NULL);
@@ -164,6 +215,18 @@ public final class Constables {
     };
   }
 
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param e the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final ModuleElement e, final Domain d) {
     return switch (e) {
     case null -> Optional.of(NULL);
@@ -181,6 +244,18 @@ public final class Constables {
     };
   }
 
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param e the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final PackageElement e, final Domain d) {
     return switch (e) {
     case null -> Optional.of(NULL);
@@ -198,6 +273,18 @@ public final class Constables {
     };
   }
 
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param e the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final TypeElement e, final Domain d) {
     return switch (e) {
     case null -> Optional.of(NULL);
@@ -215,6 +302,18 @@ public final class Constables {
     };
   }
 
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param e the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final TypeParameterElement e, final Domain d) {
     return switch (e) {
     case null -> Optional.of(NULL);
@@ -239,6 +338,51 @@ public final class Constables {
     };
   }
 
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param e the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
+  public static final Optional<? extends ConstantDesc> describe(final RecordComponentElement e, final Domain d) {
+    return switch (e) {
+    case null -> Optional.of(NULL);
+    case Constable c -> c.describeConstable();
+    case ConstantDesc cd -> Optional.of(cd); // future proofing?
+    default -> {
+      try (var lock = d.lock()) {
+        yield describe((TypeElement)e.getEnclosingElement(), d)
+          .map(executableDesc -> DynamicConstantDesc.of(BSM_INVOKE,
+                                                        MethodHandleDesc.ofMethod(VIRTUAL,
+                                                                                  ClassDesc.of(d.getClass().getName()),
+                                                                                  "recordComponentElement",
+                                                                                  MethodTypeDesc.of(CD_RecordComponentElement,
+                                                                                                    CD_ExecutableElement)),
+                                                        ((Constable)d).describeConstable().orElseThrow(),
+                                                        executableDesc));
+      }
+    }
+    };
+  }
+
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param e the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final VariableElement e, final Domain d) {
     return switch (e) {
     case null -> Optional.of(NULL);
@@ -261,6 +405,18 @@ public final class Constables {
     };
   }
 
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param t the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final TypeMirror t, final Domain d) {
     return switch (t) {
     case null -> Optional.of(NULL);
@@ -272,11 +428,11 @@ public final class Constables {
         case ARRAY -> describe((ArrayType)t, d);
         case BOOLEAN, BYTE, CHAR, DOUBLE, FLOAT, INT, LONG, SHORT -> describe((PrimitiveType)t, d);
         case DECLARED -> describe((DeclaredType)t, d);
-        case EXECUTABLE, INTERSECTION, UNION -> Optional.empty(); // no way to create one from the information in t
+        case EXECUTABLE, INTERSECTION, UNION -> Optional.empty(); // No way to get these from javax.lang.model.util.Types
         case ERROR, OTHER -> Optional.empty();
         case MODULE, NONE, PACKAGE, VOID -> describe((NoType)t, d);
         case NULL -> describe((NullType)t, d);
-        case TYPEVAR -> Optional.empty(); // not really ever needed or used; you should be working with TypeParameterElement
+        case TYPEVAR -> describe((TypeVariable)t, d); // Prefer working with TypeParameterElement instead
         case WILDCARD -> describe((WildcardType)t, d);
         };
       }
@@ -284,6 +440,18 @@ public final class Constables {
     };
   }
 
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param t the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final ArrayType t, final Domain d) {
     return switch (t) {
     case null -> Optional.of(NULL);
@@ -305,6 +473,18 @@ public final class Constables {
     };
   }
 
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param t the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final DeclaredType t, final Domain d) {
     return switch (t) {
     case null -> Optional.of(NULL);
@@ -354,6 +534,18 @@ public final class Constables {
     };
   }
 
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param t the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final NoType t, final Domain d) {
     return switch (t) {
     case null -> Optional.of(NULL);
@@ -379,6 +571,18 @@ public final class Constables {
     };
   }
 
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param t the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final NullType t, final Domain d) {
     return switch (t) {
     case null -> Optional.of(NULL);
@@ -394,6 +598,18 @@ public final class Constables {
     };
   }
 
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param t the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final PrimitiveType t, final Domain d) {
     return switch (t) {
     case null -> Optional.of(NULL);
@@ -419,6 +635,50 @@ public final class Constables {
     };
   }
 
+  public static final Optional<? extends ConstantDesc> describe(final TypeVariable t, final Domain d) {
+    return switch (t) {
+    case null -> Optional.of(NULL);
+    case Constable c -> c.describeConstable();
+    case ConstantDesc cd -> Optional.of(cd); // future proofing?
+    default -> {
+      final ConstantDesc domainDesc = d instanceof Constable constableDomain ? constableDomain.describeConstable().orElse(null) : null;
+      if (domainDesc == null) {
+        yield Optional.empty();
+      }
+      try (var lock = d.lock()) {
+        final TypeParameterElement e = (TypeParameterElement)t.asElement();
+        final ConstantDesc parameterizableDesc = describe(e.getEnclosingElement(), d).orElse(null);
+        if (parameterizableDesc == null) {
+          yield Optional.empty();
+        }
+        final String name = d.toString(e.getSimpleName());
+        yield Optional.of(DynamicConstantDesc.of(BSM_INVOKE,
+                                                 MethodHandleDesc.ofMethod(VIRTUAL,
+                                                                           ClassDesc.of(d.getClass().getName()),
+                                                                           "typeVariable",
+                                                                           MethodTypeDesc.of(CD_TypeVariable,
+                                                                                             CD_Parameterizable,
+                                                                                             CD_CharSequence)),
+                                                 domainDesc,
+                                                 parameterizableDesc,
+                                                 name));
+      }
+    }
+    };
+  }
+
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param t the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final WildcardType t, final Domain d) {
     return switch (t) {
     case null -> Optional.of(NULL);

@@ -16,15 +16,13 @@ package org.microbean.construct;
 import java.util.List;
 import java.util.Objects;
 
-import java.util.function.Predicate;
-
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.Parameterizable;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
@@ -38,9 +36,8 @@ import javax.lang.model.type.NullType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
-
-import javax.lang.model.util.ElementFilter;
 
 import static javax.lang.model.element.ElementKind.CONSTRUCTOR;
 import static javax.lang.model.element.ElementKind.METHOD;
@@ -70,30 +67,93 @@ import static javax.lang.model.element.NestingKind.TOP_LEVEL;
 @SuppressWarnings("try")
 public interface Domain {
 
+  /**
+   * Returns an {@link ArrayType} whose {@linkplain ArrayType#getComponentType() component type} is {@linkplain
+   * #sameType(TypeMirror, TypeMirror) the same as} the supplied {@code componentType}.
+   *
+   * @param componentType the component type; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link ArrayType} whose {@linkplain ArrayType#getComponentType() component type} is
+   * {@linkplain #sameType(TypeMirror, TypeMirror) the same as} the supplied {@code componentType}
+   *
+   * @exception NullPointerException if {@code componentType} is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code componentType} is not a valid component type
+   *
+   * @see javax.lang.model.util.Types#getArrayType(TypeMirror)
+   */
   public ArrayType arrayTypeOf(final TypeMirror componentType);
 
+  /**
+   * Returns the {@link Element} declaring the supplied {@link TypeMirror}, or {@code null} if there is no such {@link
+   * Element}.
+   *
+   * @param t a {@link TypeMirror}; must not be {@code null}
+   *
+   * @return an {@link Element}, or {@code null}
+   *
+   * @see javax.lang.model.util.Types#asElement(TypeMirror)
+   */
   public Element asElement(final TypeMirror t);
 
+  /**
+   * Returns a non-{@code null} {@link TypeMirror} representing the type of the supplied {@link Element} when that
+   * {@link Element} is viewed as a member of, or otherwise directly contained by, the supplied {@code containingType}.
+   *
+   * <p>For example, when viewed as a member of the parameterized type {@link java.util.Set Set&lt;String&gt;}, the
+   * {@link java.util.Set#add(Object)} method (represented as an {@link ExecutableElement}) {@linkplain
+   * ExecutableElement#asType() has} a {@linkplain ExecutableType type} whose {@linkplain
+   * ExecutableType#getParameterTypes() method parameter is of type} {@link String} (not {@link String}'s erasure).</p>
+   *
+   * @param containingType the containing {@link DeclaredType}; must not be {@code null}
+   *
+   * @param e the member {@link Element}; must not be {@code null}
+   *
+   * @return a non-{@code null} {@linkplain TypeMirror type} representing the {@linkplain Element#asType() type of} the
+   * supplied {@link Element} when viewed as a member of the supplied {@code containingType}; never {@code null}
+   *
+   * @exception NullPointerException if either {@code containingType} or {@code e} is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code e} cannot be viewed as a member of the supplied {@code
+   * containingType} (because it is the wrong {@linkplain Element#getKind() kind}, for example)
+   *
+   * @see javax.lang.model.util.Types#asMemberOf(DeclaredType, Element)
+   */
   public TypeMirror asMemberOf(final DeclaredType containingType, final Element e);
 
+  /**
+   * Returns {@code true} if and only if the supplied {@code payload} (the first argument) is considered assignable to
+   * the supplied {@code receiver} (the second argument) according to <a
+   * href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-5.html#jls-5.2">the rules of the Java Language
+   * Specification</a>.
+   *
+   * @param payload the {@link TypeMirror} being assigned; must not be {@code null}
+   *
+   * @param receiver the {@link TypeMirror} receiving the assignment; must not be {@code null}
+   *
+   * @return {@code true} if and only if {@code payload} is assignable to {@code receiver}
+   *
+   * @exception NullPointerException if either {@code payload} or {@code receiver} is {@code null}
+   *
+   * @exception IllegalArgumentException if either {@link TypeMirror} is not one that can take part in an assignment
+   *
+   * @see javax.lang.model.util.Types#isAssignable(TypeMirror, TypeMirror)
+   */
   // Note the strange positioning of payload and receiver.
   public boolean assignable(final TypeMirror payload, final TypeMirror receiver);
 
+  /**
+   * Returns the (non-{@code null}) <a
+   * href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-13.html#jls-13.1"><dfn>binary name</dfn></a> of the
+   * supplied {@link TypeElement}.
+   *
+   * @param e a {@link TypeElement}; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Name}
+   *
+   * @see javax.lang.model.util.Elements#getBinaryName(TypeElement)
+   */
   public Name binaryName(final TypeElement e);
-
-  public default TypeElement box(final PrimitiveType t) {
-    return switch (t.getKind()) { // won't cause symbol completion
-    case BOOLEAN -> this.typeElement("java.lang.Boolean");
-    case BYTE -> this.typeElement("java.lang.Byte");
-    case CHAR -> this.typeElement("java.lang.Character");
-    case DOUBLE -> this.typeElement("java.lang.Double");
-    case FLOAT -> this.typeElement("java.lang.Float");
-    case INT -> this.typeElement("java.lang.Integer");
-    case LONG -> this.typeElement("java.lang.Long");
-    case SHORT -> this.typeElement("java.lang.Short");
-    default -> throw new IllegalArgumentException("t: " + t);
-    };
-  }
 
   public TypeMirror capture(final TypeMirror wildcard);
 
@@ -186,9 +246,35 @@ public interface Domain {
 
   public PackageElement packageElement(final ModuleElement asSeenFrom, final CharSequence canonicalName);
 
+  // (Convenience.)
+  // (Unboxing.)
+  public default PrimitiveType primitiveType(final CharSequence canonicalName) {
+    final String s = this.toString(Objects.requireNonNull(canonicalName, "canonicalName"));
+    return switch (s) {
+    case "boolean", "java.lang.Boolean" -> this.primitiveType(TypeKind.BOOLEAN);
+    case "byte", "java.lang.Byte" -> this.primitiveType(TypeKind.BYTE);
+    case "char", "java.lang.Character" -> this.primitiveType(TypeKind.CHAR);
+    case "double", "java.lang.Double" -> this.primitiveType(TypeKind.DOUBLE);
+    case "float", "java.lang.Float" -> this.primitiveType(TypeKind.FLOAT);
+    case "int", "java.lang.Integer" -> this.primitiveType(TypeKind.INT);
+    case "long", "java.lang.Long" -> this.primitiveType(TypeKind.LONG);
+    case "short", "java.lang.Short" -> this.primitiveType(TypeKind.SHORT);
+    default -> throw new IllegalArgumentException("canonicalName: " + s);
+    };
+  }
+
+  // (Convenience.)
+  // (Unboxing.)
+  public default PrimitiveType primitiveType(final QualifiedNameable qn) {
+    return this.primitiveType(qn.getQualifiedName());
+  }
+
   public PrimitiveType primitiveType(final TypeKind kind);
 
-  public RecordComponentElement recordComponent(final ExecutableElement e);
+  // (Unboxing.)
+  public PrimitiveType primitiveType(final TypeMirror t);
+
+  public RecordComponentElement recordComponentElement(final ExecutableElement e);
 
   public boolean sameType(final TypeMirror t0, final TypeMirror t1);
 
@@ -196,18 +282,54 @@ public interface Domain {
 
   public boolean subtype(TypeMirror t0, TypeMirror t1);
 
+  public default String toString(final CharSequence name) {
+    return switch (name) {
+    case null -> null;
+    case String s -> s;
+    case Name n -> {
+      try (var lock = this.lock()) {
+        yield n.toString();
+      }
+    }
+    default -> name.toString();
+    };
+  }
+
   public TypeElement typeElement(final CharSequence canonicalName);
 
   public TypeElement typeElement(final ModuleElement asSeenFrom, final CharSequence canonicalName);
 
+  public default TypeElement typeElement(final PrimitiveType t) {
+    try (var lock = this.lock()) {
+      return this.typeElement(t.getKind());
+    }
+  }
+
+  public default TypeElement typeElement(final TypeKind primitiveTypeKind) {
+    return switch (primitiveTypeKind) {
+    case BOOLEAN -> this.typeElement("java.lang.Boolean");
+    case BYTE -> this.typeElement("java.lang.Byte");
+    case CHAR -> this.typeElement("java.lang.Character");
+    case DOUBLE -> this.typeElement("java.lang.Double");
+    case FLOAT -> this.typeElement("java.lang.Float");
+    case INT -> this.typeElement("java.lang.Integer");
+    case LONG -> this.typeElement("java.lang.Long");
+    case SHORT -> this.typeElement("java.lang.Short");
+    default -> throw new IllegalArgumentException("primitiveTypeKind: " + primitiveTypeKind);
+    };
+  }
+
   public default TypeParameterElement typeParameterElement(Parameterizable p, final CharSequence name) {
     Objects.requireNonNull(name, "name");
     while (p != null) {
-      // TODO: pretty sure this doesn't cause symbol completion
-      final List<? extends TypeParameterElement> tpes = p.getTypeParameters();
-      for (final TypeParameterElement tpe : tpes) {
-        if (tpe.getSimpleName().contentEquals(name)) {
-          return tpe;
+      // A call to getTypeParameters() does not cause symbol completion, but name acquisition also needs to be
+      // serialized globally.
+      try (var lock = this.lock()) {
+        final List<? extends TypeParameterElement> tpes = p.getTypeParameters();
+        for (final TypeParameterElement tpe : tpes) {
+          if (tpe.getSimpleName().contentEquals(name)) {
+            return tpe;
+          }
         }
       }
       p = switch (p) {
@@ -219,19 +341,9 @@ public interface Domain {
     return null;
   }
 
-  public default PrimitiveType unbox(final TypeElement e) {
-    // getQualifiedName() does not cause symbol completion.
-    return switch (e.getQualifiedName().toString()) {
-    case "java.lang.Boolean"   -> this.primitiveType(TypeKind.BOOLEAN);
-    case "java.lang.Byte"      -> this.primitiveType(TypeKind.BYTE);
-    case "java.lang.Character" -> this.primitiveType(TypeKind.CHAR);
-    case "java.lang.Double"    -> this.primitiveType(TypeKind.DOUBLE);
-    case "java.lang.Float"     -> this.primitiveType(TypeKind.FLOAT);
-    case "java.lang.Integer"   -> this.primitiveType(TypeKind.INT);
-    case "java.lang.Long"      -> this.primitiveType(TypeKind.LONG);
-    case "java.lang.Short"     -> this.primitiveType(TypeKind.SHORT);
-    default -> throw new IllegalArgumentException("e: " + e);
-    };
+  public default TypeVariable typeVariable(Parameterizable p, final CharSequence name) {
+    final TypeParameterElement e = this.typeParameterElement(p, name);
+    return e == null ? null : (TypeVariable)e.asType();
   }
 
   public default Name unnamedName() {
