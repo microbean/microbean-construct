@@ -11,6 +11,14 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
+
+/**
+ * Provides packages related to Java constructs.
+ *
+ * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
+ *
+ * @see org.microbean.construct.Domain
+ */
 module org.microbean.construct {
 
   exports org.microbean.construct;
@@ -24,5 +32,5 @@ module org.microbean.construct {
   exports org.microbean.construct.vm;
 
   requires transitive java.compiler;
-  
+
 }

@@ -13,24 +13,13 @@
  */
 package org.microbean.construct.element;
 
-import java.lang.annotation.Annotation;
-
-import java.lang.constant.Constable;
-import java.lang.constant.ConstantDesc;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-
-import java.util.function.Supplier;
-
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ElementVisitor;
@@ -50,49 +39,45 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 
+import org.microbean.construct.UniversalConstruct;
 import org.microbean.construct.Domain;
-
-import org.microbean.construct.constant.Constables;
 
 import org.microbean.construct.type.UniversalType;
 
+/**
+ * An {@link Element} and {@link UniversalConstruct} implementation.
+ *
+ * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
+ *
+ * @see Element#getKind()
+ *
+ * @see UniversalConstruct
+ */
 @SuppressWarnings("preview")
 public final class UniversalElement
-  implements Constable,
-             ExecutableElement,
+  extends UniversalConstruct<Element>
+  implements ExecutableElement,
              ModuleElement,
              PackageElement,
-             Parameterizable,
              RecordComponentElement,
              TypeElement,
              TypeParameterElement,
              VariableElement {
 
-  private final Domain domain;
-
-  // volatile not needed
-  private Supplier<? extends Element> delegateSupplier;
-
-  @SuppressWarnings("try")
+  /**
+   * Creates a new {@link UniversalElement}.
+   *
+   * @param delegate an {@link Element} to which operations will be delegated; must not be {@code null}
+   *
+   * @param domain a {@link Domain} from which the supplied {@code delegate} is presumed to have originated; must not be
+   * {@code null}
+   *
+   * @exception NullPointerException if either argument is {@code null}
+   *
+   * @see #delegate()
+   */
   public UniversalElement(final Element delegate, final Domain domain) {
-    super();
-    Objects.requireNonNull(delegate, "delegate");
-    this.domain = Objects.requireNonNull(domain, "domain");
-    this.delegateSupplier = switch (delegate) {
-      case null -> throw new NullPointerException("delegate");
-      case UniversalElement ue -> () -> ue;
-      default -> () -> {
-        final Element unwrappedDelegate = unwrap(delegate);
-        assert !(unwrappedDelegate instanceof UniversalElement);
-        try (var lock = this.domain.lock()) {
-          // Complete symbols on first access
-          unwrappedDelegate.getKind();
-          // A lock is no longer needed
-          this.delegateSupplier = () -> unwrappedDelegate;
-        }
-        return unwrappedDelegate;
-      };
-    };
+    super(delegate, domain);
   }
 
   @Override // Element
@@ -125,18 +110,8 @@ public final class UniversalElement
   }
 
   @Override // Element
-  public final TypeMirror asType() {
-    return UniversalType.of(this.delegate().asType(), this.domain);
-  }
-
-  public final Element delegate() {
-    return this.delegateSupplier.get();
-  }
-
-  @Override // Constable
-  public final Optional<? extends ConstantDesc> describeConstable() {
-    assert !(this.delegate() instanceof UniversalElement);
-    return Constables.describe(this.delegate(), this.domain);
+  public final UniversalType asType() {
+    return UniversalType.of(this.delegate().asType(), this.domain());
   }
 
   @Override // RecordComponentElement
@@ -147,44 +122,37 @@ public final class UniversalElement
     };
   }
 
-  @Override // Element
-  public final <A extends Annotation> A getAnnotation(final Class<A> annotationType) {
-    return this.delegate().getAnnotation(annotationType); // TODO: wrap?
-  }
-
-  @Override // Element
-  public final List<? extends AnnotationMirror> getAnnotationMirrors() {
-    return this.delegate().getAnnotationMirrors(); // TOOD: wrap?
-  }
-
-  @Override // Element
-  public final <A extends Annotation> A[] getAnnotationsByType(final Class<A> annotationType) {
-    return this.delegate().getAnnotationsByType(annotationType); // TODO: wrap?
-  }
-
   @Override // TypeParameterElement
   public final List<? extends UniversalType> getBounds() {
     return switch (this.getKind()) {
-    case TYPE_PARAMETER -> UniversalType.of(((TypeParameterElement)this.delegate()).getBounds(), this.domain);
+    case TYPE_PARAMETER -> UniversalType.of(((TypeParameterElement)this.delegate()).getBounds(), this.domain());
     default -> List.of();
     };
   }
 
   @Override // VariableElement
+  @SuppressWarnings("try")
   public final Object getConstantValue() {
     return switch (this.getKind()) {
-    case BINDING_VARIABLE, ENUM_CONSTANT, EXCEPTION_PARAMETER, FIELD, LOCAL_VARIABLE, PARAMETER, RESOURCE_VARIABLE ->
-      ((VariableElement)this.delegate()).getConstantValue();
+    case BINDING_VARIABLE, ENUM_CONSTANT, EXCEPTION_PARAMETER, FIELD, LOCAL_VARIABLE, PARAMETER, RESOURCE_VARIABLE -> {
+      try (var lock = this.domain().lock()) {
+        // There is a LOT going on here; take the domain lock for safety. See
+        // https://github.com/openjdk/jdk/blob/jdk-25%2B3/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Symbol.java#L1813-L1829
+        yield
+          ((VariableElement)this.delegate()).getConstantValue(); // will be a boxed type or String
+      }
+    }
     default -> null;
     };
   }
 
   @Override // ExecutableElement
-  public final AnnotationValue getDefaultValue() {
+  public final AnnotationValueRecord getDefaultValue() {
     return switch (this.getKind()) {
-    case ANNOTATION_TYPE ->
-      // TODO: delegating annotation value? could be a type mirror after all
-      ((ExecutableElement)this.delegate()).getDefaultValue();
+      // See
+      // https://github.com/openjdk/jdk/blob/jdk-25%2B3/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Symbol.java#L2287-L2290;
+      // no concurrent Name access so no lock needed
+    case METHOD -> AnnotationValueRecord.of(((ExecutableElement)this.delegate()).getDefaultValue(), this.domain());
     default -> null;
     };
   }
@@ -219,7 +187,7 @@ public final class UniversalElement
   public final List<? extends UniversalType> getInterfaces() {
     return switch (this.getKind()) {
     case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD ->
-      UniversalType.of(((TypeElement)this.delegate()).getInterfaces(), this.domain);
+      UniversalType.of(((TypeElement)this.delegate()).getInterfaces(), this.domain());
     default -> List.of();
     };
   }
@@ -255,11 +223,11 @@ public final class UniversalElement
   public final StringName getQualifiedName() {
     return switch (this.getKind()) {
     case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, MODULE, PACKAGE, RECORD -> {
-      try (var lock = this.domain.lock()) {
-        yield StringName.of(((QualifiedNameable)this.delegate()).getQualifiedName().toString(), this.domain);
+      try (var lock = this.domain().lock()) {
+        yield StringName.of(((QualifiedNameable)this.delegate()).getQualifiedName().toString(), this.domain());
       }
     }
-    default -> StringName.ofUnnamed(this.domain);
+    default -> StringName.of("", this.domain());
     };
   }
 
@@ -267,8 +235,8 @@ public final class UniversalElement
   public final UniversalType getReceiverType() {
     return
       this.getKind().isExecutable() ?
-      UniversalType.of(this.asType(), this.domain).getReceiverType() :
-      UniversalType.of(this.domain.noType(TypeKind.NONE), this.domain);
+      UniversalType.of(this.asType(), this.domain()).getReceiverType() :
+      UniversalType.of(this.domain().noType(TypeKind.NONE), this.domain());
   }
 
   @Override // TypeElement
@@ -281,14 +249,14 @@ public final class UniversalElement
 
   @Override // ExecutableElement
   public final UniversalType getReturnType() {
-    return UniversalType.of(this.asType(), this.domain).getReturnType();
+    return UniversalType.of(this.asType(), this.domain()).getReturnType();
   }
 
   @Override // Element
   @SuppressWarnings("try")
   public final StringName getSimpleName() {
-    try (var lock = this.domain.lock()) {
-      return new StringName(this.delegate().getSimpleName().toString(), this.domain);
+    try (var lock = this.domain().lock()) {
+      return new StringName(this.delegate().getSimpleName().toString(), this.domain());
     }
   }
 
@@ -296,8 +264,8 @@ public final class UniversalElement
   public final UniversalType getSuperclass() {
     return switch (this.getKind()) {
     case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD ->
-      UniversalType.of(((TypeElement)this.delegate()).getSuperclass(), this.domain);
-    default -> UniversalType.of(this.domain.noType(TypeKind.NONE), this.domain);
+      UniversalType.of(((TypeElement)this.delegate()).getSuperclass(), this.domain());
+    default -> UniversalType.of(this.domain().noType(TypeKind.NONE), this.domain());
     };
   }
 
@@ -305,7 +273,7 @@ public final class UniversalElement
   public final List<? extends UniversalType> getThrownTypes() {
     return
       this.getKind().isExecutable() ?
-      UniversalType.of(((ExecutableElement)this.delegate()).getThrownTypes(), this.domain) :
+      UniversalType.of(((ExecutableElement)this.delegate()).getThrownTypes(), this.domain()) :
       List.of();
   }
 
@@ -322,7 +290,7 @@ public final class UniversalElement
   public final boolean isDefault() {
     return switch (this.getKind()) {
     case METHOD -> ((ExecutableElement)this.delegate()).isDefault();
-    default     -> false;
+    default -> false;
     };
   }
 
@@ -330,7 +298,7 @@ public final class UniversalElement
   public final boolean isOpen() {
     return switch (this.getKind()) {
     case MODULE -> ((ModuleElement)this.delegate()).isOpen();
-    default     -> false;
+    default -> false;
     };
   }
 
@@ -339,7 +307,7 @@ public final class UniversalElement
     return switch (this.getKind()) {
     case MODULE  -> ((ModuleElement)this.delegate()).isUnnamed();
     case PACKAGE -> ((PackageElement)this.delegate()).isUnnamed();
-    default      -> this.getSimpleName().isEmpty();
+    default -> false;
     };
   }
 
@@ -347,7 +315,7 @@ public final class UniversalElement
   public final boolean isVarArgs() {
     return switch (this.getKind()) {
     case CONSTRUCTOR, METHOD -> ((ExecutableElement)this.delegate()).isVarArgs();
-    default                  -> false;
+    default -> false;
     };
   }
 
@@ -367,17 +335,12 @@ public final class UniversalElement
     }
   }
 
-  @Override // Element
-  public final String toString() {
-    return this.delegate().toString();
-  }
-
   private final UniversalElement wrap(final Element e) {
-    return of(e, this.domain);
+    return of(e, this.domain());
   }
 
-  private final List<UniversalElement> wrap(final Collection<? extends Element> es) {
-    return of(es, this.domain);
+  private final List<? extends UniversalElement> wrap(final Collection<? extends Element> es) {
+    return of(es, this.domain());
   }
 
 
@@ -386,7 +349,19 @@ public final class UniversalElement
    */
 
 
-  public static final List<UniversalElement> of(final Collection<? extends Element> es, final Domain domain) {
+  /**
+   * Returns a non-{@code null}, immutable {@link List} of {@link UniversalElement}s whose elements wrap the supplied
+   * {@link List}'s elements.
+   *
+   * @param es a {@link Collection} of {@link Element}s; must not be {@code null}
+   *
+   * @param domain a {@link Domain}; must not be {@code null}
+   *
+   * @return a non-{@code null}, immutable {@link List} of {@link UniversalElement}s
+   *
+   * @exception NullPointerException if either argument is {@code null}
+   */
+  public static final List<? extends UniversalElement> of(final Collection<? extends Element> es, final Domain domain) {
     final List<UniversalElement> newEs = new ArrayList<>(es.size());
     for (final Element e : es) {
       newEs.add(of(e, domain));
@@ -394,20 +369,26 @@ public final class UniversalElement
     return Collections.unmodifiableList(newEs);
   }
 
+  /**
+   * Returns a {@link UniversalElement} that is either the supplied {@link Element} (if it itself is {@code null} or is
+   * a {@link UniversalElement}) or one that wraps it.
+   *
+   * @param e an {@link Element}; may be {@code null} in which case {@code null} will be returned
+   *
+   * @param domain a {@link Domain}; must not be {@code null}
+   *
+   * @return a {@link UniversalElement}, or {@code null} (if {@code e} is {@code null})
+   *
+   * @exception NullPointerException if {@code domain} is {@code null}
+   *
+   * @see #UniversalElement(Element, Domain)
+   */
   public static final UniversalElement of(final Element e, final Domain domain) {
     return switch (e) {
-    case null ->  null;
+    case null -> null;
     case UniversalElement ue -> ue;
     default -> new UniversalElement(e, domain);
     };
-  }
-
-  @SuppressWarnings("unchecked")
-  public static final <E extends Element> E unwrap(E e) {
-    while (e instanceof UniversalElement ue) {
-      e = (E)ue.delegate();
-    }
-    return e;
   }
 
 }

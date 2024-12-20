@@ -50,6 +50,27 @@ public final class Signatures {
     super();
   }
 
+  /**
+   * Returns a <dfn>signature</dfn> for the supplied {@link Element}.
+   *
+   * @param e the {@link Element} for which a signature should be returned; must not be {@code null}
+   *
+   * @param d a {@link Domain} from which the {@link Element} is presumed to have originated; must not be {@code null}
+   *
+   * @exception NullPointerException if either argument is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code e} has an {@link ElementKind} that is either {@link
+   * ElementKind#ANNOTATION_TYPE}, {@link ElementKind#BINDING_VARIABLE}, {@link ElementKind#EXCEPTION_PARAMETER}, {@link
+   * ElementKind#LOCAL_VARIABLE}, {@link ElementKind#MODULE}, {@link ElementKind#OTHER}, {@link ElementKind#PACKAGE},
+   * {@link ElementKind#RESOURCE_VARIABLE}, or {@link ElementKind#TYPE_PARAMETER}
+   *
+   * @return a non-{@code null} signature
+   *
+   * @see ElementKind
+   *
+   * @spec https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-4.html#jvms-4.7.9.1 Java Virtual Machine
+   * Specification, section 4.7.9.1
+   */
   public static final String signature(final Element e, final Domain d) {
     try (var lock = d.lock()) {
       return switch (e.getKind()) {
@@ -354,6 +375,28 @@ public final class Signatures {
     }
   }
 
+  /**
+   * Returns a <dfn>signature</dfn> for the supplied {@link TypeMirror}.
+   *
+   * @param t the {@link TypeMirror} for which a signature should be returned; must not be {@code null}
+   *
+   * @param d a {@link Domain} from which the {@link TypeMirror} is presumed to have originated; must not be {@code
+   * null}
+   *
+   * @exception NullPointerException if either argument is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code t} has an {@link TypeKind} that is either {@link TypeKind#ERROR},
+   * {@link TypeKind#EXECUTABLE}, {@link TypeKind#INTERSECTION}, {@link TypeKind#MODULE}, {@link TypeKind#NONE}, {@link
+   * TypeKind#NULL}, {@link TypeKind#OTHER}, {@link TypeKind#PACKAGE}, {@link TypeKind#UNION}, {@link TypeKind#VOID}, or
+   * {@link TypeKind#WILDCARD}
+   *
+   * @return a non-{@code null} signature
+   *
+   * @see TypeKind
+   *
+   * @spec https://docs.oracle.com/javase/specs/jvms/se23/html/jvms-4.html#jvms-4.7.9.1 Java Virtual Machine
+   * Specification, section 4.7.9.1
+   */
   public static final String signature(final TypeMirror t, final Domain d) {
     final StringBuilder sb = new StringBuilder();
     try (var lock = d.lock()) {

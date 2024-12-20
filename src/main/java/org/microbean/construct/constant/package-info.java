@@ -11,33 +11,14 @@
  * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
  * specific language governing permissions and limitations under the License.
  */
-package org.microbean.construct;
-
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * A class holding a {@link ReentrantLock} that should be used to serialize <dfn>symbol completion</dfn> and <dfn>name
- * expansion</dfn>.
+ * Provides classes and interfaces related to Java <dfn>nominal descriptors</dfn>.
  *
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
  *
- * @see #INSTANCE
+ * @see org.microbean.construct.constant.Constables
  *
- * @see Domain#lock()
- *
- * @see Domain#toString(CharSequence)
+ * @see java.lang.constant.Constable
  */
-public final class SymbolCompletionLock {
-
-  /**
-   * A non-{@code null} {@link ReentrantLock} that should be used to serialize symbol completion and name expansion.
-   *
-   * @see Domain#lock()
-   */
-  public static final ReentrantLock INSTANCE = new ReentrantLock();
-
-  private SymbolCompletionLock() {
-    super();
-  }
-
-}
+package org.microbean.construct.constant;

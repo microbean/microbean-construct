@@ -60,6 +60,28 @@ public final class TypeDescriptors {
     super();
   }
 
+  /**
+   * Returns a {@link TypeDescriptor} for the supplied {@link TypeMirror}, or {@code null} if there is no such {@link
+   * TypeDescriptor}
+   *
+   * @param t a {@link TypeMirror}; must not be {@code null}; must {@linkplain
+   * javax.lang.model.type.TypeMirror#getKind() have a <code>TypeKind</code>} that is either {@link
+   * javax.lang.model.type.TypeKind#ARRAY}, {@link javax.lang.model.type.TypeKind#BOOLEAN}, {@link
+   * javax.lang.model.type.TypeKind#BYTE}, {@link javax.lang.model.type.TypeKind#CHAR}, {@link
+   * javax.lang.model.type.TypeKind#DECLARED}, {@link javax.lang.model.type.TypeKind#DOUBLE}, {@link
+   * javax.lang.model.type.TypeKind#EXECUTABLE}, {@link javax.lang.model.type.TypeKind#FLOAT}, {@link
+   * javax.lang.model.type.TypeKind#INT}, {@link javax.lang.model.type.TypeKind#LONG}, {@link
+   * javax.lang.model.type.TypeKind#SHORT}, {@link javax.lang.model.type.TypeKind#TYPEVAR}, or {@link
+   * javax.lang.model.type.TypeKind#VOID} for a non-{@code null} {@link TypeDescriptor} to be returned
+   *
+   * @param d a {@link Domain}; must not be {@code null}
+   *
+   * @return a {@link TypeDescriptor}, or {@code null}
+   *
+   * @see TypeDescriptor#descriptorString()
+   *
+   * @exception NullPointerException if either argument is {@code null}
+   */
   @SuppressWarnings("try")
   public static final TypeDescriptor typeDescriptor(final TypeMirror t, final Domain d) {
     try (var lock = d.lock()) {
@@ -75,6 +97,7 @@ public final class TypeDescriptors {
     case BYTE -> CD_byte;
     case CHAR -> CD_char;
     case DECLARED -> ClassDesc.of(d.toString(d.binaryName((TypeElement)((DeclaredType)t).asElement())));
+    case DOUBLE -> CD_double;
     case EXECUTABLE -> {
       final ExecutableType et = (ExecutableType)t;
       final List<? extends TypeMirror> pts = et.getParameterTypes();
@@ -87,14 +110,13 @@ public final class TypeDescriptors {
       }
       yield MethodTypeDesc.of((ClassDesc)typeDescriptor0(et.getReturnType(), d), ptcds); // recursive
     }
-    case DOUBLE -> CD_double;
     case FLOAT -> CD_float;
     case INT -> CD_int;
     case LONG -> CD_long;
     case SHORT -> CD_short;
     case TYPEVAR -> typeDescriptor0(d.erasure(t), d); // recursive
     case VOID -> CD_void;
-    default -> throw new IllegalArgumentException("t: " + t);
+    case ERROR, INTERSECTION, MODULE, NONE, NULL, OTHER, PACKAGE, UNION, WILDCARD -> null;
     };
   }
 

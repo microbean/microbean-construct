@@ -13,21 +13,11 @@
  */
 package org.microbean.construct.type;
 
-import java.lang.annotation.Annotation;
-
-import java.lang.constant.Constable;
-import java.lang.constant.ConstantDesc;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-
-import java.util.function.Supplier;
-
-import javax.lang.model.element.AnnotationMirror;
 
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
@@ -44,18 +34,26 @@ import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.type.UnionType;
 import javax.lang.model.type.WildcardType;
 
+import org.microbean.construct.UniversalConstruct;
 import org.microbean.construct.Domain;
 
 import org.microbean.construct.element.UniversalElement;
 
-import org.microbean.construct.constant.Constables;
-
 import static javax.lang.model.type.TypeKind.NONE;
 import static javax.lang.model.type.TypeKind.VOID;
 
+/**
+ * A {@link TypeMirror} and {@link UniversalConstruct} implementation.
+ *
+ * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
+ *
+ * @see TypeMirror#getKind()
+ *
+ * @see UniversalConstruct
+ */
 public final class UniversalType
+  extends UniversalConstruct<TypeMirror>
   implements ArrayType,
-             Constable,
              ErrorType,
              ExecutableType,
              IntersectionType,
@@ -66,30 +64,21 @@ public final class UniversalType
              UnionType,
              WildcardType {
 
-  private final Domain domain;
-
-  // volatile not needed
-  private Supplier<? extends TypeMirror> delegateSupplier;
-
+  /**
+   * Creates a new {@link UniversalType}.
+   *
+   * @param delegate a {@link TypeMirror} to which operations will be delegated; must not be {@code null}
+   *
+   * @param domain a {@link Domain} from which the supplied {@code delegate} is presumed to have originated; must not be
+   * {@code null}
+   *
+   * @exception NullPointerException if either argument is {@code null}
+   *
+   * @see #delegate()
+   */
   @SuppressWarnings("try")
   public UniversalType(final TypeMirror delegate, final Domain domain) {
-    super();
-    this.domain = Objects.requireNonNull(domain, "domain");
-    this.delegateSupplier = switch (delegate) {
-      case null -> throw new NullPointerException("delegate");
-      case UniversalType ut -> () -> ut;
-      default -> () -> {
-        final TypeMirror unwrappedDelegate = unwrap(delegate);
-        assert !(unwrappedDelegate instanceof UniversalType);
-        try (var lock = this.domain.lock()) {
-          // Complete symbols on first access
-          unwrappedDelegate.getKind();
-          // A lock is no longer needed
-          this.delegateSupplier = () -> unwrappedDelegate;
-        }
-        return unwrappedDelegate;
-      };
-    };
+    super(delegate, domain);
   }
 
   @Override // TypeMirror
@@ -125,20 +114,10 @@ public final class UniversalType
   @Override // Various
   public final UniversalElement asElement() {
     return switch (this.getKind()) {
-    case DECLARED -> UniversalElement.of(((DeclaredType)this.delegate()).asElement(), this.domain);
-    case TYPEVAR  -> UniversalElement.of(((TypeVariable)this.delegate()).asElement(), this.domain);
+    case DECLARED -> UniversalElement.of(((DeclaredType)this.delegate()).asElement(), this.domain());
+    case TYPEVAR  -> UniversalElement.of(((TypeVariable)this.delegate()).asElement(), this.domain());
     default       -> null;
     };
-  }
-
-  public final TypeMirror delegate() {
-    return this.delegateSupplier.get();
-  }
-
-  @Override // Constable
-  public final Optional<? extends ConstantDesc> describeConstable() {
-    assert !(this.delegate() instanceof UniversalType);
-    return Constables.describe(this.delegate(), this.domain);
   }
 
   @Override // UnionType
@@ -147,22 +126,6 @@ public final class UniversalType
     case UNION -> this.wrap(((UnionType)this.delegate()).getAlternatives());
     default    -> List.of();
     };
-  }
-
-  @Override // TypeMirror
-  public final <A extends Annotation> A getAnnotation(final Class<A> annotationType) {
-    return this.delegate().getAnnotation(annotationType);
-  }
-
-  @Override // TypeMirror
-  public final List<? extends AnnotationMirror> getAnnotationMirrors() {
-    // TODO: universal annotation mirror?
-    return this.delegate().getAnnotationMirrors();
-  }
-
-  @Override // TypeMirror
-  public final <A extends Annotation> A[] getAnnotationsByType(final Class<A> annotationType) {
-    return this.delegate().getAnnotationsByType(annotationType);
   }
 
   @Override // IntersectionType
@@ -177,7 +140,7 @@ public final class UniversalType
   public final UniversalType getComponentType() {
     return switch (this.getKind()) {
     case ARRAY -> this.wrap(((ArrayType)this.delegate()).getComponentType());
-    default    -> this.wrap(this.domain.noType(NONE));
+    default    -> this.wrap(this.domain().noType(NONE));
     };
   }
 
@@ -185,7 +148,7 @@ public final class UniversalType
   public final UniversalType getEnclosingType() {
     return switch(this.getKind()) {
     case DECLARED -> this.wrap(((DeclaredType)this.delegate()).getEnclosingType());
-    default       -> this.wrap(this.domain.noType(NONE));
+    default       -> this.wrap(this.domain().noType(NONE));
     };
   }
 
@@ -206,7 +169,7 @@ public final class UniversalType
   public final UniversalType getLowerBound() {
     return switch (this.getKind()) {
     case TYPEVAR -> this.wrap(((TypeVariable)this.delegate()).getLowerBound());
-    default      -> this.wrap(this.domain.nullType()); // bottom (null) type, not NONE type
+    default      -> this.wrap(this.domain().nullType()); // bottom (null) type, not NONE type
     };
   }
 
@@ -214,7 +177,7 @@ public final class UniversalType
   public final UniversalType getUpperBound() {
     return switch (this.getKind()) {
     case TYPEVAR -> this.wrap(((TypeVariable)this.delegate()).getUpperBound());
-    default      -> this.wrap(this.domain.javaLangObject().asType());
+    default      -> this.wrap(this.domain().javaLangObject().asType());
     };
   }
 
@@ -230,7 +193,7 @@ public final class UniversalType
   public final UniversalType getReceiverType() {
     return switch (this.getKind()) {
     case EXECUTABLE -> this.wrap(((ExecutableType)this.delegate()).getReceiverType());
-    default         -> this.wrap(this.domain.noType(NONE));
+    default         -> this.wrap(this.domain().noType(NONE));
     };
   }
 
@@ -238,7 +201,7 @@ public final class UniversalType
   public final UniversalType getReturnType() {
     return switch (this.getKind()) {
     case EXECUTABLE -> this.wrap(((ExecutableType)this.delegate()).getReturnType());
-    default         -> this.wrap(this.domain.noType(VOID));
+    default         -> this.wrap(this.domain().noType(VOID));
     };
   }
 
@@ -284,23 +247,18 @@ public final class UniversalType
     if (other == this) {
       return true;
     } else if (other instanceof TypeMirror t) { // instanceof on purpose
-      return this.domain.sameType(this, t);
+      return this.domain().sameType(this, t);
     } else {
       return false;
     }
   }
 
-  @Override // TypeMirror
-  public final String toString() {
-    return this.delegate().toString();
-  }
-
   private final List<? extends UniversalType> wrap(final Collection<? extends TypeMirror> ts) {
-    return of(ts, this.domain);
+    return of(ts, this.domain());
   }
 
   private final UniversalType wrap(final TypeMirror t) {
-    return of(t, this.domain);
+    return of(t, this.domain());
   }
 
 
@@ -309,6 +267,18 @@ public final class UniversalType
    */
 
 
+  /**
+   * Returns a non-{@code null}, immutable {@link List} of {@link UniversalType}s whose elements wrap the supplied
+   * {@link List}'s elements.
+   *
+   * @param ts a {@link Collection} of {@link TypeMirror}s; must not be {@code null}
+   *
+   * @param domain a {@link Domain}; must not be {@code null}
+   *
+   * @return a non-{@code null}, immutable {@link List} of {@link UniversalType}s
+   *
+   * @exception NullPointerException if either argument is {@code null}
+   */
   public static final List<? extends UniversalType> of(final Collection<? extends TypeMirror> ts, final Domain domain) {
     final List<UniversalType> newTs = new ArrayList<>(ts.size());
     for (final TypeMirror t : ts) {
@@ -317,20 +287,26 @@ public final class UniversalType
     return Collections.unmodifiableList(newTs);
   }
 
+  /**
+   * Returns a non-{@code null} {@link UniversalType} that is either the supplied {@link TypeMirror} (if it itself is
+   * {@code null} or is a {@link UniversalType}) or one that wraps it.
+   *
+   * @param t a {@link TypeMirror}; may be {@code null} in which case {@code null} will be returned
+   *
+   * @param domain a {@link Domain}; must not be {@code null}
+   *
+   * @return a {@link UniversalType}, or {@code null} (if {@code t} is {@code null})
+   *
+   * @exception NullPointerException if {@code domain} is {@code null}
+   *
+   * @see #UniversalType(TypeMirror, Domain)
+   */
   public static final UniversalType of(final TypeMirror t, final Domain domain) {
     return switch (t) {
     case null -> null;
     case UniversalType ut -> ut;
     default -> new UniversalType(t, domain);
     };
-  }
-
-  @SuppressWarnings("unchecked")
-  public static final <T extends TypeMirror> T unwrap(T t) {
-    while (t instanceof UniversalType ut) {
-      t = (T)ut.delegate();
-    }
-    return t;
   }
 
 }

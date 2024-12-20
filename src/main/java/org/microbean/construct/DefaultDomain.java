@@ -401,8 +401,8 @@ public class DefaultDomain implements Constable, Domain {
   // (Convenience.)
   // (Unboxing.)
   @Override // Domain
-  public UniversalType primitiveType(final QualifiedNameable qn) {
-    return UniversalType.of(Domain.super.primitiveType(qn), this);
+  public UniversalType primitiveType(final TypeElement e) {
+    return UniversalType.of(Domain.super.primitiveType(e), this);
   }
 
   // (Canonical.)
@@ -430,6 +430,8 @@ public class DefaultDomain implements Constable, Domain {
       // Critical; javax.lang.model.Types#isSameType(TypeMirror, TypeMirror) returns false here, on purpose, if the two
       // identical references are wildcards. This is almost never what anyone wants.
       return true;
+    } else if (t0 == null || t1 == null) {
+      return false;
     }
     t0 = unwrap(t0);
     t1 = unwrap(t1);

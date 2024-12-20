@@ -24,6 +24,7 @@ import javax.lang.model.type.TypeKind;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -50,7 +51,7 @@ final class TestDefaultDomain {
                                                                   "testAssignablePathological").asType(),
                                          domain.nullType()));
   }
-  
+
   @Test
   final void testBoxPathological() {
     assertThrows(NullPointerException.class, () -> domain.typeElement((PrimitiveType)null));
@@ -58,13 +59,28 @@ final class TestDefaultDomain {
     // javax.lang.model.util.Types#boxedClass(PrimitiveType) just does a blind cast (undocumented).
     assertThrows(ClassCastException.class, () -> domain.typeElement(t));
   }
-  
+
   @Test
   final void testAsMemberOfPathological() {
     assertThrows(NullPointerException.class, () -> domain.asMemberOf(null, domain.javaLangObject()));
     assertThrows(NullPointerException.class, () -> domain.asMemberOf(null, null));
   }
-  
+
+  @Test
+  final void testDirectSupertypesPathological() {
+    assertThrows(NullPointerException.class, () -> domain.directSupertypes(null));
+    assertThrows(IllegalArgumentException.class,
+                 () -> domain.directSupertypes(domain.moduleElement("java.base").asType()));
+    assertThrows(IllegalArgumentException.class,
+                 () -> domain.directSupertypes(domain.packageElement("java.lang").asType()));
+    assertThrows(IllegalArgumentException.class,
+                 () -> domain.directSupertypes(domain.executableElement(domain.typeElement(this.getClass().getName()),
+                                                                        domain.noType(TypeKind.VOID),
+                                                                        "testDirectSupertypesPathological").asType()));
+    assertEquals(List.of(), domain.directSupertypes(domain.nullType()));
+    assertEquals(List.of(), domain.directSupertypes(domain.primitiveType(TypeKind.INT)));
+  }
+
   @Test
   final void testJavaLangObject() {
     final UniversalElement e = domain.javaLangObject();
@@ -77,41 +93,41 @@ final class TestDefaultDomain {
     assertTrue(e.getQualifiedName().contentEquals("java.lang.String"));
   }
 
-  /*
-    With shared name table:
-    org.opentest4j.AssertionFailedError: expected: <true> but was: <false>
-    at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
-    at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
-    at org.junit.jupiter.api.AssertTrue.failNotTrue(AssertTrue.java:63)
-    at org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:36)
-    at org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:31)
-    at org.junit.jupiter.api.Assertions.assertTrue(Assertions.java:183)
-    at org.microbean.construct.TestDefaultDomain.testName(TestDefaultDomain.java:83)
-    at java.base/java.lang.reflect.Method.invoke(Method.java:580)
-    at java.base/java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:507)
-    at java.base/java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(ForkJoinPool.java:1458)
-    at java.base/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2034)
-    at java.base/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:189)
+  @Test
+  final void testModuleElementPathological() {
+    assertThrows(NullPointerException.class, () -> domain.moduleElement(null));
+    domain.moduleElement("_3"); // _3 is actually an invalid module name but the javax.lang.model.* machinery doesn't mind
+  }
 
-    With unshared name table:
-    org.opentest4j.AssertionFailedError: expected: <true> but was: <false>
-    at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:151)
-    at org.junit.jupiter.api.AssertionFailureBuilder.buildAndThrow(AssertionFailureBuilder.java:132)
-    at org.junit.jupiter.api.AssertTrue.failNotTrue(AssertTrue.java:63)
-    at org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:36)
-    at org.junit.jupiter.api.AssertTrue.assertTrue(AssertTrue.java:31)
-    at org.junit.jupiter.api.Assertions.assertTrue(Assertions.java:183)
-    at org.microbean.construct.TestDefaultDomain.testName(TestDefaultDomain.java:99)
-    at java.base/java.lang.reflect.Method.invoke(Method.java:580)
-    at java.base/java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:507)
-    at java.base/java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(ForkJoinPool.java:1458)
-    at java.base/java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2034)
-    at java.base/java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:189)
-  */
   @Test
   final void testName() {
     final Name name = domain.name("Hello");
     assertTrue(name.contentEquals("Hello"));
+  }
+
+  @Test
+  final void testNoTypePathological() {
+    assertThrows(NullPointerException.class, () -> domain.noType(null));
+    assertThrows(IllegalArgumentException.class, () -> domain.noType(TypeKind.INT));
+  }
+
+  @Test
+  final void testSameTypeWorksWithNulls() {
+    assertTrue(domain.sameType(null, null));
+  }
+
+  @Test
+  final void testSubsignaturePathological() {
+    assertThrows(NullPointerException.class, () -> domain.subsignature(null, null));
+    assertThrows(ClassCastException.class, () -> domain.subsignature(domain.primitiveType(TypeKind.INT),
+                                                                     domain.primitiveType(TypeKind.LONG)));
+  }
+
+  @Test
+  final void testSubtypePathological() {
+    assertThrows(NullPointerException.class, () -> domain.subtype(null, null));
+    assertTrue(domain.subtype(domain.primitiveType(TypeKind.INT),
+                              domain.primitiveType(TypeKind.LONG)));
   }
 
   @Test
@@ -165,5 +181,5 @@ final class TestDefaultDomain {
     assertEquals(t0, t1);
     assertTrue(domain.sameType(t0, t1));
   }
-  
+
 }

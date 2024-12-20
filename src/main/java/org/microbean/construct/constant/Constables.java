@@ -23,6 +23,8 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 import java.util.Optional;
 
+import javax.lang.model.AnnotatedConstruct;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
@@ -112,6 +114,29 @@ public final class Constables {
                                                                                             CD_CharSequence)),
                                                 domainDesc,
                                                 d.toString(n)));
+    };
+  }
+
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param ac the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
+  public static final Optional<? extends ConstantDesc> describe(final AnnotatedConstruct ac, final Domain d) {
+    return switch (ac) {
+    case null -> Optional.of(NULL);
+    case Constable c -> c.describeConstable();
+    case ConstantDesc cd -> Optional.of(cd); // future proofing?
+    case Element e -> describe(e, d);
+    case TypeMirror t -> describe(t, d);
+    default -> Optional.empty();
     };
   }
 
@@ -635,6 +660,18 @@ public final class Constables {
     };
   }
 
+  /**
+   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link
+   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.
+   *
+   * @param t the argument; may be {@code null}
+   *
+   * @param d the {@link Domain} from which the argument originated; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @exception NullPointerException if {@code d} is {@code null}
+   */
   public static final Optional<? extends ConstantDesc> describe(final TypeVariable t, final Domain d) {
     return switch (t) {
     case null -> Optional.of(NULL);

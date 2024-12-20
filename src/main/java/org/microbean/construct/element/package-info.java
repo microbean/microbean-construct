@@ -13,7 +13,7 @@
  */
 
 /**
- * Provides classes and interfaces related to Java elements.
+ * Provides classes and interfaces related to Java language elements.
  *
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
  */

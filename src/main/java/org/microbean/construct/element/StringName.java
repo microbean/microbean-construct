@@ -30,12 +30,45 @@ import org.microbean.construct.Domain;
 
 import static java.lang.constant.ConstantDescs.BSM_INVOKE;
 
+/**
+ * A {@link Name} implementation based on {@link String}s.
+ *
+ * @param value the actual name; must not be {@code null}
+ *
+ * @param domain a {@link Domain}; must not be {@code null}
+ *
+ * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
+ *
+ * @see Name
+ *
+ * @see Domain#toString(CharSequence)
+ */
 public final record StringName(String value, Domain domain) implements Constable, Name {
 
-  public StringName(final CharSequence name, final Domain domain) {
-    this(domain.toString(name), domain);
+  /**
+   * Creates a new {@link StringName}.
+   *
+   * @param value the actual name; must not be {@code null}
+   *
+   * @param domain a {@link Domain}; must not be {@code null}
+   *
+   * @exception NullPointerException if either argument is {@code null}
+   */
+  public StringName(final CharSequence value, final Domain domain) {
+    // We deliberately route even String-typed values through Domain#toString(CharSequence) in case the Domain wishes to
+    // cache the intermediate Name.
+    this(domain.toString(value), domain);
   }
 
+  /**
+   * Creates a new {@link StringName}.
+   *
+   * @param value the actual name; must not be {@code null}
+   *
+   * @param domain a {@link Domain}; must not be {@code null}
+   *
+   * @exception NullPointerException if either argument is {@code null}
+   */
   public StringName {
     Objects.requireNonNull(value, "value");
     Objects.requireNonNull(domain, "domain");
@@ -104,23 +137,25 @@ public final record StringName(String value, Domain domain) implements Constable
    * Static methods.
    */
 
-  public static final StringName ofUnnamed(final Domain domain) {
-    return new StringName("", domain);
-  }
 
+  /**
+   * Returns a {@link StringName} whose {@link #value()} method will return a {@link String} {@linkplain
+   * String#equals(Object) equal to} the {@linkplain Domain#toString(CharSequence) <code>String</code> conversion of}
+   * the supplied {@link CharSequence}, and whose {@link #domain()} method will return a {@link Domain} {@linkplain
+   * #equals(Object) equal to} the supplied {@link Domain}.
+   *
+   * @param cs a {@link CharSequence}; must not be {@code null}
+   *
+   * @param domain a {@link Domain}; must not be {@code null}
+   *
+   * @return a {@link StringName}; never {@code null}
+   *
+   * @exception NullPointerException if either argument is {@code null}
+   *
+   * @see Domain#toString(CharSequence)
+   */
   public static final StringName of(final CharSequence cs, final Domain domain) {
     return cs instanceof StringName sn ? sn : new StringName(domain.toString(cs), domain);
-  }
-
-  @SuppressWarnings("try")
-  public static final Name unwrap(Name n, final Domain domain) {
-    if (n instanceof StringName sn) {
-      try (var lock = domain.lock()) {
-        n = domain.name(n);
-        n.toString(); // while we're under lock
-      }
-    }
-    return n;
   }
 
 }
