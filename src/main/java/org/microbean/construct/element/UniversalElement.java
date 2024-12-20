@@ -26,7 +26,6 @@ import javax.lang.model.element.ElementVisitor;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.ModuleElement.Directive;
 import javax.lang.model.element.NestingKind;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.Parameterizable;
@@ -158,9 +157,9 @@ public final class UniversalElement
   }
 
   @Override // ModuleElement
-  public final List<? extends Directive> getDirectives() {
+  public final List<? extends UniversalDirective> getDirectives() {
     return switch (this.getKind()) {
-    case MODULE -> ((ModuleElement)this.delegate()).getDirectives(); // TODO: wrap? Probably not necessary
+    case MODULE -> UniversalDirective.of(((ModuleElement)this.delegate()).getDirectives(), this.domain());
     default -> List.of();
     };
   }
@@ -325,14 +324,14 @@ public final class UniversalElement
   }
 
   @Override // Element
+  @SuppressWarnings("try")
   public final boolean equals(final Object other) {
-    if (this == other) {
-      return true;
-    } else if (other != null && other.getClass() == this.getClass()) {
-      return this.delegate().equals(((UniversalElement)other).delegate());
-    } else {
-      return false;
-    }
+    return this == other || switch (other) {
+    case null -> false;
+    case UniversalElement her -> this.delegate().equals(her.delegate());
+    case Element her -> this.delegate().equals(her);
+    default -> false;
+    };
   }
 
   private final UniversalElement wrap(final Element e) {
@@ -362,6 +361,9 @@ public final class UniversalElement
    * @exception NullPointerException if either argument is {@code null}
    */
   public static final List<? extends UniversalElement> of(final Collection<? extends Element> es, final Domain domain) {
+    if (es.isEmpty()) {
+      return List.of();
+    }
     final List<UniversalElement> newEs = new ArrayList<>(es.size());
     for (final Element e : es) {
       newEs.add(of(e, domain));

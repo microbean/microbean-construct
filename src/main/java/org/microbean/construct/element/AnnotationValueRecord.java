@@ -96,32 +96,37 @@ public final record AnnotationValueRecord(AnnotationValue delegate, Domain domai
 
   @Override // Object
   public final boolean equals(final Object other) {
-    if (other == this) {
-      return true;
-    } else if (other instanceof AnnotationValue av) { // instanceof on purpose
-      return this.getValue().equals(AnnotationValueRecord.of(av, this.domain()).getValue());
-    } else {
-      return false;
+    return this == other || switch (other) {
+    case null -> false;
+    case AnnotationValue av -> {
+      try (var lock = this.domain().lock()) {
+        // The mere act of getting a value (even of type String) can trigger symbol completion:
+        // https://github.com/openjdk/jdk/blob/jdk-25%2B3/src/jdk.compiler/share/classes/com/sun/tools/javac/util/Constants.java#L49
+        yield this.delegate().equals(av instanceof AnnotationValueRecord avr ? avr.delegate() : av);
+      }
     }
+    default -> false;
+    };
   }
 
   @Override // AnnotationValue
   @SuppressWarnings({ "try", "unchecked" })
   public final Object getValue() {
     final Domain domain = this.domain();
+    final Object value;
     try (var lock = domain.lock()) {
       // The mere act of getting a value (even of type String) can trigger symbol completion:
       // https://github.com/openjdk/jdk/blob/jdk-25%2B3/src/jdk.compiler/share/classes/com/sun/tools/javac/util/Constants.java#L49
-      final Object value = this.delegate().getValue();
-      return switch (value) {
-      case null -> throw new AssertionError();
-      case AnnotationMirror a -> AnnotationRecord.of(a, domain);
-      case List<?> l -> of((List<? extends AnnotationValue>)l, domain);
-      case TypeMirror t -> UniversalType.of(t, domain);
-      case VariableElement e -> UniversalElement.of(e, domain);
-      default -> value;
-      };
+      value = this.delegate().getValue();
     }
+    return switch (value) {
+    case null -> throw new AssertionError();
+    case AnnotationMirror a -> AnnotationRecord.of(a, domain);
+    case List<?> l -> of((List<? extends AnnotationValue>)l, domain);
+    case TypeMirror t -> UniversalType.of(t, domain);
+    case VariableElement e -> UniversalElement.of(e, domain);
+    default -> value;
+    };
   }
 
   @Override // Object
@@ -146,20 +151,24 @@ public final record AnnotationValueRecord(AnnotationValue delegate, Domain domai
 
   /**
    * Returns a non-{@code null} {@link AnnotationValueRecord} that is either the supplied {@link AnnotationValue} (if it
-   * itself is an {@link AnnotationValueRecord}) or one that wraps it.
+   * itself is {@code null} or is an {@link AnnotationValueRecord}) or one that wraps it.
    *
-   * @param av an {@link AnnotationValue}; must not be {@code null}
+   * @param av an {@link AnnotationValue}; may be {@code null}
    *
    * @param domain a {@link Domain}; must not be {@code null}
    *
-   * @return a non-{@code null} {@link AnnotationValueRecord}
+   * @return an {@link AnnotationValueRecord}, or {@code null} (if {@code av} is {@code null})
    *
-   * @exception NullPointerException if either argument is {@code null}
+   * @exception NullPointerException if {@code domain} is {@code null}
    *
    * @see #AnnotationValueRecord(AnnotationValue, Domain)
    */
   public static final AnnotationValueRecord of(final AnnotationValue av, final Domain domain) {
-    return av instanceof AnnotationValueRecord avr ? avr : new AnnotationValueRecord(av, domain);
+    return switch (av) {
+    case null -> null;
+    case AnnotationValueRecord avr -> avr;
+    default -> new AnnotationValueRecord(av, domain);
+    };
   }
 
   /**
@@ -176,6 +185,9 @@ public final record AnnotationValueRecord(AnnotationValue delegate, Domain domai
    */
   public static final List<? extends AnnotationValueRecord> of(final Collection<? extends AnnotationValue> avs,
                                                                final Domain domain) {
+    if (avs.isEmpty()) {
+      return List.of();
+    }
     final List<AnnotationValueRecord> newAvs = new ArrayList<>(avs.size());
     for (final AnnotationValue av : avs) {
       newAvs.add(AnnotationValueRecord.of(av, domain));

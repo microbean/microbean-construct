@@ -74,23 +74,15 @@ public final record AnnotationRecord(AnnotationMirror delegate, Domain domain) i
   @Override // Object
   @SuppressWarnings("try")
   public final boolean equals(final Object other) {
-    if (other == this) {
-      return true;
-    } else if (other instanceof AnnotationMirror a) { // instanceof on purpose
+    return this == other || switch (other) {
+    case null -> false;
+    case AnnotationMirror a -> {
       try (var lock = this.domain().lock()) {
-        // We need the explicit domain lock because a might not be an AnnotationRecord and so its annotation type might
-        // not be a UniversalType.
-        //
-        // Type equality anywhere in here will be via domain.sameType(TypeMirror, TypeMirror).
-        //
-        // Because the keys in getElementValues() are UniversalElements, equality of elements will be OK.
-        return
-          this.getAnnotationType().equals(a.getAnnotationType()) &&
-          this.getElementValues().equals(a.getElementValues());
+        yield this.delegate().equals(a instanceof AnnotationRecord ar ? ar.delegate() : a);
       }
-    } else {
-      return false;
     }
+    default -> false;
+    };
   }
 
   @Override // AnnotationMirror
@@ -159,6 +151,9 @@ public final record AnnotationRecord(AnnotationMirror delegate, Domain domain) i
    */
   public static final List<? extends AnnotationRecord> of(final Collection<? extends AnnotationMirror> as,
                                                           final Domain domain) {
+    if (as.isEmpty()) {
+      return List.of();
+    }
     final List<AnnotationRecord> newAs = new ArrayList<>(as.size());
     for (final AnnotationMirror a : as) {
       newAs.add(AnnotationRecord.of(a, domain));

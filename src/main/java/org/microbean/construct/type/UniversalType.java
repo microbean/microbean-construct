@@ -116,7 +116,7 @@ public final class UniversalType
     return switch (this.getKind()) {
     case DECLARED -> UniversalElement.of(((DeclaredType)this.delegate()).asElement(), this.domain());
     case TYPEVAR  -> UniversalElement.of(((TypeVariable)this.delegate()).asElement(), this.domain());
-    default       -> null;
+    default -> null;
     };
   }
 
@@ -124,7 +124,7 @@ public final class UniversalType
   public final List<? extends UniversalType> getAlternatives() {
     return switch (this.getKind()) {
     case UNION -> this.wrap(((UnionType)this.delegate()).getAlternatives());
-    default    -> List.of();
+    default -> List.of();
     };
   }
 
@@ -132,7 +132,7 @@ public final class UniversalType
   public final List<? extends UniversalType> getBounds() {
     return switch (this.getKind()) {
     case INTERSECTION -> this.wrap(((IntersectionType)this.delegate()).getBounds());
-    default           -> List.of();
+    default -> List.of();
     };
   }
 
@@ -140,7 +140,7 @@ public final class UniversalType
   public final UniversalType getComponentType() {
     return switch (this.getKind()) {
     case ARRAY -> this.wrap(((ArrayType)this.delegate()).getComponentType());
-    default    -> this.wrap(this.domain().noType(NONE));
+    default -> this.wrap(this.domain().noType(NONE));
     };
   }
 
@@ -148,7 +148,7 @@ public final class UniversalType
   public final UniversalType getEnclosingType() {
     return switch(this.getKind()) {
     case DECLARED -> this.wrap(((DeclaredType)this.delegate()).getEnclosingType());
-    default       -> this.wrap(this.domain().noType(NONE));
+    default -> this.wrap(this.domain().noType(NONE));
     };
   }
 
@@ -156,7 +156,7 @@ public final class UniversalType
   public final UniversalType getExtendsBound() {
     return switch (this.getKind()) {
     case WILDCARD -> this.wrap(((WildcardType)this.delegate()).getExtendsBound());
-    default       -> null;
+    default -> null;
     };
   }
 
@@ -169,7 +169,7 @@ public final class UniversalType
   public final UniversalType getLowerBound() {
     return switch (this.getKind()) {
     case TYPEVAR -> this.wrap(((TypeVariable)this.delegate()).getLowerBound());
-    default      -> this.wrap(this.domain().nullType()); // bottom (null) type, not NONE type
+    default -> this.wrap(this.domain().nullType()); // bottom (null) type, not NONE type
     };
   }
 
@@ -177,7 +177,7 @@ public final class UniversalType
   public final UniversalType getUpperBound() {
     return switch (this.getKind()) {
     case TYPEVAR -> this.wrap(((TypeVariable)this.delegate()).getUpperBound());
-    default      -> this.wrap(this.domain().javaLangObject().asType());
+    default -> this.wrap(this.domain().javaLangObject().asType());
     };
   }
 
@@ -185,7 +185,7 @@ public final class UniversalType
   public final List<? extends UniversalType> getParameterTypes() {
     return switch (this.getKind()) {
     case EXECUTABLE -> this.wrap(((ExecutableType)this.delegate()).getParameterTypes());
-    default         -> List.of();
+    default -> List.of();
     };
   }
 
@@ -193,7 +193,7 @@ public final class UniversalType
   public final UniversalType getReceiverType() {
     return switch (this.getKind()) {
     case EXECUTABLE -> this.wrap(((ExecutableType)this.delegate()).getReceiverType());
-    default         -> this.wrap(this.domain().noType(NONE));
+    default -> this.wrap(this.domain().noType(NONE));
     };
   }
 
@@ -201,7 +201,7 @@ public final class UniversalType
   public final UniversalType getReturnType() {
     return switch (this.getKind()) {
     case EXECUTABLE -> this.wrap(((ExecutableType)this.delegate()).getReturnType());
-    default         -> this.wrap(this.domain().noType(VOID));
+    default -> this.wrap(this.domain().noType(VOID));
     };
   }
 
@@ -209,7 +209,7 @@ public final class UniversalType
   public final UniversalType getSuperBound() {
     return switch (this.getKind()) {
     case WILDCARD -> this.wrap(((WildcardType)this.delegate()).getSuperBound());
-    default       -> null;
+    default -> null;
     };
   }
 
@@ -217,7 +217,7 @@ public final class UniversalType
   public final List<? extends UniversalType> getThrownTypes() {
     return switch (this.getKind()) {
     case EXECUTABLE -> this.wrap(((ExecutableType)this.delegate()).getThrownTypes());
-    default         -> List.of();
+    default -> List.of();
     };
   }
 
@@ -225,7 +225,7 @@ public final class UniversalType
   public final List<? extends UniversalType> getTypeArguments() {
     return switch (this.getKind()) {
     case DECLARED -> this.wrap(((DeclaredType)this.delegate()).getTypeArguments());
-    default       -> List.of();
+    default -> List.of();
     };
   }
 
@@ -233,7 +233,7 @@ public final class UniversalType
   public final List<? extends UniversalType> getTypeVariables() {
     return switch (this.getKind()) {
     case EXECUTABLE -> this.wrap(((ExecutableType)this.delegate()).getTypeVariables());
-    default         -> List.of();
+    default -> List.of();
     };
   }
 
@@ -244,13 +244,11 @@ public final class UniversalType
 
   @Override // TypeMirror
   public final boolean equals(final Object other) {
-    if (other == this) {
-      return true;
-    } else if (other instanceof TypeMirror t) { // instanceof on purpose
-      return this.domain().sameType(this, t);
-    } else {
-      return false;
-    }
+    return this == other || switch (other) {
+    case null -> false;
+    case TypeMirror her -> this.domain().sameType(this, her);
+    default -> false;
+    };
   }
 
   private final List<? extends UniversalType> wrap(final Collection<? extends TypeMirror> ts) {
@@ -280,6 +278,9 @@ public final class UniversalType
    * @exception NullPointerException if either argument is {@code null}
    */
   public static final List<? extends UniversalType> of(final Collection<? extends TypeMirror> ts, final Domain domain) {
+    if (ts.isEmpty()) {
+      return List.of();
+    }
     final List<UniversalType> newTs = new ArrayList<>(ts.size());
     for (final TypeMirror t : ts) {
       newTs.add(of(t, domain));
