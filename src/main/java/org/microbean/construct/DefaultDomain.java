@@ -62,12 +62,12 @@ import static java.lang.constant.ConstantDescs.BSM_INVOKE;
  *
  * @see Domain
  *
- * @see RuntimeProcessingEnvironment
+ * @see RuntimeProcessingEnvironmentSupplier
  */
 @SuppressWarnings({ "try", "unchecked" })
 public class DefaultDomain implements Constable, Domain {
 
-  private final ProcessingEnvironment pe;
+  private final Supplier<? extends ProcessingEnvironment> pe;
 
   private final Supplier<? extends Unlockable> locker;
 
@@ -84,7 +84,8 @@ public class DefaultDomain implements Constable, Domain {
    * Creates a new {@link DefaultDomain} whose usage type is determined by the argument supplied to this constructor.
    *
    * @param pe a {@link ProcessingEnvironment}; may be {@code null} in which case the return value of an invocation of
-   * {@link RuntimeProcessingEnvironment#get()} will be used instead
+   * {@link Supplier#get()} on the return value of an invocation of {@link RuntimeProcessingEnvironmentSupplier#of()}
+   * will be used instead
    *
    * @see #DefaultDomain(ProcessingEnvironment, Lock)
    *
@@ -102,7 +103,7 @@ public class DefaultDomain implements Constable, Domain {
    *
    * @see #DefaultDomain(ProcessingEnvironment, Lock)
    *
-   * @see RuntimeProcessingEnvironment
+   * @see RuntimeProcessingEnvironmentSupplier
    *
    * @see SymbolCompletionLock
    */
@@ -114,28 +115,29 @@ public class DefaultDomain implements Constable, Domain {
    * Creates a new {@link DefaultDomain} whose usage type is determined by the arguments supplied to this constructor.
    *
    * @param pe a {@link ProcessingEnvironment}; may be {@code null} in which case the return value of an invocation of
-   * {@link RuntimeProcessingEnvironment#get()} will be used instead
+   * {@link Supplier#get()} on the return value of an invocation of {@link RuntimeProcessingEnvironmentSupplier#of()}
+   * will be used instead
    *
    * @param lock a {@link Lock} to use to serialize symbol completion; if {@code null} and {@code pe} is {@code null},
    * then a global {@link ReentrantLock} will be used instead; if {@code null} and {@code pe} is non-{@code null}, then
    * no serialization of symbol completion will occur and this {@link DefaultDomain} will not be safe for concurrent use
    * by multiple threads
    *
-   * @see RuntimeProcessingEnvironment
+   * @see RuntimeProcessingEnvironmentSupplier
    *
    * @see SymbolCompletionLock
    */
   public DefaultDomain(final ProcessingEnvironment pe, final Lock lock) {
     super();
     if (pe == null) {
-      this.pe = RuntimeProcessingEnvironment.get();
+      this.pe = RuntimeProcessingEnvironmentSupplier.of();
       final Lock l = lock == null ? SymbolCompletionLock.INSTANCE : lock;
       this.locker = () -> {
         l.lock();
         return l::unlock;
       };
     } else {
-      this.pe = pe;
+      this.pe = () -> pe;
       this.locker = lock == null ? DefaultDomain::noopLock : () -> {
         lock.lock();
         return lock::unlock;
@@ -278,7 +280,7 @@ public class DefaultDomain implements Constable, Domain {
   }
 
   private final Elements elements() {
-    return this.pe.getElementUtils();
+    return this.pe().getElementUtils();
   }
 
   @Override // Object
@@ -287,7 +289,7 @@ public class DefaultDomain implements Constable, Domain {
       return true;
     } else if (other != null && other.getClass() == this.getClass()) {
       return
-        Objects.equals(this.pe, ((DefaultDomain)other).pe) &&
+        Objects.equals(this.pe(), ((DefaultDomain)other).pe()) &&
         Objects.equals(this.locker, ((DefaultDomain)other).locker);
     } else {
       return false;
@@ -313,7 +315,7 @@ public class DefaultDomain implements Constable, Domain {
 
   @Override // Object
   public int hashCode() {
-    return this.pe.hashCode() ^ this.locker.hashCode();
+    return this.pe().hashCode() ^ this.locker.hashCode();
   }
 
   // (Convenience.)
@@ -383,6 +385,10 @@ public class DefaultDomain implements Constable, Domain {
     try (var lock = lock()) {
       return UniversalElement.of(this.elements().getPackageElement(asSeenFrom, canonicalName), this);
     }
+  }
+
+  private final ProcessingEnvironment pe() {
+    return this.pe.get();
   }
 
   // (Canonical.)
@@ -534,7 +540,7 @@ public class DefaultDomain implements Constable, Domain {
   }
 
   private final Types types() {
-    return this.pe.getTypeUtils();
+    return this.pe().getTypeUtils();
   }
 
   // (Convenience.)

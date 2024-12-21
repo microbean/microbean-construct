@@ -95,6 +95,7 @@ public final record AnnotationValueRecord(AnnotationValue delegate, Domain domai
   }
 
   @Override // Object
+  @SuppressWarnings("try")
   public final boolean equals(final Object other) {
     return this == other || switch (other) {
     case null -> false;

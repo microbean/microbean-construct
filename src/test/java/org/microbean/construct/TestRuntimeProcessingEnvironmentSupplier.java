@@ -13,6 +13,8 @@
  */
 package org.microbean.construct;
 
+import java.util.function.Supplier;
+
 import javax.annotation.processing.ProcessingEnvironment;
 
 import org.junit.jupiter.api.AfterEach;
@@ -24,7 +26,7 @@ import org.junit.jupiter.api.parallel.Isolated;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Isolated
-final class TestRuntimeProcessingEnvironment {
+final class TestRuntimeProcessingEnvironmentSupplier {
 
 
   /*
@@ -32,7 +34,7 @@ final class TestRuntimeProcessingEnvironment {
    */
 
 
-  static ProcessingEnvironment pe;
+  static Supplier<? extends ProcessingEnvironment> pe;
 
 
   /*
@@ -40,7 +42,7 @@ final class TestRuntimeProcessingEnvironment {
    */
 
 
-  private TestRuntimeProcessingEnvironment() {
+  private TestRuntimeProcessingEnvironmentSupplier() {
     super();
   }
 
@@ -52,14 +54,14 @@ final class TestRuntimeProcessingEnvironment {
 
   @BeforeEach
   final void rpe() {
-    RuntimeProcessingEnvironment.close();
-    pe = RuntimeProcessingEnvironment.get();
+    RuntimeProcessingEnvironmentSupplier.close();
+    pe = RuntimeProcessingEnvironmentSupplier.of();
   }
 
   @AfterEach
   final void close() {
     pe = null;
-    RuntimeProcessingEnvironment.close();
+    RuntimeProcessingEnvironmentSupplier.close();
   }
 
 
@@ -68,14 +70,14 @@ final class TestRuntimeProcessingEnvironment {
    */
 
 
-  // This whole test rig shows you can close the single static RuntimeProcessingEnvironment and reload it.
+  // This whole test rig shows you can close the single static RuntimeProcessingEnvironmentSupplier and reload it.
   @Test
   final void testPe0() {
-    assertNotNull(pe);
+    assertNotNull(pe.get());
   }
   @Test
   final void testPe1() {
-    assertNotNull(pe);
+    assertNotNull(pe.get());
   }
 
 }

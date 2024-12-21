@@ -129,7 +129,6 @@ final class BlockingCompilationTask implements Runnable {
 
     // Use an appropriate compiler-supplied thread-safe name table.
     installNameTableOptions(options::add);
-    // Optional.ofNullable(nameTableOption()).ifPresent(options::add);
 
     // Propagate the current classpath to the compiler environment.
     options.add("-cp");
@@ -151,7 +150,7 @@ final class BlockingCompilationTask implements Runnable {
                                                     moduleLocations),
                  diagnosticLogger,
                  options,
-                 List.of("java.lang.annotation.RetentionPolicy"), // arbitrary, but reads minimal number of classes
+                 List.of("java.lang.Deprecated"), // arbitrary, but is always read by the compiler no matter what so incurs no extra class reads
                  null); // compilation units
     task.setLocale(locale);
     task.addModules(additionalRootModuleNames);

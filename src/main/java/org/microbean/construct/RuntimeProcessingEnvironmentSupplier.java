@@ -21,6 +21,8 @@ import java.util.concurrent.Future;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import java.util.function.Supplier;
+
 import javax.annotation.processing.ProcessingEnvironment;
 
 import static java.lang.System.getLogger;
@@ -28,17 +30,17 @@ import static java.lang.System.getLogger;
 import static java.lang.System.Logger.Level.ERROR;
 
 /**
- * A utility class that can {@linkplain #get() supply} a {@link ProcessingEnvironment} suitable for use at runtime.
+ * A utility class that can {@linkplain #of() supply} a {@link ProcessingEnvironment} suitable for use at runtime.
  *
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
  *
- * @see #get()
+ * @see #of()
  *
  * @see ProcessingEnvironment
  *
  * @see Domain
  */
-public final class RuntimeProcessingEnvironment {
+public final class RuntimeProcessingEnvironmentSupplier {
 
 
   /*
@@ -46,7 +48,7 @@ public final class RuntimeProcessingEnvironment {
    */
 
 
-  private static final Logger LOGGER = getLogger(RuntimeProcessingEnvironment.class.getName());
+  private static final Logger LOGGER = getLogger(RuntimeProcessingEnvironmentSupplier.class.getName());
 
   private static final CountDownLatch processorLatch = new CountDownLatch(1);
 
@@ -59,7 +61,7 @@ public final class RuntimeProcessingEnvironment {
    */
 
 
-  private RuntimeProcessingEnvironment() {
+  private RuntimeProcessingEnvironmentSupplier() {
     super();
   }
 
@@ -70,25 +72,22 @@ public final class RuntimeProcessingEnvironment {
 
 
   /**
-   * Returns a non-{@code null} {@link ProcessingEnvironment} suitable for use at runtime.
+   * Returns a non-{@code null} {@link Supplier} of a {@link ProcessingEnvironment} suitable for use at runtime.
    *
-   * <p>The returned {@link ProcessingEnvironment} and the objects it supplies are not guaranteed to be safe for
-   * concurrent use by multiple threads.</p>
+   * <p>The {@link ProcessingEnvironment} available from the returned {@link Supplier} and the objects it supplies are
+   * intended to be safe for concurrent use by multiple threads.</p>
    *
-   * @return a non-{@code null} {@link ProcessingEnvironment}
-   *
-   * @exception java.util.concurrent.CancellationException if the task of setting up the {@link ProcessingEnvironment}
-   * was cancelled
-   *
-   * @exception java.util.concurrent.CompletionException if an error occurs
+   * @return a non-{@code null}, thread-safe {@link Supplier} of a non-{@code null}, thread-safe {@link
+   * ProcessingEnvironment} suitable for use at runtime
    *
    * @see ProcessingEnvironment
    *
    * @see Domain
    */
-  public static final ProcessingEnvironment get() {
+  public static final Supplier<? extends ProcessingEnvironment> of() {
     CompletableFuture<ProcessingEnvironment> f = r.get();
     if (f == null) {
+      // (This will only be true if close() has been called and no of() invocation has happened yet.)
       f = new CompletableFuture<>();
       if (r.compareAndSet(null, f)) {
         startBlockingCompilationTask(f);
@@ -96,11 +95,19 @@ public final class RuntimeProcessingEnvironment {
         f = r.get();
       }
     }
-    return f.join();
+    return f::join;
   }
 
   /**
    * Closes and unblocks the machinery responsible for supplying {@link ProcessingEnvironment} instances.
+   *
+   * <p><strong>Note:</strong> After an invocation of this method, any invocations of the {@link Supplier#get() get()}
+   * method on any extant {@link Supplier} instances previously returned by the {@link #of()} method will throw {@link
+   * java.util.concurrent.CancellationException}s.</p>
+   *
+   * @see Future#cancel(boolean)
+   *
+   * @see #of()
    */
   public static final void close() {
     final Future<?> f = r.get();
@@ -122,7 +129,7 @@ public final class RuntimeProcessingEnvironment {
     // offloads the setup of the compiler/annotation processing machinery, and the thread that said machinery may use to
     // run the actual compilation task (which blocks forever) (see CompilationTask#call()).
     Thread.ofVirtual()
-      .name(RuntimeProcessingEnvironment.class.getName())
+      .name(RuntimeProcessingEnvironmentSupplier.class.getName())
       .uncaughtExceptionHandler((thread, exception) -> {
           f.completeExceptionally(exception);
           if (LOGGER.isLoggable(ERROR)) {
