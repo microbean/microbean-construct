@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024 microBean™.
+ * Copyright © 2024–2025 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,14 +23,13 @@ import java.lang.module.ModuleFinder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.RunnableFuture;
 
 import java.util.function.Consumer;
 
@@ -55,9 +54,13 @@ import static java.lang.System.Logger.Level.WARNING;
 
 import static java.nio.charset.Charset.defaultCharset;
 
+import static java.util.HashSet.newHashSet;
+
 import static javax.tools.ToolProvider.getSystemJavaCompiler;
 
-final class BlockingCompilationTask implements Runnable {
+// One-shot, because it's a CompletableFuture so can be cancelled/completed
+final class BlockingCompilationTask extends CompletableFuture<ProcessingEnvironment>
+  implements AutoCloseable, RunnableFuture<ProcessingEnvironment> {
 
 
   /*
@@ -73,11 +76,13 @@ final class BlockingCompilationTask implements Runnable {
    */
 
 
-  private final CountDownLatch processorLatch;
-
-  private final CompletableFuture<? super ProcessingEnvironment> f;
+  private final JavaCompiler jc;
 
   private final Locale locale;
+
+  private final Processor p;
+
+  private volatile boolean closed;
 
 
   /*
@@ -85,18 +90,23 @@ final class BlockingCompilationTask implements Runnable {
    */
 
 
-  BlockingCompilationTask(final CompletableFuture<? super ProcessingEnvironment> f,
-                          final CountDownLatch processorLatch) {
-    this(f, processorLatch, null);
+  BlockingCompilationTask() {
+    this(null, null);
   }
 
-  BlockingCompilationTask(final CompletableFuture<? super ProcessingEnvironment> f,
-                          final CountDownLatch processorLatch,
-                          final Locale locale) {
+  BlockingCompilationTask(final Locale locale) {
+    this(null, locale);
+  }
+
+  BlockingCompilationTask(final JavaCompiler jc) {
+    this(jc, null);
+  }
+
+  BlockingCompilationTask(final JavaCompiler jc, final Locale locale) {
     super();
-    this.f = Objects.requireNonNull(f, "f");
-    this.processorLatch = Objects.requireNonNull(processorLatch, "processorLatch");
+    this.jc = jc == null ? getSystemJavaCompiler() : jc;
     this.locale = locale;
+    this.p = new Processor(this::complete, this::obtrudeException);
   }
 
 
@@ -105,13 +115,33 @@ final class BlockingCompilationTask implements Runnable {
    */
 
 
+  @Override // CompletableFuture<ProcessingEnvironment>
+  public final boolean cancel(final boolean mayInterrupt) {
+    final boolean result = super.cancel(mayInterrupt);
+    this.close();
+    return result;
+  }
+
+  @Override // AutoCloseable
+  public final void close() {
+    final boolean closed = this.closed; // volatile read
+    if (!closed) {
+      this.closed = true; // volatile write
+      this.p.close();
+    }
+  }
+
+  @Override // CompletableFuture<ProcessingEnvironment>
+  public final boolean completeExceptionally(final Throwable t) {
+    final boolean result = super.completeExceptionally(t);
+    this.close();
+    return result;
+  }
+
   @Override // Runnable
   public final void run() {
-    final JavaCompiler jc = getSystemJavaCompiler();
-    if (jc == null) {
-      final IllegalStateException e = new IllegalStateException("ToolProvider.getSystemJavaCompiler() == null");
-      this.f.completeExceptionally(e);
-      throw e;
+    if (this.closed) { // volatile read
+      throw new IllegalStateException();
     }
 
     final List<String> options = new ArrayList<>();
@@ -150,15 +180,15 @@ final class BlockingCompilationTask implements Runnable {
                                                     moduleLocations),
                  diagnosticLogger,
                  options,
-                 List.of("java.lang.Deprecated"), // arbitrary, but is always read by the compiler no matter what so incurs no extra class reads
-                 null); // compilation units
+                 List.of("java.lang.Deprecated"), // arbitrary, but is always read by the compiler no matter what so incurs no extra reads
+                 null); // no compilation units; we're -proc:only
     task.setLocale(locale);
     task.addModules(additionalRootModuleNames);
 
     // Set the task's annotation processor whose only function will be to return the ProcessingEnvironment supplied to
     // it in its #init(ProcessingEnvironment) method. The supplied latch is used to make this task block forever (unless
     // an error occurs) to keep the ProcessingEnvironment "in scope".
-    task.setProcessors(List.of(new Processor(this.f, processorLatch)));
+    task.setProcessors(List.of(this.p));
 
     if (LOGGER.isLoggable(DEBUG)) {
       LOGGER.log(DEBUG, "CompilationTask options: " + options);
@@ -167,7 +197,7 @@ final class BlockingCompilationTask implements Runnable {
     }
 
     try {
-      final Boolean result = task.call(); // blocks forever deliberately unless an error occurs
+      final Boolean result = task.call(); // blocks forever deliberately unless an error occurs; see Processor2
       if (!TRUE.equals(result)) {
         if (LOGGER.isLoggable(ERROR)) {
           LOGGER.log(ERROR, "Calling CompilationTask failed");
@@ -175,8 +205,7 @@ final class BlockingCompilationTask implements Runnable {
         throw new IllegalStateException("compilationTask.call() == " + result);
       }
     } catch (final Throwable t) {
-      this.f.completeExceptionally(t);
-      processorLatch.countDown(); // unblock the Processor
+      this.completeExceptionally(t);
       switch (t) {
       case RuntimeException e -> throw e;
       case Error e -> throw e;
@@ -191,7 +220,7 @@ final class BlockingCompilationTask implements Runnable {
     if (moduleLayer == null) {
       return Set.of();
     }
-    Set<String> additionalRootModuleNames = new HashSet<>();
+    Set<String> additionalRootModuleNames = newHashSet(7);
     final ModuleFinder smf = ModuleFinder.ofSystem();
     final Module unnamedModule = this.getClass().getClassLoader().getUnnamedModule();
     try (final Stream<Module> s = moduleLayer.modules().stream().sequential()) {
@@ -209,6 +238,10 @@ final class BlockingCompilationTask implements Runnable {
           });
     }
     return Collections.unmodifiableSet(additionalRootModuleNames);
+  }
+
+  private final void obtrudeException() {
+    this.obtrudeException(new IllegalStateException());
   }
 
 

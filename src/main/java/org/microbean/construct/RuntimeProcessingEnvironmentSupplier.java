@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024 microBean™.
+ * Copyright © 2024–2025 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -16,11 +16,11 @@ package org.microbean.construct;
 import java.lang.System.Logger;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
+import java.util.concurrent.RunnableFuture;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -40,7 +40,7 @@ import static java.lang.System.Logger.Level.ERROR;
  *
  * @see Domain
  */
-public final class RuntimeProcessingEnvironmentSupplier {
+public final class RuntimeProcessingEnvironmentSupplier implements AutoCloseable, Supplier<ProcessingEnvironment> {
 
 
   /*
@@ -49,11 +49,16 @@ public final class RuntimeProcessingEnvironmentSupplier {
 
 
   private static final Logger LOGGER = getLogger(RuntimeProcessingEnvironmentSupplier.class.getName());
+  
+  private static final RuntimeProcessingEnvironmentSupplier INSTANCE = new RuntimeProcessingEnvironmentSupplier();
 
-  private static final CountDownLatch processorLatch = new CountDownLatch(1);
 
-  private static final AtomicReference<CompletableFuture<ProcessingEnvironment>> r =
-    new AtomicReference<>(startBlockingCompilationTask(new CompletableFuture<>()));
+  /*
+   * Instance fields.
+   */
+
+
+  private final AtomicReference<BlockingCompilationTask> r;
 
 
   /*
@@ -63,6 +68,31 @@ public final class RuntimeProcessingEnvironmentSupplier {
 
   private RuntimeProcessingEnvironmentSupplier() {
     super();
+    this.r = new AtomicReference<>();
+    install(this.r::set);
+  }
+
+
+  /*
+   * Instance methods.
+   */
+
+
+  @Override // AutoCloseable
+  public final void close() {
+    this.r.get().cancel(true);
+  }
+
+  @Override // Supplier<ProcessingEnvironment>
+  public final ProcessingEnvironment get() {
+    final BlockingCompilationTask f = this.r.get();
+    if (f.isCompletedExceptionally()) {
+      final Throwable t = f.exceptionNow();
+      if (t instanceof IllegalStateException) {
+        return install(this.r::set).join();
+      }
+    }
+    return f.join();
   }
 
 
@@ -70,6 +100,21 @@ public final class RuntimeProcessingEnvironmentSupplier {
    * Static methods.
    */
 
+
+  private static final BlockingCompilationTask install(final Consumer<? super BlockingCompilationTask> c) {
+    final BlockingCompilationTask f = new BlockingCompilationTask();
+    c.accept(f);
+    Thread.ofVirtual()
+      .name(RuntimeProcessingEnvironmentSupplier.class.getName())
+      .uncaughtExceptionHandler((thread, exception) -> {
+          f.completeExceptionally(exception);
+          if (LOGGER.isLoggable(ERROR)) {
+            LOGGER.log(ERROR, exception.getMessage(), exception);
+          }
+        })
+      .start(f);
+    return f;
+  }
 
   /**
    * Returns a non-{@code null} {@link Supplier} of a {@link ProcessingEnvironment} suitable for use at runtime.
@@ -85,59 +130,7 @@ public final class RuntimeProcessingEnvironmentSupplier {
    * @see Domain
    */
   public static final Supplier<? extends ProcessingEnvironment> of() {
-    CompletableFuture<ProcessingEnvironment> f = r.get();
-    if (f == null) {
-      // (This will only be true if close() has been called and no of() invocation has happened yet.)
-      f = new CompletableFuture<>();
-      if (r.compareAndSet(null, f)) {
-        startBlockingCompilationTask(f);
-      } else {
-        f = r.get();
-      }
-    }
-    return f::join;
-  }
-
-  /**
-   * Closes and unblocks the machinery responsible for supplying {@link ProcessingEnvironment} instances.
-   *
-   * <p><strong>Note:</strong> After an invocation of this method, any invocations of the {@link Supplier#get() get()}
-   * method on any extant {@link Supplier} instances previously returned by the {@link #of()} method will throw {@link
-   * java.util.concurrent.CancellationException}s.</p>
-   *
-   * @see Future#cancel(boolean)
-   *
-   * @see #of()
-   */
-  public static final void close() {
-    final Future<?> f = r.get();
-    if (f != null) {
-      try {
-        f.cancel(true);
-      } finally {
-        r.set(null);
-        processorLatch.countDown();
-      }
-    }
-  }
-
-  private static final CompletableFuture<ProcessingEnvironment> startBlockingCompilationTask(final CompletableFuture<ProcessingEnvironment> f) {
-    // Use a virtual thread since the BlockingCompilationTask will spend its entire time blocked/parked once it has
-    // completed the CompletableFuture.
-    //
-    // There may be two (or more) threads involved here, depending on the compiler implementation: this virtual one that
-    // offloads the setup of the compiler/annotation processing machinery, and the thread that said machinery may use to
-    // run the actual compilation task (which blocks forever) (see CompilationTask#call()).
-    Thread.ofVirtual()
-      .name(RuntimeProcessingEnvironmentSupplier.class.getName())
-      .uncaughtExceptionHandler((thread, exception) -> {
-          f.completeExceptionally(exception);
-          if (LOGGER.isLoggable(ERROR)) {
-            LOGGER.log(ERROR, exception.getMessage(), exception);
-          }
-        })
-      .start(new BlockingCompilationTask(f, processorLatch));
-    return f;
+    return INSTANCE;
   }
 
 }

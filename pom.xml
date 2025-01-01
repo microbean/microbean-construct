@@ -68,7 +68,7 @@
     <java.util.logging.config.file>${project.basedir}/src/test/java/logging.properties</java.util.logging.config.file>
 
     <!-- maven-compiler-plugin properties -->
-    <maven.compiler.release>21</maven.compiler.release>
+    <maven.compiler.release>23</maven.compiler.release>
     <maven.compiler.showDeprecation>true</maven.compiler.showDeprecation>
     <maven.compiler.showWarnings>true</maven.compiler.showWarnings>
 
@@ -99,7 +99,7 @@
     <project.build.sourceEncoding>UTF8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF8</project.reporting.outputEncoding>
 
-    <surefire.useModulePath>false</surefire.useModulePath>
+    <!-- <surefire.useModulePath>false</surefire.useModulePath> -->
     
   </properties>
 

@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024 microBean™.
+ * Copyright © 2024–2025 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,81 +15,120 @@ package org.microbean.construct;
 
 import java.lang.System.Logger;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-import javax.annotation.processing.AbstractProcessor;
+import java.util.function.Consumer;
+
+import javax.annotation.processing.Completion;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 
 import javax.lang.model.SourceVersion;
 
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 import static java.lang.System.getLogger;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
-final class Processor extends AbstractProcessor {
+final class Processor implements AutoCloseable, javax.annotation.processing.Processor {
 
   private static final Logger LOGGER = getLogger(Processor.class.getName());
 
-  private final CompletableFuture<? super ProcessingEnvironment> c;
+  private final Consumer<? super ProcessingEnvironment> cpe;
 
-  private final CountDownLatch l;
-  
-  Processor(final CompletableFuture<? super ProcessingEnvironment> c,
-            final CountDownLatch l) {
+  private final Runnable r;
+
+  private final Lock lock;
+
+  private final Condition c;
+
+  // @GuardedBy("lock")
+  private boolean closed;
+
+  Processor(final Consumer<? super ProcessingEnvironment> cpe,
+            final Runnable r) {
     super();
-    this.c = Objects.requireNonNull(c, "c");
-    this.l = Objects.requireNonNull(l, "l");
+    this.cpe = Objects.requireNonNull(cpe, "cpe");
+    this.r = r == null ? Processor::sink : r;
+    this.lock = new ReentrantLock();
+    this.c = this.lock.newCondition();
   }
 
-  
+
   /*
    * Instance methods.
    */
 
 
-  @Override // AbstractProcessor (Processor)
-  public final void init(final ProcessingEnvironment pe) {
-    if (pe == null) {
-      final NullPointerException e = new NullPointerException("pe");
-      this.c.completeExceptionally(e);
-      throw e;
-    }
-    this.c.complete(pe);
-    // Note to future maintainers: you're going to desperately want to move this to the process() method, and you
-    // cannot. If you decide to doubt this message, at least comment this out so you don't lose it here. Don't say I
-    // didn't warn you.
+  @Override // AutoCloseable
+  public final void close() {
+    this.lock.lock();
     try {
-      this.l.await(); // NOTE: Blocks forever except in error cases
-    } catch (final InterruptedException e) {
-      Thread.currentThread().interrupt();
+      if (!this.closed) {
+        this.closed = true;
+        this.c.signal();
+      }
+    } finally {
+      this.lock.unlock();
     }
   }
 
-  @Override // AbstractProcessor (Processor)
-  public final Set<String> getSupportedAnnotationTypes() {
-    return Set.of(); // we claim nothing, although it's moot because we're the only processor in existence
+  @Override // Processor;
+  public final void init(final ProcessingEnvironment pe) {
+    this.lock.lock();
+    try {
+      if (this.closed) {
+        this.closed = false;
+      }
+      this.cpe.accept(pe);
+      while (!this.closed) {
+        this.c.awaitUninterruptibly();
+      }
+    } finally {
+      System.out.println("in finally block; running cleanup");
+      this.r.run();
+      this.lock.unlock();
+    }
   }
 
-  @Override // AbstractProcessor (Processor)
+  @Override // Processor
+  public final Iterable<? extends Completion> getCompletions(final Element element,
+                                                             final AnnotationMirror annotation,
+                                                             final ExecutableElement member,
+                                                             final String userText) {
+    return List.of();
+  }
+
+  @Override // Processor
+  public final Set<String> getSupportedAnnotationTypes() {
+    return Set.of();
+  }
+
+  @Override // Processor
   public final Set<String> getSupportedOptions() {
     return Set.of();
   }
 
-  @Override // AbstractProcessor (Processor)
+  @Override // Processor
   public final SourceVersion getSupportedSourceVersion() {
     return SourceVersion.latestSupported();
   }
 
-  @Override // AbstractProcessor (Processor)
+  @Override // Processor
   public final boolean process(final Set<? extends TypeElement> annotations, final RoundEnvironment roundEnvironment) {
-    return false; // we don't claim anything, but we're the only processor in existence
+    return false;
   }
-  
+
+  private static final void sink() {}
+
 }
