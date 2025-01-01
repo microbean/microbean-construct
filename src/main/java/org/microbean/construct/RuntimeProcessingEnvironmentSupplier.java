@@ -34,7 +34,11 @@ import static java.lang.System.Logger.Level.ERROR;
  *
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
  *
+ * @see #get()
+ *
  * @see #of()
+ *
+ * @see #close()
  *
  * @see ProcessingEnvironment
  *
@@ -49,7 +53,7 @@ public final class RuntimeProcessingEnvironmentSupplier implements AutoCloseable
 
 
   private static final Logger LOGGER = getLogger(RuntimeProcessingEnvironmentSupplier.class.getName());
-  
+
   private static final RuntimeProcessingEnvironmentSupplier INSTANCE = new RuntimeProcessingEnvironmentSupplier();
 
 
@@ -78,21 +82,35 @@ public final class RuntimeProcessingEnvironmentSupplier implements AutoCloseable
    */
 
 
+  /**
+   * Closes this {@link RuntimeProcessingEnvironmentSupplier}, which invalidates all {@link ProcessingEnvironment}s
+   * {@linkplain #get() supplied} by it.
+   *
+   * <p>A subsequent call to {@link #get()} will reset this {@link RuntimeProcessingEnvironmentSupplier}.</p>
+   *
+   * <p>Closing a {@link RuntimeProcessingEnvironmentSupplier} that has already been closed has no effect.</p>
+   *
+   * <p>Most users should not have a need to call this method. {@link RuntimeProcessingEnvironmentSupplier} instances do
+   * not have to be closed.</p>
+   *
+   * @see #get()
+   */
   @Override // AutoCloseable
   public final void close() {
     this.r.get().cancel(true);
   }
 
+  /**
+   * Returns a non-{@code null}, thread-safe {@link ProcessingEnvironment} suitable for runtime use.
+   *
+   * @return a non-{@code null} {@link ProcessingEnvironment} suitable for runtime use
+   */
   @Override // Supplier<ProcessingEnvironment>
   public final ProcessingEnvironment get() {
     final BlockingCompilationTask f = this.r.get();
-    if (f.isCompletedExceptionally()) {
-      final Throwable t = f.exceptionNow();
-      if (t instanceof IllegalStateException) {
-        return install(this.r::set).join();
-      }
-    }
-    return f.join();
+    return
+      (f.isCompletedExceptionally() && f.exceptionNow() instanceof ClosedProcessorException ? install(this.r::set) : f)
+      .join();
   }
 
 
@@ -117,19 +135,15 @@ public final class RuntimeProcessingEnvironmentSupplier implements AutoCloseable
   }
 
   /**
-   * Returns a non-{@code null} {@link Supplier} of a {@link ProcessingEnvironment} suitable for use at runtime.
+   * Returns a non-{@code null} {@link RuntimeProcessingEnvironmentSupplier}.
    *
-   * <p>The {@link ProcessingEnvironment} available from the returned {@link Supplier} and the objects it supplies are
-   * intended to be safe for concurrent use by multiple threads.</p>
-   *
-   * @return a non-{@code null}, thread-safe {@link Supplier} of a non-{@code null}, thread-safe {@link
-   * ProcessingEnvironment} suitable for use at runtime
+   * @return a non-{@code null} {@link RuntimeProcessingEnvironmentSupplier}
    *
    * @see ProcessingEnvironment
    *
    * @see Domain
    */
-  public static final Supplier<? extends ProcessingEnvironment> of() {
+  public static final RuntimeProcessingEnvironmentSupplier of() {
     return INSTANCE;
   }
 

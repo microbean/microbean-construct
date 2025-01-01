@@ -83,6 +83,15 @@ final class Processor implements AutoCloseable, javax.annotation.processing.Proc
     }
   }
 
+  /**
+   * Initializes this {@link Processor}.
+   *
+   * @param pe a {@link ProcessingEnvironment}; must not be {@code null}
+   *
+   * @deprecated This method should be called only by a Java compiler in accordance with annotation processing
+   * contracts.
+   */
+  @Deprecated // to be called only by a Java compiler in accordance with annotation processing contracts
   @Override // Processor;
   public final void init(final ProcessingEnvironment pe) {
     this.lock.lock();

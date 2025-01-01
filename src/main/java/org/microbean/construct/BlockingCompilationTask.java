@@ -205,7 +205,7 @@ final class BlockingCompilationTask extends CompletableFuture<ProcessingEnvironm
         throw new IllegalStateException("compilationTask.call() == " + result);
       }
     } catch (final Throwable t) {
-      this.completeExceptionally(t);
+      // this.completeExceptionally(t);
       switch (t) {
       case RuntimeException e -> throw e;
       case Error e -> throw e;
@@ -241,7 +241,9 @@ final class BlockingCompilationTask extends CompletableFuture<ProcessingEnvironm
   }
 
   private final void obtrudeException() {
-    this.obtrudeException(new IllegalStateException());
+    // Ideally we'd use CancellationException but see
+    // https://github.com/openjdk/jdk/blob/jdk-25%2B3/src/java.base/share/classes/java/util/concurrent/CompletableFuture.java#L2210.
+    this.obtrudeException(new ClosedProcessorException());
   }
 
 
