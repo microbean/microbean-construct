@@ -40,8 +40,8 @@
   </developers>
 
   <scm>
-    <connection>scm:git:git@github.com:microbean/microbean-construct.git</connection>
-    <developerConnection>scm:git:git@github.com:microbean/microbean-construct.git</developerConnection>
+    <connection>${scm.url}</connection>
+    <developerConnection>${scm.url}</developerConnection>
     <url>https://github.com/microbean/microbean-construct/</url>
     <tag>HEAD</tag>
   </scm>
@@ -98,6 +98,7 @@
     <!-- Other properties -->
     <project.build.sourceEncoding>UTF8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF8</project.reporting.outputEncoding>
+    <scm.url>scm:git:git@github.com:microbean/microbean-construct.git</scm.url>
 
     <!-- <surefire.useModulePath>false</surefire.useModulePath> -->
     
