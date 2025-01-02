@@ -83,7 +83,6 @@
     <links>https://javadoc.io/doc/com.netflix.eureka/eureka-client/2.0.4/,https://helidon.io/docs/v4/apidocs/</links>
     <sourcetab>2</sourcetab>
 
-
     <!-- maven-release-plugin properties -->
     <goals>deploy</goals>
     <!-- See http://central.sonatype.org/pages/apache-maven.html#performing-a-release-deployment-with-the-maven-release-plugin -->
@@ -92,21 +91,27 @@
     <tagNameFormat>v@{project.version}</tagNameFormat>
     <useReleaseProfile>false</useReleaseProfile>
 
+    <!-- maven-scm-publish-plugin properties;
+         see https://maven.apache.org/plugins/maven-scm-publish-plugin/publish-scm-mojo.html -->
+    <scmpublish.content>${project.reporting.outputDirectory}</scmpublish.content>
+    <scmpublish.pubScmUrl>${project.scm.developerConnection}</scmpublish.pubScmUrl>
+    <scmpublish.scm.branch>gh-pages</scmpublish.scm.branch>
+
     <!-- maven-site-plugin properties -->
     <maven.site.deploy.skip>true</maven.site.deploy.skip>
     <relativizeDecorationLinks>false</relativizeDecorationLinks>
-    
+
     <!-- nexus-staging-maven-plugin properties -->
     <!-- See https://github.com/sonatype/nexus-maven-plugins/blob/0aee3defb33cb133ff536aba59b11d32a368b1e6/staging/maven-plugin/src/main/java/org/sonatype/nexus/maven/staging/AbstractStagingMojo.java#L169-L175 -->
     <stagingProgressTimeoutMinutes>10</stagingProgressTimeoutMinutes>
-    
+
     <!-- Other properties -->
     <project.build.sourceEncoding>UTF8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF8</project.reporting.outputEncoding>
     <scm.url>scm:git:git@github.com:microbean/microbean-construct.git</scm.url>
 
     <!-- <surefire.useModulePath>false</surefire.useModulePath> -->
-    
+
   </properties>
 
   <dependencyManagement>
@@ -138,7 +143,7 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
       <scope>test</scope>
-    </dependency>    
+    </dependency>
   </dependencies>
 
   <build>
@@ -429,5 +434,5 @@
     </profile>
   </profiles>
 
-  
+
 </project>

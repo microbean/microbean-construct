@@ -31,7 +31,7 @@ as a Maven dependency:
     Always check https://search.maven.org/artifact/org.microbean/microbean-construct
     for up-to-date available versions.
   -->
-  <version>0.0.2</version>
+  <version>0.0.3</version>
 </dependency>
 ```
 
