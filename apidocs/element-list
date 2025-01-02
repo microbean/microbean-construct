@@ -1,0 +1,6 @@
+module:org.microbean.construct
+org.microbean.construct
+org.microbean.construct.constant
+org.microbean.construct.element
+org.microbean.construct.type
+org.microbean.construct.vm
