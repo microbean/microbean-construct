@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024 microBean™.
+ * Copyright © 2024–2025 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -43,9 +43,10 @@ import static javax.lang.model.element.ElementKind.CONSTRUCTOR;
 import static javax.lang.model.element.ElementKind.METHOD;
 
 /**
- * A domain of Java constructs.
+ * A representation of a domain of valid Java constructs.
  *
- * <p>A <dfn id="domain">domain</dfn> is a universe of valid Java <a href="#construct">constructs</a>.</p>
+ * <p>A <dfn id="domain">domain</dfn> is a set of valid Java <a href="#construct">constructs</a>. A {@link Domain}
+ * provides access to a domain and its members.</p>
  *
  * <p>A Java <dfn id="construct">construct</dfn> is either a <a href="#type">type</a> or an <a
  * href="#element">element</a>.</p>
@@ -60,6 +61,8 @@ import static javax.lang.model.element.ElementKind.METHOD;
  *
  * <p>This interface is modeled on a deliberately restricted combination of the {@link javax.lang.model.util.Elements}
  * and {@link javax.lang.model.util.Types} interfaces.</p>
+ *
+ * <p>{@link Domain} implementations must be thread-safe.</p>
  *
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
  */
@@ -356,8 +359,8 @@ public interface Domain {
   public <T extends TypeMirror> T erasure(final T t);
 
   /**
-   * Returns an {@link ExecutableElement} representing the static initializer, constructor or method described by the
-   * supplied arguments, or {@code null} if no such {@link ExecutableElement} exists.
+   * A convenience method that returns an {@link ExecutableElement} representing the static initializer, constructor or
+   * method described by the supplied arguments, or {@code null} if no such {@link ExecutableElement} exists.
    *
    * @param declaringElement a {@link TypeElement} representing the class that declares the executable; must not be
    * {@code null}
@@ -407,7 +410,7 @@ public interface Domain {
   }
 
   /**
-   * Returns {@code true} if and only if the supplied {@link Element} is <dfn>generic</dfn>.
+   * A convenience method that returns {@code true} if and only if the supplied {@link Element} is <dfn>generic</dfn>.
    *
    * @param e an {@link Element}; must not be {@code null}
    *
@@ -716,9 +719,8 @@ public interface Domain {
    * <li>Its arguments may be {@code null}. If both arguments are {@code null}, {@code true} is returned. If only one
    * argument is {@code null}, {@code false} is returned.</li>
    *
-   * <li>If the same Java object reference is passed to an implementation of this method as both of its arguments,
-   * {@code true} is returned (even if it {@linkplain TypeMirror#getKind() has a <code>TypeKind</code>} of {@link
-   * TypeKind#WILDCARD}).</li>
+   * <li>If the same Java object reference is passed as both arguments, {@code true} is returned (even if it {@linkplain
+   * TypeMirror#getKind() has a <code>TypeKind</code>} of {@link TypeKind#WILDCARD}).</li>
    *
    * </ul>
    *
@@ -952,8 +954,8 @@ public interface Domain {
   }
 
   /**
-   * Returns the {@link TypeVariable} {@linkplain TypeParameterElement#asType() declared by} the {@link
-   * TypeParameterElement} {@linkplain Parameterizable#getTypeParameters() contained} by the supplied {@link
+   * A convenience method that returns the {@link TypeVariable} {@linkplain TypeParameterElement#asType() declared by}
+   * the {@link TypeParameterElement} {@linkplain Parameterizable#getTypeParameters() contained} by the supplied {@link
    * Parameterizable} whose {@linkplain TypeParameterElement#getSimpleName() name} {@linkplain
    * Name#contentEquals(CharSequence) is equal to} the supplied {@code name}, or {@code null} if there is no such {@link
    * TypeParameterElement} or {@link TypeVariable}.
@@ -972,10 +974,10 @@ public interface Domain {
   }
 
   /**
-   * Returns the first {@link VariableElement} with a {@linkplain javax.lang.model.element.ElementKind#isVariable()
-   * variable <code>ElementKind</code>} and {@linkplain Element#getSimpleName() bearing} the supplied {@code simpleName}
-   * that the supplied {@code enclosingElement} {@linkplain Element#getEnclosedElements() encloses}, or {@code null} if
-   * there is no such {@link VariableElement}.
+   * A convenience method that returns the first {@link VariableElement} with a {@linkplain
+   * javax.lang.model.element.ElementKind#isVariable() variable <code>ElementKind</code>} and {@linkplain
+   * Element#getSimpleName() bearing} the supplied {@code simpleName} that the supplied {@code enclosingElement}
+   * {@linkplain Element#getEnclosedElements() encloses}, or {@code null} if there is no such {@link VariableElement}.
    *
    * @param enclosingElement an {@link Element}; must not be {@code null}
    *
@@ -1006,9 +1008,9 @@ public interface Domain {
   }
 
   /**
-   * Returns a new {@link WildcardType} {@linkplain TypeMirror#getKind() with a <code>TypeKind</code>} of {@link
-   * TypeKind#WILDCARD}, an {@linkplain WildcardType#getExtendsBound() extends bound} of {@code null}, and a {@linkplain
-   * WildcardType#getSuperBound() super bound} of {@code null}.
+   * A convenience method that returns a new {@link WildcardType} {@linkplain TypeMirror#getKind() with a
+   * <code>TypeKind</code>} of {@link TypeKind#WILDCARD}, an {@linkplain WildcardType#getExtendsBound() extends bound}
+   * of {@code null}, and a {@linkplain WildcardType#getSuperBound() super bound} of {@code null}.
    *
    * @return a new, non-{@code null} {@link WildcardType}
    *

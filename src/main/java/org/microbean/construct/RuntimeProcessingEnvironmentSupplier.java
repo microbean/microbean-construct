@@ -101,9 +101,13 @@ public final class RuntimeProcessingEnvironmentSupplier implements AutoCloseable
   }
 
   /**
-   * Returns a non-{@code null}, thread-safe {@link ProcessingEnvironment} suitable for runtime use.
+   * Returns a non-{@code null}, {@link ProcessingEnvironment} suitable for runtime use.
    *
-   * @return a non-{@code null} {@link ProcessingEnvironment} suitable for runtime use
+   * <p>{@link ProcessingEnvironment} instances are not guaranteed to be thread-safe.</p>
+   *
+   * @return a non-{@code null} {@link ProcessingEnvironment}
+   *
+   * @see Domain
    */
   @Override // Supplier<ProcessingEnvironment>
   public final ProcessingEnvironment get() {
