@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Objects;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.Name;
@@ -87,8 +88,8 @@ public interface Domain {
   public ArrayType arrayTypeOf(final TypeMirror componentType);
 
   /**
-   * Returns the {@link Element} declaring the supplied {@link TypeMirror}, or {@code null} if there is no such {@link
-   * Element}.
+   * Returns the {@link Element} declaring the supplied {@link TypeMirror}, <strong>or {@code null} if there is no such
+   * {@link Element}</strong>.
    *
    * @param t a {@link TypeMirror}; must not be {@code null}
    *
@@ -210,8 +211,8 @@ public interface Domain {
 
   /**
    * A convenience method that returns the {@link DeclaredType} {@linkplain TypeElement#asType() of} a {@link
-   * TypeElement} that bears the supplied {@code canonicalName}, or {@code null} if there is no such {@link TypeElement}
-   * (and therefore no such {@link DeclaredType}).
+   * TypeElement} that bears the supplied {@code canonicalName}, <strong>or {@code null} if there is no such {@link
+   * TypeElement} (and therefore no such {@link DeclaredType})</strong>.
    *
    * @param canonicalName a valid canonical name; must not be {@code null}
    *
@@ -324,8 +325,8 @@ public interface Domain {
   /**
    * Returns the {@link Element} responsible for declaring the supplied {@link TypeMirror}, which is most commonly a
    * {@link DeclaredType}, a {@link TypeVariable}, a {@link NoType} with a {@link TypeKind} of {@link TypeKind#MODULE},
-   * or a {@link NoType} with a {@link TypeKind} of {@link TypeKind#PACKAGE}, or {@code null} if there is no such {@link
-   * Element}.
+   * or a {@link NoType} with a {@link TypeKind} of {@link TypeKind#PACKAGE}, <strong>or {@code null} if there is no
+   * such {@link Element}</strong>.
    *
    * @param t a {@link TypeMirror}; must not be {@code null}
    *
@@ -336,6 +337,29 @@ public interface Domain {
    * @see javax.lang.model.util.Types#asElement(TypeMirror)
    */
   public Element element(final TypeMirror t);
+
+  /**
+   * A convenience method that returns the <dfn>element type</dfn> of the supplied {@link TypeMirror}.
+   *
+   * <p>The element type of an {@linkplain TypeKind#ARRAY array type} is the element type of its {@linkplain
+   * ArrayType#getComponentType() component type}.</p>.
+   *
+   * <p>The element type of every other kind of type is the type itself. Note that the semantics of the prior sentence
+   * diverge deliberately, primarily for convenience, from those of the relevant section in the Java Language
+   * Specification.</p>
+   *
+   * @param t a {@link TypeMirror}; must not be {@code null}
+   *
+   * @return the <dfn>element type</dfn> of the supplied {@link TypeMirror}; never {@code null}
+   *
+   * @exception NullPointerException if {@code t} is {@code null}
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-10.html#jls-10.1 Java Language Specification, section
+   * 10.1
+   */
+  public default TypeMirror elementType(final TypeMirror t) {
+    return t.getKind() == TypeKind.ARRAY ? this.elementType(((ArrayType)t).getComponentType()) : t;
+  }
 
   /**
    * Returns the <dfn>erasure</dfn> of the supplied {@link TypeMirror}.
@@ -360,7 +384,8 @@ public interface Domain {
 
   /**
    * A convenience method that returns an {@link ExecutableElement} representing the static initializer, constructor or
-   * method described by the supplied arguments, or {@code null} if no such {@link ExecutableElement} exists.
+   * method described by the supplied arguments, <strong>or {@code null} if no such {@link ExecutableElement}
+   * exists</strong>.
    *
    * @param declaringElement a {@link TypeElement} representing the class that declares the executable; must not be
    * {@code null}
@@ -373,9 +398,8 @@ public interface Domain {
    * @param parameterTypes {@link TypeMirror}s that represent the executable's {@linkplain
    * ExecutableElement#getParameters() parameter types}
    *
-   * @return an {@link ExecutableElement} with an {@link javax.lang.model.element.ElementKind} of {@link
-   * javax.lang.model.element.ElementKind#CONSTRUCTOR}, {@link javax.lang.model.element.ElementKind#METHOD}, or {@link
-   * javax.lang.model.element.ElementKind#STATIC_INIT}, or {@code null}
+   * @return an {@link ExecutableElement} with an {@link ElementKind} of {@link ElementKind#CONSTRUCTOR}, {@link
+   * ElementKind#METHOD}, or {@link ElementKind#STATIC_INIT}, or {@code null}
    *
    * @exception NullPointerException if any argument is {@code null}
    */
@@ -445,6 +469,42 @@ public interface Domain {
   }
 
   /**
+   * A convenience method that returns {@code true} if and only if the supplied {@link Element} represents the (essentially
+   * primordial) {@code java.lang.Object} {@link Element}.
+   *
+   * @param e an {@link Element}; must not be {@code null}
+   *
+   * @return {@code true} if and only if the supplied {@link Element} represents the (essentially
+   * primordial) {@code java.lang.Object} {@link Element}; {@code false} otherwise
+   *
+   * @exception NullPointerException if {@code e} is {@code null}
+   */
+  public default boolean javaLangObject(final Element e) {
+    return
+      e.getKind() == ElementKind.CLASS &&
+      ((QualifiedNameable)e).getQualifiedName().contentEquals("java.lang.Object");
+  }
+
+  /**
+   * A convenience method that returns {@code true} if and only if the supplied {@link TypeMirror} represents the {@link
+   * DeclaredType} declared by the (essentially primordial) {@code java.lang.Object} element.
+   *
+   * @param t a {@link TypeMirror}; must not be {@code null}
+   *
+   * @return {@code true} represents the {@link
+   * DeclaredType} declared by the (essentially primordial) {@code java.lang.Object} element; {@code false} otherwise
+   *
+   * @exception NullPointerException if {@code t} is {@code null}
+   *
+   * @see #javaLangObject(Element)
+   */
+  public default boolean javaLangObject(final TypeMirror t) {
+    return
+      t.getKind() == TypeKind.DECLARED &&
+      javaLangObject(((DeclaredType)t).asElement());
+  }
+
+  /**
    * A convenience method that returns the {@link TypeElement} representing the class named {@link Object
    * java.lang.Object}.
    *
@@ -471,7 +531,7 @@ public interface Domain {
 
   /**
    * Returns a {@link ModuleElement} representing the module {@linkplain ModuleElement#getQualifiedName() named} by the
-   * supplied {@code qualifiedName}, or {@code null} if there is no such {@link ModuleElement}.
+   * supplied {@code qualifiedName}, <strong>or {@code null} if there is no such {@link ModuleElement}</strong>.
    *
    * @param qualifiedName a name suitable for naming a module; must not be {@code null}; may be {@linkplain
    * CharSequence#isEmpty() empty}, in which case a {@link ModuleElement} representing an <dfn>unnamed module</dfn> will
@@ -540,8 +600,8 @@ public interface Domain {
   public NullType nullType();
 
   /**
-   * Returns a {@link PackageElement} representing the package bearing the supplied {@code canonicalName}, or {@code null}
-   * if there is no such {@link PackageElement}.
+   * Returns a {@link PackageElement} representing the package bearing the supplied {@code canonicalName}, <strong>or
+   * {@code null} if there is no such {@link PackageElement}</strong>.
    *
    * @param canonicalName a canonical name suitable for naming a package; must not be {@code null}; may be {@linkplain
    * CharSequence#isEmpty() empty}, in which case a {@link ModuleElement} representing an <dfn>unnamed package</dfn> will
@@ -560,8 +620,8 @@ public interface Domain {
 
   /**
    * Returns a {@link PackageElement} representing the package bearing the supplied {@code canonicalName} as seen from
-   * the module represented by the supplied {@link ModuleElement}, or {@code null} if there is no such {@link
-   * PackageElement}.
+   * the module represented by the supplied {@link ModuleElement}, <strong>or {@code null} if there is no such {@link
+   * PackageElement}</strong>.
    *
    * @param asSeenFrom a {@link ModuleElement}; must not be {@code null}
    *
@@ -579,6 +639,25 @@ public interface Domain {
    * 6.7
    */
   public PackageElement packageElement(final ModuleElement asSeenFrom, final CharSequence canonicalName);
+
+  /**
+   * A convenience method that returns {@code true} if and only if {@code t} is a {@link DeclaredType}, {@linkplain
+   * TypeMirror#getKind() has a <code>TypeKind</code>} of {@link TypeKind#DECLARED DECLARED}, and {@linkplain
+   * DeclaredType#getTypeArguments() has an empty type arguments list}.
+   *
+   * @param t a {@link TypeMirror}; must not be {@code null}
+   *
+   * @return {@code true} if and only if {@code t} is a {@link DeclaredType}, {@linkplain
+   * TypeMirror#getKind() has a <code>TypeKind</code>} of {@link TypeKind#DECLARED DECLARED}, and {@linkplain
+   * DeclaredType#getTypeArguments() has an empty type arguments list}; {@code false} otherwise
+   *
+   * @exception NullPointerException if {@code t} is {@code null}
+   */
+  public default boolean parameterized(final TypeMirror t) {
+    return
+      t.getKind() == TypeKind.DECLARED &&
+      !((DeclaredType)t).getTypeArguments().isEmpty();
+  }
 
   /**
    * Returns the result of applying <dfn>unboxing conversion</dfn> to the (logical) {@link TypeElement} bearing the
@@ -693,8 +772,32 @@ public interface Domain {
   public PrimitiveType primitiveType(final TypeMirror t);
 
   /**
-   * Returns a {@link RecordComponentElement} corresponding to the supplied {@link ExecutableElement}, or {@code null}
-   * if there is no such {@link RecordComponentElement}.
+   * A convenience method that returns the <dfn>raw type</dfn> corresponding to {@code t}, <strong>or {@code null} if
+   * {@code t} is <a href="https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8">incapable of yielding
+   * a raw type</a></strong>.
+   *
+   * <p>Overrides of this method must conform to the requirements imposed by the relevant section of the relevant
+   * version of the Java Language Specification concerning raw types.</p>
+   *
+   * @param t a {@link TypeMirror}; must not be {@code null}
+   *
+   * @return the raw type corresponding to the supplied {@link TypeMirror}, or {@code null} if {@code t} is <a
+   * href="https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8">incapable of yielding a raw type</a>
+   *
+   * @exception NullPointerException if {@code t} is {@code null}
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8 Java Language Specification, section 4.8
+   */
+  public default TypeMirror rawType(final TypeMirror t) {
+    return switch (t.getKind()) {
+    case ARRAY -> this.rawType(this.elementType(t)); // recursive
+    default -> this.parameterized(t) ? this.erasure(t) : null;
+    };
+  }
+
+  /**
+   * Returns a {@link RecordComponentElement} corresponding to the supplied {@link ExecutableElement}, <strong>or {@code
+   * null} if there is no such {@link RecordComponentElement}</strong>.
    *
    * @param e an {@link ExecutableElement} {@linkplain ExecutableElement#getEnclosingElement() enclosed by} a record
    * representing an <dfn>accessor method</dfn>; must not be {@code null}
@@ -807,8 +910,8 @@ public interface Domain {
   }
 
   /**
-   * Returns a {@link TypeElement} representing the element bearing the supplied <dfn>canonical name</dfn>, or {@code
-   * null} if there is no such {@link TypeElement}.
+   * Returns a {@link TypeElement} representing the element bearing the supplied <dfn>canonical name</dfn>, <strong>or
+   * {@code null} if there is no such {@link TypeElement}</strong>.
    *
    * @param canonicalName a valid canonical name; must not be {@code null}
    *
@@ -825,8 +928,8 @@ public interface Domain {
 
   /**
    * Returns a {@link TypeElement} representing the element bearing the supplied <dfn>canonical name</dfn>, as read or
-   * seen from the module represented by the supplied {@link ModuleElement}, or {@code null} if there is no such {@link
-   * TypeElement}.
+   * seen from the module represented by the supplied {@link ModuleElement}, <strong>or {@code null} if there is no such
+   * {@link TypeElement}</strong>.
    *
    * @param asSeenFrom a {@link ModuleElement}; must not be {@code null}
    *
@@ -922,8 +1025,8 @@ public interface Domain {
   /**
    * Returns the {@link TypeParameterElement} {@linkplain Parameterizable#getTypeParameters() contained} by the supplied
    * {@link Parameterizable} whose {@linkplain TypeParameterElement#getSimpleName() name} {@linkplain
-   * Name#contentEquals(CharSequence) is equal to} the supplied {@code name}, or {@code null} if there is no such {@link
-   * TypeParameterElement}.
+   * Name#contentEquals(CharSequence) is equal to} the supplied {@code name}, <strong>or {@code null} if there is no
+   * such {@link TypeParameterElement}</strong>.
    *
    * @param p a {@link Parameterizable}; must not be {@code null}
    *
@@ -957,8 +1060,8 @@ public interface Domain {
    * A convenience method that returns the {@link TypeVariable} {@linkplain TypeParameterElement#asType() declared by}
    * the {@link TypeParameterElement} {@linkplain Parameterizable#getTypeParameters() contained} by the supplied {@link
    * Parameterizable} whose {@linkplain TypeParameterElement#getSimpleName() name} {@linkplain
-   * Name#contentEquals(CharSequence) is equal to} the supplied {@code name}, or {@code null} if there is no such {@link
-   * TypeParameterElement} or {@link TypeVariable}.
+   * Name#contentEquals(CharSequence) is equal to} the supplied {@code name}, <strong>or {@code null} if there is no
+   * such {@link TypeParameterElement} or {@link TypeVariable}</strong>.
    *
    * @param p a {@link Parameterizable}; must not be {@code null}
    *
@@ -974,10 +1077,10 @@ public interface Domain {
   }
 
   /**
-   * A convenience method that returns the first {@link VariableElement} with a {@linkplain
-   * javax.lang.model.element.ElementKind#isVariable() variable <code>ElementKind</code>} and {@linkplain
-   * Element#getSimpleName() bearing} the supplied {@code simpleName} that the supplied {@code enclosingElement}
-   * {@linkplain Element#getEnclosedElements() encloses}, or {@code null} if there is no such {@link VariableElement}.
+   * A convenience method that returns the first {@link VariableElement} with a {@linkplain ElementKind#isVariable()
+   * variable <code>ElementKind</code>} and {@linkplain Element#getSimpleName() bearing} the supplied {@code simpleName}
+   * that the supplied {@code enclosingElement} {@linkplain Element#getEnclosedElements() encloses}, <strong>or {@code
+   * null} if there is no such {@link VariableElement}</strong>.
    *
    * @param enclosingElement an {@link Element}; must not be {@code null}
    *
@@ -989,7 +1092,7 @@ public interface Domain {
    *
    * @see Element#getEnclosedElements()
    *
-   * @see javax.lang.model.element.ElementKind#isVariable()
+   * @see ElementKind#isVariable()
    *
    * @see Element#getSimpleName()
    *
