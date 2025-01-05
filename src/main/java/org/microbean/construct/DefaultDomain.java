@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024 microBean™.
+ * Copyright © 2024–2025 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -320,7 +320,7 @@ public class DefaultDomain implements Constable, Domain {
 
   // (Convenience.)
   @Override // Domain
-  public final UniversalElement javaLangObject() {
+  public UniversalElement javaLangObject() {
     return UniversalElement.of(Domain.super.javaLangObject(), this);
   }
 
@@ -419,6 +419,11 @@ public class DefaultDomain implements Constable, Domain {
     try (var lock = lock()) {
       return UniversalType.of(this.types().unboxedType(t), this);
     }
+  }
+
+  @Override // Domain
+  public UniversalType rawType(final TypeMirror t) {
+    return UniversalType.of(Domain.super.rawType(t), this);
   }
 
   // (Canonical.)

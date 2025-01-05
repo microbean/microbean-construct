@@ -358,7 +358,9 @@ public interface Domain {
    * 10.1
    */
   public default TypeMirror elementType(final TypeMirror t) {
-    return t.getKind() == TypeKind.ARRAY ? this.elementType(((ArrayType)t).getComponentType()) : t;
+    try (var lock = lock()) {
+      return t.getKind() == TypeKind.ARRAY ? this.elementType(((ArrayType)t).getComponentType()) : t;
+    }
   }
 
   /**
@@ -480,9 +482,11 @@ public interface Domain {
    * @exception NullPointerException if {@code e} is {@code null}
    */
   public default boolean javaLangObject(final Element e) {
-    return
-      e.getKind() == ElementKind.CLASS &&
-      ((QualifiedNameable)e).getQualifiedName().contentEquals("java.lang.Object");
+    try (var lock = this.lock()) {
+      return
+        e.getKind() == ElementKind.CLASS &&
+        ((QualifiedNameable)e).getQualifiedName().contentEquals("java.lang.Object");
+    }
   }
 
   /**
@@ -499,9 +503,11 @@ public interface Domain {
    * @see #javaLangObject(Element)
    */
   public default boolean javaLangObject(final TypeMirror t) {
-    return
-      t.getKind() == TypeKind.DECLARED &&
-      javaLangObject(((DeclaredType)t).asElement());
+    try (var lock = this.lock()) {
+      return
+        t.getKind() == TypeKind.DECLARED &&
+        javaLangObject(((DeclaredType)t).asElement());
+    }
   }
 
   /**
@@ -654,9 +660,11 @@ public interface Domain {
    * @exception NullPointerException if {@code t} is {@code null}
    */
   public default boolean parameterized(final TypeMirror t) {
-    return
-      t.getKind() == TypeKind.DECLARED &&
-      !((DeclaredType)t).getTypeArguments().isEmpty();
+    try (var lock = this.lock()) {
+      return
+        t.getKind() == TypeKind.DECLARED &&
+        !((DeclaredType)t).getTypeArguments().isEmpty();
+    }
   }
 
   /**
@@ -772,6 +780,34 @@ public interface Domain {
   public PrimitiveType primitiveType(final TypeMirror t);
 
   /**
+   * A convenience method that returns {@code true} if and only if the supplied {@link TypeMirror} is a <dfn>raw
+   * type</dfn> according to <a href="https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8">the rules
+   * of the Java Language Specification</a>
+   *
+   * @param t a {@link TypeMirror}; must not be {@code null}
+   *
+   * @return {@code true} if and only if the supplied {@link TypeMirror} is a <dfn>raw type</dfn> according to <a
+   * href="https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8">the rules of the Java Language
+   * Specification</a>
+   *
+   * @exception NullPointerException if {@code t} is {@code null}
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8 Java Language Specification, section 4.8
+   */
+  public default boolean raw(final TypeMirror t) {
+    try (var lock = this.lock()) {
+      return switch (t.getKind()) {
+      case ARRAY -> raw(elementType((ArrayType)t));
+      case DECLARED -> {
+        final DeclaredType dt = (DeclaredType)t;
+        yield generic(dt.asElement()) && dt.getTypeArguments().isEmpty();
+      }
+      default -> false;
+      };
+    }
+  }
+
+  /**
    * A convenience method that returns the <dfn>raw type</dfn> corresponding to {@code t}, <strong>or {@code null} if
    * {@code t} is <a href="https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8">incapable of yielding
    * a raw type</a></strong>.
@@ -789,10 +825,12 @@ public interface Domain {
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8 Java Language Specification, section 4.8
    */
   public default TypeMirror rawType(final TypeMirror t) {
-    return switch (t.getKind()) {
-    case ARRAY -> this.rawType(this.elementType(t)); // recursive
-    default -> this.parameterized(t) ? this.erasure(t) : null;
-    };
+    try (var lock = this.lock()) {
+      return switch (t.getKind()) {
+      case ARRAY -> this.rawType(this.elementType(t)); // recursive
+      default -> this.parameterized(t) ? this.erasure(t) : null;
+      };
+    }
   }
 
   /**
