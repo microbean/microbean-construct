@@ -104,7 +104,6 @@ final class Processor implements AutoCloseable, javax.annotation.processing.Proc
         this.c.awaitUninterruptibly();
       }
     } finally {
-      System.out.println("in finally block; running cleanup");
       this.r.run();
       this.lock.unlock();
     }

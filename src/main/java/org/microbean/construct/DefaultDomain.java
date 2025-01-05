@@ -272,11 +272,16 @@ public class DefaultDomain implements Constable, Domain {
   }
 
   @Override // Domain
-  public Element element(TypeMirror t) {
+  public UniversalElement element(TypeMirror t) {
     t = unwrap(t);
     try (var lock = lock()) {
       return UniversalElement.of(this.types().asElement(t), this);
     }
+  }
+
+  @Override // Domain
+  public UniversalType elementType(final TypeMirror t) {
+    return UniversalType.of(Domain.super.elementType(t), this);
   }
 
   private final Elements elements() {
@@ -428,7 +433,7 @@ public class DefaultDomain implements Constable, Domain {
 
   // (Canonical.)
   @Override // Domain
-  public RecordComponentElement recordComponentElement(ExecutableElement e) {
+  public UniversalElement recordComponentElement(ExecutableElement e) {
     e = unwrap(e);
     try (var lock = lock()) {
       return UniversalElement.of(this.elements().recordComponentFor(e), this);
