@@ -80,7 +80,6 @@
     <!-- maven-javadoc-plugin properties -->
     <bottom><![CDATA[Copyright &copy; ${project.inceptionYear}&ndash;{currentYear}, <a href="${project.organization.url}" target="_top">${project.organization.name}</a>. All rights reserved.]]></bottom>
     <doctitle>&lt;a href="${project.url}" target="_top"&gt;&lt;span style="font-family:Lobster, cursive;"&gt;µb&lt;/span&gt; ${project.artifactId}&lt;/a&gt; ${project.version}</doctitle>
-    <links>https://javadoc.io/doc/com.netflix.eureka/eureka-client/2.0.4/,https://helidon.io/docs/v4/apidocs/</links>
     <sourcetab>2</sourcetab>
 
     <!-- maven-release-plugin properties -->
@@ -109,8 +108,6 @@
     <project.build.sourceEncoding>UTF8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF8</project.reporting.outputEncoding>
     <scm.url>scm:git:git@github.com:microbean/microbean-construct.git</scm.url>
-
-    <!-- <surefire.useModulePath>false</surefire.useModulePath> -->
 
   </properties>
 
@@ -269,6 +266,13 @@
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <version>3.5.2</version>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.maven.surefire</groupId>
+              <artifactId>surefire-junit-platform</artifactId>
+              <version>3.5.2</version>
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <artifactId>maven-toolchains-plugin</artifactId>
