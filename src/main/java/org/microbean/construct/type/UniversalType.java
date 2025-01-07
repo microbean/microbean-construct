@@ -159,6 +159,23 @@ public final class UniversalType
     return t;
   }
 
+  /**
+   * Returns {@code true} if and only if this {@link UniversalType} is declared by a {@linkplain
+   * UniversalElement#generic() generic declaration}.
+   *
+   * @return {@code true} if and only if this {@link UniversalType} is declared by a {@linkplain
+   * UniversalElement#generic() generic declaration}
+   *
+   * @see UniversalElement#generic()
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-8.html#jls-8.1.2 Java Language Specification, section
+   * 8.1.2
+   */
+  public final boolean generic() {
+    final UniversalElement e = this.asElement();
+    return e != null && e.generic();
+  }
+
   @Override // UnionType
   public final List<? extends UniversalType> getAlternatives() {
     return switch (this.getKind()) {

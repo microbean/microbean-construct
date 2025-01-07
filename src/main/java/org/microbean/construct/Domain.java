@@ -515,6 +515,44 @@ public interface Domain {
   }
 
   /**
+   * A convenience method that returns {@code true} if and only if the supplied {@link TypeMirror} is declared by an
+   * {@link Element} that {@linkplain #generic(Element) is generic}.
+   *
+   * @param t a {@link TypeMirror}; must not be {@code null}
+   *
+   * @return {@code true} if and only if the supplied {@link TypeMirror} is declared by an {@link Element} that
+   * {@linkplain #generic(Element) is generic}
+   *
+   * @exception NullPointerException if {@code t} is {@code null}
+   *
+   * @see #generic(Element)
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-8.html#jls-8.1.2 Java Language Specification, section
+   * 8.1.2
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-8.html#jls-8.4.4 Java Language Specification, section
+   * 8.4.4
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-8.html#jls-8.8.4 Java Language Specification, section
+   * 8.8.4
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-9.html#jls-9.1.2 Java Language Specification, section
+   * 9.1.2
+   */
+  public default boolean generic(final TypeMirror t) {
+    return switch (t) {
+    case null -> throw new NullPointerException("t");
+    case UniversalType ut -> ut.generic();
+    default -> {
+      try (var lock = this.lock()) {
+        final Element e = this.asElement(t);
+        yield e != null && this.generic(e);
+      }
+    }
+    };
+  }
+
+  /**
    * A convenience method that returns {@code true} if and only if the supplied {@link Element} represents the (essentially
    * primordial) {@code java.lang.Object} {@link Element}.
    *
