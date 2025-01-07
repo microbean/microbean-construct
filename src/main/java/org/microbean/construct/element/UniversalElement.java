@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024 microBean™.
+ * Copyright © 2024–2025 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -111,6 +111,32 @@ public final class UniversalElement
   @Override // Element
   public final UniversalType asType() {
     return UniversalType.of(this.delegate().asType(), this.domain());
+  }
+
+  @Override // Element
+  @SuppressWarnings("try")
+  public final boolean equals(final Object other) {
+    return this == other || switch (other) {
+    case null -> false;
+    case UniversalElement her -> this.delegate().equals(her.delegate());
+    case Element her -> this.delegate().equals(her);
+    default -> false;
+    };
+  }
+
+  /**
+   * Returns {@code true} if and only if this {@link UniversalElement} is a <dfn>generic class declaration</dfn>.
+   *
+   * @return {@code true} if and only if this {@link UniversalElement} is a <dfn>generic class declaration</dfn>
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-8.html#jls-8.1.2 Java Language Specification, section
+   * 8.1.2
+   */
+  public final boolean generic() {
+    return switch (this.getKind()) {
+    case CLASS, CONSTRUCTOR, ENUM, INTERFACE, METHOD, RECORD -> !this.getTypeParameters().isEmpty();
+    default -> false;
+    };
   }
 
   @Override // RecordComponentElement
@@ -285,6 +311,11 @@ public final class UniversalElement
     };
   }
 
+  @Override // Element
+  public final int hashCode() {
+    return this.delegate().hashCode();
+  }
+
   @Override // ExecutableElement
   public final boolean isDefault() {
     return switch (this.getKind()) {
@@ -318,18 +349,15 @@ public final class UniversalElement
     };
   }
 
-  @Override // Element
-  public final int hashCode() {
-    return this.delegate().hashCode();
-  }
-
-  @Override // Element
-  @SuppressWarnings("try")
-  public final boolean equals(final Object other) {
-    return this == other || switch (other) {
-    case null -> false;
-    case UniversalElement her -> this.delegate().equals(her.delegate());
-    case Element her -> this.delegate().equals(her);
+  /**
+   * A convenience method that returns {@code true} if this {@link UniversalElement} is the class declaration for {@code
+   * java.lang.Object}.
+   *
+   * @return {@code true} if this {@link UniversalElement} is the class declaration for {@code java.lang.Object}
+   */
+  public final boolean javaLangObject() {
+    return switch (this.getKind()) {
+    case CLASS -> this.getQualifiedName().contentEquals("java.lang.Object");
     default -> false;
     };
   }

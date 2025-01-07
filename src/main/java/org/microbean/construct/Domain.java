@@ -40,6 +40,11 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 
+import org.microbean.construct.element.StringName;
+import org.microbean.construct.element.UniversalElement;
+
+import org.microbean.construct.type.UniversalType;
+
 import static javax.lang.model.element.ElementKind.CONSTRUCTOR;
 import static javax.lang.model.element.ElementKind.METHOD;
 
@@ -358,9 +363,15 @@ public interface Domain {
    * 10.1
    */
   public default TypeMirror elementType(final TypeMirror t) {
-    try (var lock = lock()) {
-      return t.getKind() == TypeKind.ARRAY ? this.elementType(((ArrayType)t).getComponentType()) : t;
+    return switch (t) {
+    case null -> throw new NullPointerException("t");
+    case UniversalType ut -> ut.elementType();
+    default -> {
+      try (var lock = lock()) {
+        yield t.getKind() == TypeKind.ARRAY ? this.elementType(((ArrayType)t).getComponentType()) : t;
+      }
     }
+    };
   }
 
   /**
@@ -409,17 +420,19 @@ public interface Domain {
                                                      final TypeMirror returnType,
                                                      final CharSequence name,
                                                      final TypeMirror... parameterTypes) {
-    try (var lock = this.lock()) {
-      final List<? extends Element> ees = declaringElement.getEnclosedElements();
-      return ees.stream()
+    return switch (declaringElement) {
+    case null -> throw new NullPointerException("declaringElement");
+    case UniversalElement ue -> {
+      final List<? extends UniversalElement> ees = ue.getEnclosedElements();
+      yield ees.stream()
         .sequential()
         .filter(e -> e.getKind().isExecutable() && e.getSimpleName().contentEquals(name))
-        .map(ExecutableElement.class::cast)
+        .map(UniversalElement.class::cast)
         .filter(ee -> {
             if (!this.sameType(returnType, ee.getReturnType())) {
               return false;
             }
-            final List<? extends VariableElement> ps = ee.getParameters();
+            final List<? extends UniversalElement> ps = ee.getParameters();
             if (ps.size() != parameterTypes.length) {
               return false;
             }
@@ -433,6 +446,33 @@ public interface Domain {
         .findFirst()
         .orElse(null);
     }
+    default -> {
+      try (var lock = this.lock()) {
+        final List<? extends Element> ees = declaringElement.getEnclosedElements();
+        yield ees.stream()
+          .sequential()
+          .filter(e -> e.getKind().isExecutable() && e.getSimpleName().contentEquals(name))
+          .map(ExecutableElement.class::cast)
+          .filter(ee -> {
+              if (!this.sameType(returnType, ee.getReturnType())) {
+                return false;
+              }
+              final List<? extends VariableElement> ps = ee.getParameters();
+              if (ps.size() != parameterTypes.length) {
+                return false;
+              }
+              for (int i = 0; i < parameterTypes.length; i++) {
+                if (!this.sameType(ps.get(i).asType(), parameterTypes[i])) {
+                  return false;
+                }
+              }
+              return true;
+            })
+          .findFirst()
+          .orElse(null);
+      }
+    }
+    };
   }
 
   /**
@@ -459,15 +499,19 @@ public interface Domain {
    * 9.1.2
    */
   public default boolean generic(final Element e) {
-    if (Objects.requireNonNull(e, "e") instanceof Parameterizable p) {
+    return switch (e) {
+    case null -> throw new NullPointerException("e");
+    case UniversalElement ue -> ue.generic();
+    case Parameterizable p -> {
       try (var lock = this.lock()) {
-        return switch (e.getKind()) {
+        yield switch (e.getKind()) {
         case CLASS, CONSTRUCTOR, ENUM, INTERFACE, METHOD, RECORD -> !p.getTypeParameters().isEmpty();
         default -> false;
         };
       }
     }
-    return false;
+    default -> false;
+    };
   }
 
   /**
@@ -482,11 +526,17 @@ public interface Domain {
    * @exception NullPointerException if {@code e} is {@code null}
    */
   public default boolean javaLangObject(final Element e) {
-    try (var lock = this.lock()) {
-      return
-        e.getKind() == ElementKind.CLASS &&
-        ((QualifiedNameable)e).getQualifiedName().contentEquals("java.lang.Object");
+    return switch (e) {
+    case null -> throw new NullPointerException("e");
+    case UniversalElement ue -> ue.javaLangObject();
+    default -> {
+      try (var lock = this.lock()) {
+        yield
+          e.getKind() == ElementKind.CLASS &&
+          ((QualifiedNameable)e).getQualifiedName().contentEquals("java.lang.Object");
+      }
     }
+    };
   }
 
   /**
@@ -503,11 +553,17 @@ public interface Domain {
    * @see #javaLangObject(Element)
    */
   public default boolean javaLangObject(final TypeMirror t) {
-    try (var lock = this.lock()) {
-      return
-        t.getKind() == TypeKind.DECLARED &&
-        javaLangObject(((DeclaredType)t).asElement());
+    return switch (t) {
+    case null -> throw new NullPointerException("t");
+    case UniversalType ut -> ut.javaLangObject();
+    default -> {
+      try (var lock = this.lock()) {
+        yield
+          t.getKind() == TypeKind.DECLARED &&
+          javaLangObject(((DeclaredType)t).asElement());
+      }
     }
+    };
   }
 
   /**
@@ -660,11 +716,15 @@ public interface Domain {
    * @exception NullPointerException if {@code t} is {@code null}
    */
   public default boolean parameterized(final TypeMirror t) {
-    try (var lock = this.lock()) {
-      return
-        t.getKind() == TypeKind.DECLARED &&
-        !((DeclaredType)t).getTypeArguments().isEmpty();
+    return switch (t) {
+    case null -> throw new NullPointerException("t");
+    case UniversalType ut -> ut.parameterized();
+    default -> {
+      try (var lock = this.lock()) {
+        yield t.getKind() == TypeKind.DECLARED && !((DeclaredType)t).getTypeArguments().isEmpty();
+      }
     }
+    };
   }
 
   /**
@@ -795,16 +855,22 @@ public interface Domain {
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8 Java Language Specification, section 4.8
    */
   public default boolean raw(final TypeMirror t) {
-    try (var lock = this.lock()) {
-      return switch (t.getKind()) {
-      case ARRAY -> raw(elementType((ArrayType)t));
-      case DECLARED -> {
-        final DeclaredType dt = (DeclaredType)t;
-        yield generic(dt.asElement()) && dt.getTypeArguments().isEmpty();
+    return switch (t) {
+    case null -> throw new NullPointerException("t");
+    case UniversalType ut -> ut.raw();
+    default -> {
+      try (var lock = this.lock()) {
+        yield switch (t.getKind()) {
+        case ARRAY -> raw(elementType((ArrayType)t));
+        case DECLARED -> {
+          final DeclaredType dt = (DeclaredType)t;
+          yield generic(dt.asElement()) && dt.getTypeArguments().isEmpty();
+        }
+        default -> false;
+        };
       }
-      default -> false;
-      };
     }
+    };
   }
 
   /**
@@ -822,15 +888,22 @@ public interface Domain {
    *
    * @exception NullPointerException if {@code t} is {@code null}
    *
-   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8 Java Language Specification, section 4.8
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8 Java Language Specification, section
+   * 4.8
    */
   public default TypeMirror rawType(final TypeMirror t) {
-    try (var lock = this.lock()) {
-      return switch (t.getKind()) {
-      case ARRAY -> this.rawType(this.elementType(t)); // recursive
-      default -> this.parameterized(t) ? this.erasure(t) : null;
-      };
+    return switch (t) {
+    case null -> throw new NullPointerException("t");
+    case UniversalType ut -> ut.rawType();
+    default -> {
+      try (var lock = this.lock()) {
+        yield switch (t.getKind()) {
+        case ARRAY -> this.rawType(this.elementType(t)); // recursive
+        default -> this.parameterized(t) ? this.erasure(t) : null;
+        };
+      }
     }
+    };
   }
 
   /**
@@ -938,6 +1011,7 @@ public interface Domain {
     return switch (name) {
     case null -> null;
     case String s -> s;
+    case StringName sn -> sn.value();
     case Name n -> {
       try (var lock = this.lock()) {
         yield n.toString();
@@ -1019,9 +1093,15 @@ public interface Domain {
   // (Canonical.)
   // (Boxing.)
   public default TypeElement typeElement(final PrimitiveType t) {
-    try (var lock = this.lock()) {
-      return this.typeElement(t.getKind());
+    return switch (t) {
+    case null -> throw new NullPointerException("t");
+    case UniversalType ut -> this.typeElement(ut.getKind());
+    default -> {
+      try (var lock = this.lock()) {
+        yield this.typeElement(t.getKind());
+      }
     }
+    };
   }
 
   /**
@@ -1076,20 +1156,26 @@ public interface Domain {
     Objects.requireNonNull(p, "p");
     Objects.requireNonNull(name, "name");
     while (p != null) {
-      // A call to getTypeParameters() does not cause symbol completion, but name acquisition also needs to be
-      // serialized globally.
-      try (var lock = this.lock()) {
-        for (final TypeParameterElement tpe : p.getTypeParameters()) {
+      switch (p) {
+      case UniversalElement ue:
+        for (final UniversalElement tpe : ue.getTypeParameters()) {
           if (tpe.getSimpleName().contentEquals(name)) {
             return tpe;
           }
         }
+        p = ue.getEnclosingElement();
+        break;
+      default:
+        try (var lock = this.lock()) {
+          for (final TypeParameterElement tpe : p.getTypeParameters()) {
+            if (tpe.getSimpleName().contentEquals(name)) {
+              return tpe;
+            }
+          }
+          p = (Parameterizable)((Element)p).getEnclosingElement();
+        }
+        break;
       }
-      p = switch (p) {
-      case ExecutableElement ee -> (Parameterizable)ee.getEnclosingElement();
-      case TypeElement te -> (Parameterizable)te.getEnclosingElement();
-      default -> null;
-      };
     }
     return null;
   }
@@ -1138,14 +1224,27 @@ public interface Domain {
    */
   public default VariableElement variableElement(final Element enclosingElement, final CharSequence simpleName) {
     Objects.requireNonNull(simpleName, "simpleName");
-    try (var lock = lock()) {
-      for (final Element ee : enclosingElement.getEnclosedElements()) {
+    return switch (enclosingElement) {
+    case null -> throw new NullPointerException("enclosingElement");
+    case UniversalElement ue -> {
+      for (final UniversalElement ee : ue.getEnclosedElements()) {
         if (ee.getKind().isVariable() && ee.getSimpleName().contentEquals(simpleName)) {
-          return (VariableElement)ee;
+          yield ee;
         }
       }
+      yield null;
     }
-    return null;
+    default -> {
+      try (var lock = lock()) {
+        for (final Element ee : enclosingElement.getEnclosedElements()) {
+          if (ee.getKind().isVariable() && ee.getSimpleName().contentEquals(simpleName)) {
+            yield (VariableElement)ee;
+          }
+        }
+      }
+      yield null;
+    }
+    };
   }
 
   /**

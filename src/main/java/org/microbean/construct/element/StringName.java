@@ -57,7 +57,10 @@ public final record StringName(String value, Domain domain) implements Constable
   public StringName(final CharSequence value, final Domain domain) {
     // We deliberately route even String-typed values through Domain#toString(CharSequence) in case the Domain wishes to
     // cache the intermediate Name.
-    this(domain.toString(value), domain);
+    this(switch (value) {
+      case StringName sn -> sn.value();
+      default -> domain.toString(value);
+      }, domain);
   }
 
   /**

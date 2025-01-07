@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024 microBean™.
+ * Copyright © 2024–2025 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -64,6 +64,8 @@ public final class UniversalType
              UnionType,
              WildcardType {
 
+  private volatile UniversalType erasure;
+
   /**
    * Creates a new {@link UniversalType}.
    *
@@ -118,6 +120,43 @@ public final class UniversalType
     case TYPEVAR  -> UniversalElement.of(((TypeVariable)this.delegate()).asElement(), this.domain());
     default -> null;
     };
+  }
+
+  /**
+   * Returns the <dfn>element type</dfn> of this {@link UniversalType} if it is an array type, or simply this {@link
+   * UniversalType} if it is not.
+   *
+   * @return the <dfn>element type</dfn> of this {@link UniversalType} if it is an array type, or this {@link
+   * UniversalType} if it is not; never {@code null}
+   */
+  public final UniversalType elementType() {
+    return this.elementType(this);
+  }
+
+  private final UniversalType elementType(final UniversalType t) {
+    return switch (t.getKind()) {
+    case ARRAY -> this.elementType(t.getComponentType());
+    default -> t;
+    };
+  }
+
+  /**
+   * Returns the <dfn>erasure</dfn> of this {@link UniversalType}.
+   *
+   * @return the erasure of this {@link UniversalType}; never {@code null}
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.6 Java Language Specification, section
+   * 4.6
+   */
+  public final UniversalType erasure() {
+    UniversalType t = this.erasure; // volatile read
+    if (t == null) {
+      t = this.erasure = switch (this.getKind()) { // volatile write, read
+      case ARRAY, DECLARED, TYPEVAR -> this.wrap(this.domain().erasure(this));
+      default -> this;
+      };
+    }
+    return t;
   }
 
   @Override // UnionType
@@ -240,6 +279,70 @@ public final class UniversalType
   @Override // TypeMirror
   public final int hashCode() {
     return this.delegate().hashCode();
+  }
+
+  /**
+   * A convenience method that returns {@code true} if and only if this is the type declared by the {@code
+   * java.lang.Object} class.
+   *
+   * @return {@code true} if and only if this is the type declared by the {@code java.lang.Object} class
+   *
+   * @see UniversalElement#javaLangObject()
+   */
+  public final boolean javaLangObject() {
+    return this.getKind() == TypeKind.DECLARED && this.asElement().javaLangObject();
+  }
+
+  /**
+   * Returns {@code true} if and only if this {@link UniversalType} represents a <dfn>parameterized type</dfn>.
+   *
+   * @return {@code true} if and only if this {@link UniversalType} represents a parameterized type
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.5 Java Language Specification, section
+   * 4.5
+   */
+  public final boolean parameterized() {
+    return this.getKind() == TypeKind.DECLARED && !this.getTypeArguments().isEmpty();
+  }
+
+  /**
+   * Returns {@code true} if and only if this {@link UniversalType} represents the <dfn>raw</dfn> usage of either a
+   * {@linkplain #parameterized() parameterized} type or an array type whose {@linkplain #elementType() element type} is
+   * parameterized.
+   *
+   * @return {@code true} if this {@link UniversalType} is the raw usage of either a parameterized type or an array type
+   * whose element type is parameterized
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.5 Java Language Specification, section
+   * 4.5
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8 Java Language Specification, section
+   * 4.8
+   */
+  public final boolean raw() {
+    return switch (this.getKind()) {
+    case ARRAY -> this.elementType().raw();
+    case DECLARED -> this.asElement().generic() && this.getTypeArguments().isEmpty();
+    default -> false;
+    };
+  }
+
+  /**
+   * Returns the {@link UniversalType} that is the <dfn>raw</dfn> usage of this {@link UniversalType}, if it is capable
+   * of having such a usage, <strong>or {@code null} if it is not</strong>.
+   *
+   * @return a {@link UniversalType} whose {@link #raw()} method is guaranteed to return {@code true}, or {@code null}
+   *
+   * @see #raw()
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8 Java Language Specification, section
+   * 4.8
+   */
+  public final UniversalType rawType() {
+    return switch (this.getKind()) {
+    case ARRAY -> this.elementType().rawType();
+    default -> this.parameterized() ? this.erasure() : null;
+    };
   }
 
   @Override // TypeMirror
