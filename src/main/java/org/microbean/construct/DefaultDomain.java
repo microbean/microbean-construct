@@ -293,9 +293,10 @@ public class DefaultDomain implements Constable, Domain {
     if (this == other) {
       return true;
     } else if (other != null && other.getClass() == this.getClass()) {
+      final DefaultDomain her = (DefaultDomain)other;
       return
-        Objects.equals(this.pe(), ((DefaultDomain)other).pe()) &&
-        Objects.equals(this.locker, ((DefaultDomain)other).locker);
+        Objects.equals(this.pe(), her.pe()) &&
+        Objects.equals(this.locker, her.locker);
     } else {
       return false;
     }
@@ -305,7 +306,7 @@ public class DefaultDomain implements Constable, Domain {
   public UniversalType erasure(TypeMirror t) {
     t = unwrap(t);
     try (var lock = lock()) {
-      return UniversalType.of(this.types().erasure(t), this); // (unchecked warning; OK)
+      return UniversalType.of(this.types().erasure(t), this);
     }
   }
 
