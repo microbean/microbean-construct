@@ -93,18 +93,6 @@ public interface Domain {
   public ArrayType arrayTypeOf(final TypeMirror componentType);
 
   /**
-   * Returns the {@link Element} declaring the supplied {@link TypeMirror}, <strong>or {@code null} if there is no such
-   * {@link Element}</strong>.
-   *
-   * @param t a {@link TypeMirror}; must not be {@code null}
-   *
-   * @return an {@link Element}, or {@code null}
-   *
-   * @see javax.lang.model.util.Types#asElement(TypeMirror)
-   */
-  public Element asElement(final TypeMirror t);
-
-  /**
    * Returns a non-{@code null} {@link TypeMirror} representing the type of the supplied {@link Element} when that
    * {@link Element} is viewed as a member of, or otherwise directly contained by, the supplied {@code containingType}.
    *
@@ -545,7 +533,7 @@ public interface Domain {
     case UniversalType ut -> ut.generic();
     default -> {
       try (var lock = this.lock()) {
-        final Element e = this.asElement(t);
+        final Element e = this.element(t);
         yield e != null && this.generic(e);
       }
     }

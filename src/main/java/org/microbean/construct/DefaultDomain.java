@@ -177,14 +177,6 @@ public class DefaultDomain implements Constable, Domain {
   }
 
   @Override // Domain
-  public UniversalElement asElement(TypeMirror t) {
-    t = unwrap(t);
-    try (var lock = lock()) {
-      return UniversalElement.of(this.types().asElement(t), this);
-    }
-  }
-
-  @Override // Domain
   public UniversalType asMemberOf(DeclaredType containingType, Element e) {
     containingType = unwrap(containingType);
     e = unwrap(e);
