@@ -40,6 +40,7 @@ import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Elements.Origin;
 import javax.lang.model.util.Types;
 
 import javax.lang.model.type.DeclaredType;
@@ -200,6 +201,14 @@ public class DefaultDomain implements Constable, Domain {
     e = unwrap(e);
     try (var lock = lock()) {
       return StringName.of(this.elements().getBinaryName(e).toString(), this);
+    }
+  }
+
+  @Override // Domain
+  public boolean bridge(ExecutableElement e) {
+    e = unwrap(e);
+    try (var lock = lock()) {
+      return this.elements().isBridge(e);
     }
   }
 
@@ -366,6 +375,14 @@ public class DefaultDomain implements Constable, Domain {
   @Override // Domain
   public UniversalType nullType() {
     return UniversalType.of(this.types().getNullType(), this);
+  }
+
+  @Override // Domain
+  public Origin origin(Element e) {
+    e = unwrap(e);
+    try (var lock = lock()) {
+      return this.elements().getOrigin(e);
+    }
   }
 
   // (Canonical.)

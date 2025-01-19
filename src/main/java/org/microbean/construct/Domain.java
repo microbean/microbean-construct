@@ -40,6 +40,9 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Elements.Origin;
+
 import org.microbean.construct.element.StringName;
 import org.microbean.construct.element.UniversalElement;
 
@@ -150,12 +153,33 @@ public interface Domain {
    *
    * @return a non-{@code null} {@link Name}
    *
+   * @exception NullPointerException if {@code e} is {@code null}
+   *
    * @see javax.lang.model.util.Elements#getBinaryName(TypeElement)
    *
    * @spec https://docs.oracle.com/javase/specs/jls/se21/html/jls-13.html#jls-13.1 Java Language Specification, section
    * 13.1
    */
   public Name binaryName(final TypeElement e);
+
+  /**
+   * Returns {@code true} if and only if the supplied {@link ExecutableElement} represents a <dfn>bridge method</dfn>.
+   *
+   * @param e an {@link ExecutableElement}; must not be {@code null}
+   *
+   * @return {@code true} if and only if the supplied {@link ExecutableElement} represents a bridge method
+   *
+   * @exception NullPointerException if {@code e} is {@code null}
+   *
+   * @see javax.lang.model.util.Elements#isBridge(ExecutableElement)
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-8.html#jls-8.4.8.3 Java Language Specification,
+   * section 8.4.8.3
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-15.html#jls-15.12.4.5 Java Language Specification,
+   * section 15.12.4.5
+   */
+  public boolean bridge(final ExecutableElement e);
 
   /**
    * Applies <a href="https://docs.oracle.com/javase/specs/jls/se23/html/jls-5.html#jls-5.1.10"><dfn>capture
@@ -686,6 +710,17 @@ public interface Domain {
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.1 Java Language Specification, section 4.1
    */
   public NullType nullType();
+
+  /**
+   * Returns the {@linkplain Origin origin} of the supplied {@link Element}.
+   *
+   * @param e a non-{@code null} {@link Element}
+   *
+   * @return a non-{@code null} {@link Origin}
+   *
+   * @see Elements#getOrigin(Element)
+   */
+  public Origin origin(final Element e);
 
   /**
    * Returns a {@link PackageElement} representing the package bearing the supplied {@code canonicalName}, <strong>or
