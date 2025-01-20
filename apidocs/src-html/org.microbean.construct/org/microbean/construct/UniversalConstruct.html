@@ -108,7 +108,7 @@
 <span class="source-line-no">095</span><span id="line-95">    final T unwrappedDelegate = unwrap(Objects.requireNonNull(delegate, "delegate"));</span>
 <span class="source-line-no">096</span><span id="line-96">    final Runnable symbolCompleter = switch (unwrappedDelegate) {</span>
 <span class="source-line-no">097</span><span id="line-97">    case null -&gt; throw new IllegalArgumentException("delegate: " + delegate);</span>
-<span class="source-line-no">098</span><span id="line-98">    case Element e -&gt; e::getKind;</span>
+<span class="source-line-no">098</span><span id="line-98">    case Element e -&gt; e::getModifiers;</span>
 <span class="source-line-no">099</span><span id="line-99">    case TypeMirror t -&gt; t::getKind;</span>
 <span class="source-line-no">100</span><span id="line-100">    default -&gt; UniversalConstruct::doNothing;</span>
 <span class="source-line-no">101</span><span id="line-101">    };</span>
