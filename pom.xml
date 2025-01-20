@@ -4,7 +4,7 @@
 
   <groupId>org.microbean</groupId>
   <artifactId>microbean-construct</artifactId>
-  <version>0.0.10-SNAPSHOT</version>
+  <version>0.0.10</version>
 
   <name>microBean™ Construct</name>
   <description>microBean™ Construct: Utility classes for modeling Java language constructs.</description>
@@ -43,7 +43,7 @@
     <connection>${scm.url}</connection>
     <developerConnection>${scm.url}</developerConnection>
     <url>https://github.com/microbean/microbean-construct/</url>
-    <tag>HEAD</tag>
+    <tag>v0.0.10</tag>
   </scm>
 
   <issueManagement>
