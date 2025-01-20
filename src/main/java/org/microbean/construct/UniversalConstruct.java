@@ -95,7 +95,7 @@ public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct> im
     final T unwrappedDelegate = unwrap(Objects.requireNonNull(delegate, "delegate"));
     final Runnable symbolCompleter = switch (unwrappedDelegate) {
     case null -> throw new IllegalArgumentException("delegate: " + delegate);
-    case Element e -> e::getKind;
+    case Element e -> e::getModifiers;
     case TypeMirror t -> t::getKind;
     default -> UniversalConstruct::doNothing;
     };

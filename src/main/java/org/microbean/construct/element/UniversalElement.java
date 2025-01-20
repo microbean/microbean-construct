@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import java.util.function.Supplier;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ElementVisitor;
@@ -63,6 +65,9 @@ public final class UniversalElement
              TypeParameterElement,
              VariableElement {
 
+  // volatile not needed
+  private Supplier<? extends List<? extends UniversalElement>> enclosedElementsSupplier;
+
   /**
    * Creates a new {@link UniversalElement}.
    *
@@ -75,8 +80,17 @@ public final class UniversalElement
    *
    * @see #delegate()
    */
+  @SuppressWarnings("try")
   public UniversalElement(final Element delegate, final Domain domain) {
     super(delegate, domain);
+    this.enclosedElementsSupplier = () -> {
+      final List<? extends UniversalElement> ees;
+      try (var lock = domain.lock()) {
+        ees = this.wrap(this.delegate().getEnclosedElements());
+        this.enclosedElementsSupplier = () -> ees;
+      }
+      return ees;
+    };
   }
 
   @Override // Element
@@ -190,9 +204,23 @@ public final class UniversalElement
     };
   }
 
+  /*
+    java.lang.AssertionError: Filling jrt:/java.base/java/lang/String$CaseInsensitiveComparator.class during DirectoryFileObject[/modules/java.base:java/lang/Integer$IntegerCache.class]
+    at jdk.compiler/com.sun.tools.javac.util.Assert.error(Assert.java:162)
+    at jdk.compiler/com.sun.tools.javac.code.ClassFinder.fillIn(ClassFinder.java:366)
+    at jdk.compiler/com.sun.tools.javac.code.ClassFinder.complete(ClassFinder.java:302)
+    at jdk.compiler/com.sun.tools.javac.code.Symbol.complete(Symbol.java:687)
+    at jdk.compiler/com.sun.tools.javac.code.Symbol$ClassSymbol.complete(Symbol.java:1455)
+    at jdk.compiler/com.sun.tools.javac.code.Symbol.apiComplete(Symbol.java:693)
+    at jdk.compiler/com.sun.tools.javac.code.Symbol$TypeSymbol.getEnclosedElements(Symbol.java:864)
+    at jdk.compiler/com.sun.tools.javac.code.Symbol$ClassSymbol.getEnclosedElements(Symbol.java:1420)
+    at jdk.compiler/com.sun.tools.javac.code.Symbol$ClassSymbol.getEnclosedElements(Symbol.java:1264)
+    at org.microbean.construct@0.0.10-SNAPSHOT/org.microbean.construct.element.UniversalElement.getEnclosedElements(UniversalElement.java:195)
+  */
+  // See https://github.com/microbean/microbean-construct/issues/18
   @Override // Element
   public final List<? extends UniversalElement> getEnclosedElements() {
-    return this.wrap(this.delegate().getEnclosedElements());
+    return this.enclosedElementsSupplier.get();
   }
 
   @Override // Element
