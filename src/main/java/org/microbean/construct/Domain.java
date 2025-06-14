@@ -13,6 +13,14 @@
  */
 package org.microbean.construct;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.GenericDeclaration;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+
 import java.util.List;
 import java.util.Objects;
 
@@ -408,6 +416,35 @@ public interface Domain {
   public <T extends TypeMirror> T erasure(final T t);
 
   /**
+   * Returns an {@link ExecutableElement} corresponding to the supplied {@link Executable}.
+   *
+   * @param e an {@link Executable}; must not be {@code null}
+   *
+   * @return an {@link ExecutableElement} corresponding to the supplied {@link Executable}; never {@code null}
+   *
+   * @exception NullPointerException if {@code e} is {@code null}
+   *
+   * @exception IllegalArgumentException if somehow {@code e} is neither a {@link Constructor} nor a {@link Method}
+   */
+  public default ExecutableElement executableElement(final Executable e) {
+    return switch (e) {
+    case null -> throw new NullPointerException("e");
+    case Constructor<?> c ->
+      this.executableElement(this.typeElement(c.getDeclaringClass().getCanonicalName()),
+                             this.noType(TypeKind.VOID),
+                             "<init>",
+                             this.types(c.getParameterTypes()));
+    case Method m ->
+      this.executableElement(this.typeElement(m.getDeclaringClass().getCanonicalName()),
+                             this.type(m.getReturnType()),
+                             m.getName(),
+                             this.types(m.getParameterTypes()));
+    default -> throw new IllegalArgumentException("e: " + e);
+    };
+  }
+
+
+  /**
    * A convenience method that returns an {@link ExecutableElement} representing the static initializer, constructor or
    * method described by the supplied arguments, <strong>or {@code null} if no such {@link ExecutableElement}
    * exists</strong>.
@@ -764,6 +801,26 @@ public interface Domain {
   public PackageElement packageElement(final ModuleElement asSeenFrom, final CharSequence canonicalName);
 
   /**
+   * Returns a {@link Parameterizable} corresponding to the supplied (reflective) {@link GenericDeclaration}.
+   *
+   * @param gd a {@link GenericDeclaration}; must not be {@code null}
+   *
+   * @return a {@link Parameterizable} corresponding to the supplied {@link GenericDeclaration}; never {@code null}
+   *
+   * @exception NullPointerException if {@code gd} is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code gd} is neither a {@link Class} nor an {@link Executable}
+   */
+  public default Parameterizable parameterizable(final GenericDeclaration gd) {
+    return switch (gd) {
+    case null -> throw new NullPointerException("gd");
+    case Class<?> c -> this.typeElement(c.getCanonicalName());
+    case Executable e -> this.executableElement(e);
+    default -> throw new IllegalArgumentException("gd: " + gd);
+    };
+  }
+
+  /**
    * A convenience method that returns {@code true} if and only if {@code t} is a {@link DeclaredType}, {@linkplain
    * TypeMirror#getKind() has a <code>TypeKind</code>} of {@link TypeKind#DECLARED DECLARED}, and {@linkplain
    * DeclaredType#getTypeArguments() has an empty type arguments list}.
@@ -1079,6 +1136,81 @@ public interface Domain {
       }
     }
     default -> name.toString();
+    };
+  }
+
+  /**
+   * A convenience method that returns the {@link TypeMirror} corresponding to the supplied (reflective) {@link Type}.
+   *
+   * @param t a {@link Type}; must not be {@code null}
+   *
+   * @return the {@link TypeMirror} corresponding to the supplied {@link Type}; never {@code null}
+   *
+   * @exception NullPointerException if {@code t} is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code t} is not a {@link Class}, {@link GenericArrayType}, {@link
+   * ParameterizedType}, {@link java.lang.reflect.TypeVariable} or {@link java.lang.reflect.WildcardType}
+   */
+  public default TypeMirror type(final Type t) {
+    // TODO: anywhere there is domain.declaredType(), consider passing
+    // domain.moduleElement(this.getClass().getModule().getName()) as the first argument. Not sure how this works
+    // exactly but I think it might be necessary.
+    return switch (t) {
+    case null -> throw new NullPointerException("t");
+    case Class<?> c when t == boolean.class -> this.primitiveType(TypeKind.BOOLEAN);
+    case Class<?> c when t == byte.class -> this.primitiveType(TypeKind.BYTE);
+    case Class<?> c when t == char.class -> this.primitiveType(TypeKind.CHAR);
+    case Class<?> c when t == double.class -> this.primitiveType(TypeKind.DOUBLE);
+    case Class<?> c when t == float.class -> this.primitiveType(TypeKind.FLOAT);
+    case Class<?> c when t == int.class -> this.primitiveType(TypeKind.INT);
+    case Class<?> c when t == long.class -> this.primitiveType(TypeKind.LONG);
+    case Class<?> c when t == short.class -> this.primitiveType(TypeKind.SHORT);
+    case Class<?> c when t == void.class -> this.noType(TypeKind.VOID);
+    case Class<?> c when t == Object.class -> this.javaLangObject().asType(); // cheap and easy optimization
+    case Class<?> c when c.isArray() -> this.arrayTypeOf(this.type(c.getComponentType()));
+    case Class<?> c -> this.declaredType(c.getCanonicalName());
+    case GenericArrayType g -> this.arrayTypeOf(this.type(g.getGenericComponentType()));
+    case ParameterizedType pt when pt.getOwnerType() == null ->
+      this.declaredType(this.typeElement(((Class<?>)pt.getRawType()).getCanonicalName()),
+                        this.types(pt.getActualTypeArguments()));
+    case ParameterizedType pt ->
+      this.declaredType((DeclaredType)this.type(pt.getOwnerType()),
+                        this.typeElement(((Class<?>)pt.getRawType()).getCanonicalName()),
+                        this.types(pt.getActualTypeArguments()));
+    case java.lang.reflect.TypeVariable<?> tv -> this.typeVariable(this.parameterizable(tv.getGenericDeclaration()), tv.getName());
+    case java.lang.reflect.WildcardType w when w.getLowerBounds().length <= 0 -> this.wildcardType(this.type(w.getUpperBounds()[0]), null);
+    case java.lang.reflect.WildcardType w -> this.wildcardType(null, this.type(w.getLowerBounds()[0]));
+    default -> throw new IllegalArgumentException("t: " + t);
+    };
+  }
+
+  /**
+   * A convenience method that returns an array of {@link TypeMirror}s whose elements correspond, in order, to the
+   * elements in the supplied {@link Type} array.
+   *
+   * @param ts an array of {@link Type}s; must not be {@code null}
+   *
+   * @return an array of {@link TypeMirror}s whose elements correspond, in order, to the elements in the supplied {@link
+   * Type} array; never {@code null}
+   *
+   * @exception NullPointerException if {@code ts} is {@code null} or contains {@code null} elements
+   *
+   * @exception IllegalArgumentException if any element of {@code ts} is deemed illegal by the {@link #type(Type)}
+   * method
+   *
+   * @see #type(Type)
+   */
+  public default TypeMirror[] types(final Type[] ts) {
+    return switch (ts.length) {
+    case 0 -> new TypeMirror[0];
+    case 1 -> new TypeMirror[] { this.type(ts[0]) };
+    default -> {
+      final TypeMirror[] rv = new TypeMirror[ts.length];
+      for (int i = 0; i < ts.length; i++) {
+        rv[i] = this.type(ts[i]);
+      }
+      yield rv;
+    }
     };
   }
 
