@@ -58,6 +58,8 @@ jobs:
       - id: 'mvn-release-prepare'
         name: 'Step: Maven Release: Prepare, Perform and Publish Site'
         env:
+          CENTRAL_SONATYPE_COM_PASSWORD: '${{ secrets.CENTRAL_SONATYPE_COM_PASSWORD }}'
+          CENTRAL_SONATYPE_COM_USERNAME: '${{ secrets.CENTRAL_SONATYPE_COM_USERNAME }}'
           DRY_RUN: '${{ inputs.dryRun }}'
           GIT_ASKPASS: '${{ runner.temp }}/.askpass'
           GPG_PASSPHRASE: '${{ secrets.GPG_PASSPHRASE }}'
