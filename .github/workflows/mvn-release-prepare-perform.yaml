@@ -36,12 +36,12 @@ jobs:
           distribution: 'temurin'
           gpg-passphrase: 'GPG_PASSPHRASE'
           gpg-private-key: '${{ secrets.GPG_PRIVATE_KEY }}'
-          java-version: '23'
-          mvn-toolchain-id: 'Temurin 23'
+          java-version: '24'
+          mvn-toolchain-id: 'Temurin 24'
           mvn-toolchain-vendor: 'openjdk' # see ../../pom.xml
-          server-id: 'sonatype-oss-repository-hosting' # see https://github.com/microbean/microbean-parent/blob/master/pom.xml#L38
-          server-password: 'SONATYPE_OSSRH_PASSWORD'
-          server-username: 'SONATYPE_OSSRH_USERNAME'
+          server-id: 'central.sonatype.com'
+          server-password: 'CENTRAL_SONATYPE_COM_PASSWORD'
+          server-username: 'CENTRAL_SONATYPE_COM_USERNAME'
       - id: 'setup-askpass'
         name: 'Step: Set Up GIT_ASKPASS'
         run: |
@@ -65,9 +65,6 @@ jobs:
           MVN_TRANSFER_LOGGING: ${{ inputs.mvnTransferLogging && '' || '--no-transfer-progress' }}
           PUSH_TOKEN : '${{ secrets.PUSH_TOKEN }}' # critical; see ${GIT_ASKPASS} file
           SCM_GIT_HTTPS_URL: 'scm:git:${{ github.server_url }}/${{ github.repository }}.git'
-          SONATYPE_OSSRH_PASSWORD: '${{ secrets.SONATYPE_OSSRH_PASSWORD }}'
-          SONATYPE_OSSRH_STAGING_PROFILE_ID: '${{ vars.SONATYPE_OSSRH_STAGING_PROFILE_ID }}'
-          SONATYPE_OSSRH_USERNAME: '${{ secrets.SONATYPE_OSSRH_USERNAME }}'
         shell: 'bash -e {0}'
         run: >
           git config --global user.email 'ci@microbean.org'
@@ -91,36 +88,12 @@ jobs:
 
           echo "::group::Running mvn perform"
           
-          set +e
-
-          {
           ./mvnw --batch-mode ${MVN_DEBUG} --errors ${MVN_TRANSFER_LOGGING} release:perform
-          -Darguments="${MVN_TRANSFER_LOGGING} -Dscmpublish.dryRun=${DRY_RUN} -Dscmpublish.pubScmUrl=${SCM_GIT_HTTPS_URL} -DskipTests -DstagingProfileId=${SONATYPE_OSSRH_STAGING_PROFILE_ID}"
+          -Darguments="${MVN_TRANSFER_LOGGING} -Dscmpublish.dryRun=${DRY_RUN} -Dscmpublish.pubScmUrl=${SCM_GIT_HTTPS_URL} -DskipTests -DautoPublish=true -DwaitUntil=published"
           -DdryRun="${DRY_RUN}"
           -Dgoals="process-classes,post-site,scm-publish:publish-scm,deploy"
           -Dscm.url="${SCM_GIT_HTTPS_URL}"
-          |
-          tee /dev/fd/3
-          |
-          grep --invert-match --silent 'Java class com.sonatype.nexus.staging.api.dto.StagingProfileRepositoryDTO' || cat > /dev/null
-          ;
-          }
-          3>&1
 
-          exit_codes=(${PIPESTATUS[@]})
-
-          echo "::endgroup::"
+          echo "Released ${scm_tag} successfully" >> "${GITHUB_STEP_SUMMARY}";
           
-          set -e
-
-          if [ "${exit_codes[2]}" -ne 0 ] ; then
-            # grep "failed" (found com.sonatype.nexus.staging.api.dto.StagingProfileRepositoryDTO) and mvn failed
-            echo "Released ${scm_tag} successfully, but verify that the staging repository was successfully released" >> "${GITHUB_STEP_SUMMARY}";
-            # Treat this as a successful run
-            exit 0;
-          elif [ "${exit_codes[0]}" -eq 0 ] ; then
-            # mvn succeeded and grep "succeeded" (did not find com.sonatype.nexus.staging.api.dto.StagingProfileRepositoryDTO)
-            echo "Released ${scm_tag} successfully" >> "${GITHUB_STEP_SUMMARY}";
-          fi
-
-          exit "${exit_codes[0]}"
+          echo "::endgroup::"
