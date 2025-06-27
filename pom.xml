@@ -315,7 +315,7 @@
           <version>0.8.0</version>
           <extensions>true</extensions>
           <configuration>
-            <publishingServerId>central.sontaype.com</publishingServerId>
+            <publishingServerId>central.sonatype.com</publishingServerId>
           </configuration>
         </plugin>
       </plugins>
