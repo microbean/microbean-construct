@@ -74,12 +74,12 @@ jobs:
           git config --global user.name 'microbean'
 
           echo "::group::Running mvn prepare"
-          
+
           ./mvnw --batch-mode ${MVN_DEBUG} --errors ${MVN_TRANSFER_LOGGING} release:prepare
           -DdryRun="${DRY_RUN}"
           -Darguments="${MVN_TRANSFER_LOGGING}"
           -Dscm.url="${SCM_GIT_HTTPS_URL}"
-          
+
           scm_tag="$(grep '^scm.tag=' release.properties | cut -f 2 -d =)"
 
           echo "Prepared ${scm_tag}" >> "${GITHUB_STEP_SUMMARY}"
@@ -89,13 +89,13 @@ jobs:
           echo "::endgroup::"
 
           echo "::group::Running mvn perform"
-          
+
           ./mvnw --batch-mode ${MVN_DEBUG} --errors ${MVN_TRANSFER_LOGGING} release:perform
-          -Darguments="${MVN_TRANSFER_LOGGING} -Dscmpublish.dryRun=${DRY_RUN} -Dscmpublish.pubScmUrl=${SCM_GIT_HTTPS_URL} -DskipTests -DautoPublish=true -DwaitUntil=published"
+          -Darguments="${MVN_TRANSFER_LOGGING} -Dscmpublish.dryRun=${DRY_RUN} -Dscmpublish.pubScmUrl=${SCM_GIT_HTTPS_URL} -DskipTests -DautoPublish=true -DwaitUntil=published -DwaitMaxTime=3600"
           -DdryRun="${DRY_RUN}"
           -Dgoals="process-classes,post-site,scm-publish:publish-scm,deploy"
           -Dscm.url="${SCM_GIT_HTTPS_URL}"
 
           echo "Released ${scm_tag} successfully" >> "${GITHUB_STEP_SUMMARY}";
-          
+
           echo "::endgroup::"

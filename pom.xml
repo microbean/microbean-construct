@@ -52,14 +52,6 @@
   </issueManagement>
 
   <distributionManagement>
-    <!-- See https://central.sonatype.org/publish/publish-maven/#distribution-management-and-authentication (superseded) -->
-    <!-- Ostensibly no longer needed with central-publishing-maven-plugin (see https://central.sonatype.org/publish/publish-portal-maven/) -->
-    <!--
-    <repository>
-      <id>sonatype-oss-repository-hosting</id>
-      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-      </repository>
-    -->
     <site>
       <id>Github Pages</id>
       <name>microBean™ Construct Site</name>
@@ -106,10 +98,8 @@
     <maven.site.deploy.skip>true</maven.site.deploy.skip>
     <relativizeDecorationLinks>false</relativizeDecorationLinks>
 
-    <!-- Superseded by central-publishing-maven-plugin -->
-    <!-- nexus-staging-maven-plugin properties -->
-    <!-- See https://github.com/sonatype/nexus-maven-plugins/blob/0aee3defb33cb133ff536aba59b11d32a368b1e6/staging/maven-plugin/src/main/java/org/sonatype/nexus/maven/staging/AbstractStagingMojo.java#L169-L175 -->
-    <!-- <stagingProgressTimeoutMinutes>10</stagingProgressTimeoutMinutes> -->
+    <!-- central-publishing-maven-plugin properties -->
+    <deploymentName>${project.name} v${project.version}</deploymentName>
 
     <!-- Other properties -->
     <project.build.sourceEncoding>UTF8</project.build.sourceEncoding>
@@ -206,7 +196,6 @@
         </plugin>
         <plugin>
           <artifactId>maven-gpg-plugin</artifactId>
-          <!-- <version>3.1.0</version> -->
           <version>3.2.7</version>
         </plugin>
         <plugin>
@@ -234,7 +223,6 @@
         </plugin>
         <plugin>
           <artifactId>maven-release-plugin</artifactId>
-          <!-- <version>3.0.0-M6</version> --> <!-- see https://issues.apache.org/jira/browse/MRELEASE-1038 -->
           <version>3.1.1</version>
         </plugin>
         <plugin>
@@ -288,27 +276,6 @@
           <artifactId>jandex-maven-plugin</artifactId>
           <version>3.3.1</version>
         </plugin>
-        <!-- Superseded by central-publishing-maven-plugin -->
-        <!--
-        <plugin>
-          <groupId>org.sonatype.plugins</groupId>
-          <artifactId>nexus-staging-maven-plugin</artifactId>
-          <version>1.6.8</version>
-          <extensions>true</extensions>
-          <dependencies>
-            <dependency>
-              <groupId>com.thoughtworks.xstream</groupId>
-              <artifactId>xstream</artifactId>
-              <version>1.4.15</version>
-            </dependency>
-          </dependencies>
-          <configuration>
-            <serverId>sonatype-oss-repository-hosting</serverId>
-            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-          </configuration>
-        </plugin>
-        -->
         <plugin>
           <groupId>org.sonatype.central</groupId>
           <artifactId>central-publishing-maven-plugin</artifactId>
@@ -360,13 +327,6 @@
           </systemPropertyVariables>
         </configuration>
       </plugin>
-      <!-- Superseded by central-publishing-maven-plugin -->
-      <!--
-      <plugin>
-        <groupId>org.sonatype.plugins</groupId>
-        <artifactId>nexus-staging-maven-plugin</artifactId>
-      </plugin>
-      -->
       <plugin>
         <groupId>org.sonatype.central</groupId>
         <artifactId>central-publishing-maven-plugin</artifactId>
