@@ -57,13 +57,6 @@
       <name>microBean™ Construct Site</name>
       <url>https://microbean.github.io/microbean-construct/</url>
     </site>
-    <!-- Ostensibly no longer needed with central-publishing-maven-plugin (see https://central.sonatype.org/publish/publish-portal-snapshots/#publishing-with-the-central-publishing-maven-plugin) -->
-    <!--
-    <snapshotRepository>
-      <id>central.sonatype.com</id>
-      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-    </snapshotRepository>
-    -->
   </distributionManagement>
 
   <properties>
@@ -86,7 +79,6 @@
     <releaseProfiles>deployment</releaseProfiles>
     <scmCommentPrefix>[maven-release-plugin] [skip ci]</scmCommentPrefix>
     <tagNameFormat>v@{project.version}</tagNameFormat>
-    <useReleaseProfile>false</useReleaseProfile>
 
     <!-- maven-scm-publish-plugin properties;
          see https://maven.apache.org/plugins/maven-scm-publish-plugin/publish-scm-mojo.html -->
@@ -192,11 +184,11 @@
         </plugin>
         <plugin>
           <artifactId>maven-enforcer-plugin</artifactId>
-          <version>3.5.0</version>
+          <version>3.6.1</version>
         </plugin>
         <plugin>
           <artifactId>maven-gpg-plugin</artifactId>
-          <version>3.2.7</version>
+          <version>3.2.8</version>
         </plugin>
         <plugin>
           <artifactId>maven-install-plugin</artifactId>
@@ -208,7 +200,7 @@
         </plugin>
         <plugin>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>3.11.2</version>
+          <version>3.11.3</version>
           <configuration>
             <docfilessubdirs>true</docfilessubdirs>
           </configuration>
@@ -264,7 +256,7 @@
         <plugin>
           <groupId>com.github.spotbugs</groupId>
           <artifactId>spotbugs-maven-plugin</artifactId>
-          <version>4.9.3.1</version>
+          <version>4.9.4.0</version>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
@@ -274,7 +266,7 @@
         <plugin>
           <groupId>io.smallrye</groupId>
           <artifactId>jandex-maven-plugin</artifactId>
-          <version>3.3.1</version>
+          <version>3.4.0</version>
         </plugin>
         <plugin>
           <groupId>org.sonatype.central</groupId>
@@ -410,6 +402,5 @@
       </build>
     </profile>
   </profiles>
-
 
 </project>
