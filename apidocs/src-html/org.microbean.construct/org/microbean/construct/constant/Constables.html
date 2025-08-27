@@ -121,7 +121,7 @@
 <span class="source-line-no">108</span><span id="line-108">    default -&gt; (d instanceof Constable c ? c.describeConstable() : Optional.&lt;ConstantDesc&gt;empty())</span>
 <span class="source-line-no">109</span><span id="line-109">      .map(domainDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
 <span class="source-line-no">110</span><span id="line-110">                                                MethodHandleDesc.ofMethod(VIRTUAL,</span>
-<span class="source-line-no">111</span><span id="line-111">                                                                          ClassDesc.of(d.getClass().getName()),</span>
+<span class="source-line-no">111</span><span id="line-111">                                                                          ClassDesc.of(Domain.class.getName()),</span>
 <span class="source-line-no">112</span><span id="line-112">                                                                          "name",</span>
 <span class="source-line-no">113</span><span id="line-113">                                                                          MethodTypeDesc.of(CD_Name,</span>
 <span class="source-line-no">114</span><span id="line-114">                                                                                            CD_CharSequence)),</span>
@@ -220,7 +220,7 @@
 <span class="source-line-no">207</span><span id="line-207">        final ConstantDesc[] args = new ConstantDesc[5 + parameterCount];</span>
 <span class="source-line-no">208</span><span id="line-208">        args[0] =</span>
 <span class="source-line-no">209</span><span id="line-209">          MethodHandleDesc.ofMethod(VIRTUAL,</span>
-<span class="source-line-no">210</span><span id="line-210">                                    ClassDesc.of(d.getClass().getName()),</span>
+<span class="source-line-no">210</span><span id="line-210">                                    ClassDesc.of(Domain.class.getName()),</span>
 <span class="source-line-no">211</span><span id="line-211">                                    "executableElement",</span>
 <span class="source-line-no">212</span><span id="line-212">                                    MethodTypeDesc.of(CD_ExecutableElement,</span>
 <span class="source-line-no">213</span><span id="line-213">                                                      CD_TypeElement,</span>
@@ -273,7 +273,7 @@
 <span class="source-line-no">260</span><span id="line-260">    default -&gt; describe(e.getQualifiedName(), d) // getQualifiedName() does not cause symbol completion</span>
 <span class="source-line-no">261</span><span id="line-261">      .map(nameDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
 <span class="source-line-no">262</span><span id="line-262">                                              MethodHandleDesc.ofMethod(VIRTUAL,</span>
-<span class="source-line-no">263</span><span id="line-263">                                                                        ClassDesc.of(d.getClass().getName()),</span>
+<span class="source-line-no">263</span><span id="line-263">                                                                        ClassDesc.of(Domain.class.getName()),</span>
 <span class="source-line-no">264</span><span id="line-264">                                                                        "moduleElement",</span>
 <span class="source-line-no">265</span><span id="line-265">                                                                        MethodTypeDesc.of(CD_ModuleElement,</span>
 <span class="source-line-no">266</span><span id="line-266">                                                                                          CD_CharSequence)),</span>
@@ -302,7 +302,7 @@
 <span class="source-line-no">289</span><span id="line-289">    default -&gt; describe(e.getQualifiedName(), d) // getQualifiedName() does not cause symbol completion</span>
 <span class="source-line-no">290</span><span id="line-290">      .map(nameDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
 <span class="source-line-no">291</span><span id="line-291">                                              MethodHandleDesc.ofMethod(VIRTUAL,</span>
-<span class="source-line-no">292</span><span id="line-292">                                                                        ClassDesc.of(d.getClass().getName()),</span>
+<span class="source-line-no">292</span><span id="line-292">                                                                        ClassDesc.of(Domain.class.getName()),</span>
 <span class="source-line-no">293</span><span id="line-293">                                                                        "packageElement",</span>
 <span class="source-line-no">294</span><span id="line-294">                                                                        MethodTypeDesc.of(CD_PackageElement,</span>
 <span class="source-line-no">295</span><span id="line-295">                                                                                          CD_CharSequence)),</span>
@@ -331,7 +331,7 @@
 <span class="source-line-no">318</span><span id="line-318">    default -&gt; describe(e.getQualifiedName(), d) // getQualifiedName() does not cause symbol completion</span>
 <span class="source-line-no">319</span><span id="line-319">      .map(nameDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
 <span class="source-line-no">320</span><span id="line-320">                                              MethodHandleDesc.ofMethod(VIRTUAL,</span>
-<span class="source-line-no">321</span><span id="line-321">                                                                        ClassDesc.of(d.getClass().getName()),</span>
+<span class="source-line-no">321</span><span id="line-321">                                                                        ClassDesc.of(Domain.class.getName()),</span>
 <span class="source-line-no">322</span><span id="line-322">                                                                        "typeElement",</span>
 <span class="source-line-no">323</span><span id="line-323">                                                                        MethodTypeDesc.of(CD_TypeElement,</span>
 <span class="source-line-no">324</span><span id="line-324">                                                                                          CD_CharSequence)),</span>
@@ -363,7 +363,7 @@
 <span class="source-line-no">350</span><span id="line-350">          .flatMap(parameterizableDesc -&gt; describe(e.getSimpleName(), d)</span>
 <span class="source-line-no">351</span><span id="line-351">                   .map(nameDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
 <span class="source-line-no">352</span><span id="line-352">                                                           MethodHandleDesc.ofMethod(VIRTUAL,</span>
-<span class="source-line-no">353</span><span id="line-353">                                                                                     ClassDesc.of(d.getClass().getName()),</span>
+<span class="source-line-no">353</span><span id="line-353">                                                                                     ClassDesc.of(Domain.class.getName()),</span>
 <span class="source-line-no">354</span><span id="line-354">                                                                                     "typeParameterElement",</span>
 <span class="source-line-no">355</span><span id="line-355">                                                                                     MethodTypeDesc.of(CD_TypeParameterElement,</span>
 <span class="source-line-no">356</span><span id="line-356">                                                                                                       CD_Parameterizable,</span>
@@ -398,7 +398,7 @@
 <span class="source-line-no">385</span><span id="line-385">        yield describe((TypeElement)e.getEnclosingElement(), d)</span>
 <span class="source-line-no">386</span><span id="line-386">          .map(executableDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
 <span class="source-line-no">387</span><span id="line-387">                                                        MethodHandleDesc.ofMethod(VIRTUAL,</span>
-<span class="source-line-no">388</span><span id="line-388">                                                                                  ClassDesc.of(d.getClass().getName()),</span>
+<span class="source-line-no">388</span><span id="line-388">                                                                                  ClassDesc.of(Domain.class.getName()),</span>
 <span class="source-line-no">389</span><span id="line-389">                                                                                  "recordComponentElement",</span>
 <span class="source-line-no">390</span><span id="line-390">                                                                                  MethodTypeDesc.of(CD_RecordComponentElement,</span>
 <span class="source-line-no">391</span><span id="line-391">                                                                                                    CD_ExecutableElement)),</span>
@@ -432,7 +432,7 @@
 <span class="source-line-no">419</span><span id="line-419">          .flatMap(nameDesc -&gt; describe(e.getEnclosingElement(), d)</span>
 <span class="source-line-no">420</span><span id="line-420">                   .map(enclosingElementDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
 <span class="source-line-no">421</span><span id="line-421">                                                                       MethodHandleDesc.ofMethod(VIRTUAL,</span>
-<span class="source-line-no">422</span><span id="line-422">                                                                                                 ClassDesc.of(d.getClass().getName()),</span>
+<span class="source-line-no">422</span><span id="line-422">                                                                                                 ClassDesc.of(Domain.class.getName()),</span>
 <span class="source-line-no">423</span><span id="line-423">                                                                                                 "variableElement",</span>
 <span class="source-line-no">424</span><span id="line-424">                                                                                                 MethodTypeDesc.of(CD_Element,</span>
 <span class="source-line-no">425</span><span id="line-425">                                                                                                                   CD_CharSequence)),</span>
@@ -500,7 +500,7 @@
 <span class="source-line-no">487</span><span id="line-487">        yield describe(t.getComponentType(), d)</span>
 <span class="source-line-no">488</span><span id="line-488">          .map(componentTypeDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
 <span class="source-line-no">489</span><span id="line-489">                                                           MethodHandleDesc.ofMethod(VIRTUAL,</span>
-<span class="source-line-no">490</span><span id="line-490">                                                                                     ClassDesc.of(d.getClass().getName()),</span>
+<span class="source-line-no">490</span><span id="line-490">                                                                                     ClassDesc.of(Domain.class.getName()),</span>
 <span class="source-line-no">491</span><span id="line-491">                                                                                     "arrayTypeOf",</span>
 <span class="source-line-no">492</span><span id="line-492">                                                                                     MethodTypeDesc.of(CD_ArrayType,</span>
 <span class="source-line-no">493</span><span id="line-493">                                                                                                       CD_TypeMirror)),</span>
@@ -538,224 +538,225 @@
 <span class="source-line-no">525</span><span id="line-525">        case DECLARED -&gt; {</span>
 <span class="source-line-no">526</span><span id="line-526">          final List&lt;? extends TypeMirror&gt; typeArguments = t.getTypeArguments();</span>
 <span class="source-line-no">527</span><span id="line-527">          final int typeArgumentCount = typeArguments.size();</span>
-<span class="source-line-no">528</span><span id="line-528">          final ConstantDesc[] args = new ConstantDesc[3 + typeArgumentCount];</span>
+<span class="source-line-no">528</span><span id="line-528">          final ConstantDesc[] args = new ConstantDesc[4 + typeArgumentCount];</span>
 <span class="source-line-no">529</span><span id="line-529">          final TypeMirror enclosingType = t.getEnclosingType();</span>
-<span class="source-line-no">530</span><span id="line-530">          args[0] = MethodHandleDesc.ofMethod(VIRTUAL,</span>
-<span class="source-line-no">531</span><span id="line-531">                                              ClassDesc.of(d.getClass().getName()),</span>
-<span class="source-line-no">532</span><span id="line-532">                                              "declaredType",</span>
-<span class="source-line-no">533</span><span id="line-533">                                              MethodTypeDesc.of(CD_DeclaredType,</span>
-<span class="source-line-no">534</span><span id="line-534">                                                                CD_DeclaredType,</span>
-<span class="source-line-no">535</span><span id="line-535">                                                                CD_TypeElement,</span>
-<span class="source-line-no">536</span><span id="line-536">                                                                CD_TypeMirror.arrayType()));</span>
-<span class="source-line-no">537</span><span id="line-537">          args[1] = domainDesc;</span>
-<span class="source-line-no">538</span><span id="line-538">          args[2] = enclosingType.getKind() == TypeKind.NONE ? NULL : describe(enclosingType, d).orElse(null);</span>
-<span class="source-line-no">539</span><span id="line-539">          if (args[2] == null) {</span>
-<span class="source-line-no">540</span><span id="line-540">            yield Optional.empty();</span>
-<span class="source-line-no">541</span><span id="line-541">          }</span>
-<span class="source-line-no">542</span><span id="line-542">          args[3] = describe((TypeElement)t.asElement(), d).orElse(null);</span>
-<span class="source-line-no">543</span><span id="line-543">          if (args[3] == null) {</span>
-<span class="source-line-no">544</span><span id="line-544">            yield Optional.empty();</span>
-<span class="source-line-no">545</span><span id="line-545">          }</span>
-<span class="source-line-no">546</span><span id="line-546">          for (int i = 0; i &lt; typeArgumentCount; i++) {</span>
-<span class="source-line-no">547</span><span id="line-547">            final int index = i + 3;</span>
-<span class="source-line-no">548</span><span id="line-548">            args[index] = describe(typeArguments.get(i), d).orElse(null);</span>
-<span class="source-line-no">549</span><span id="line-549">            if (args[index] == null) {</span>
-<span class="source-line-no">550</span><span id="line-550">              yield Optional.empty();</span>
-<span class="source-line-no">551</span><span id="line-551">            }</span>
-<span class="source-line-no">552</span><span id="line-552">          }</span>
-<span class="source-line-no">553</span><span id="line-553">          yield Optional.of(DynamicConstantDesc.of(BSM_INVOKE, args));</span>
-<span class="source-line-no">554</span><span id="line-554">        }</span>
-<span class="source-line-no">555</span><span id="line-555">        default -&gt; Optional.empty(); // could be an error type</span>
-<span class="source-line-no">556</span><span id="line-556">        };</span>
-<span class="source-line-no">557</span><span id="line-557">      }</span>
-<span class="source-line-no">558</span><span id="line-558">    }</span>
-<span class="source-line-no">559</span><span id="line-559">    };</span>
-<span class="source-line-no">560</span><span id="line-560">  }</span>
-<span class="source-line-no">561</span><span id="line-561"></span>
-<span class="source-line-no">562</span><span id="line-562">  /**</span>
-<span class="source-line-no">563</span><span id="line-563">   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link</span>
-<span class="source-line-no">564</span><span id="line-564">   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.</span>
-<span class="source-line-no">565</span><span id="line-565">   *</span>
-<span class="source-line-no">566</span><span id="line-566">   * @param t the argument; may be {@code null}</span>
-<span class="source-line-no">567</span><span id="line-567">   *</span>
-<span class="source-line-no">568</span><span id="line-568">   * @param d the {@link Domain} from which the argument originated; must not be {@code null}</span>
-<span class="source-line-no">569</span><span id="line-569">   *</span>
-<span class="source-line-no">570</span><span id="line-570">   * @return a non-{@code null} {@link Optional}</span>
-<span class="source-line-no">571</span><span id="line-571">   *</span>
-<span class="source-line-no">572</span><span id="line-572">   * @exception NullPointerException if {@code d} is {@code null}</span>
-<span class="source-line-no">573</span><span id="line-573">   */</span>
-<span class="source-line-no">574</span><span id="line-574">  public static final Optional&lt;? extends ConstantDesc&gt; describe(final NoType t, final Domain d) {</span>
-<span class="source-line-no">575</span><span id="line-575">    return switch (t) {</span>
-<span class="source-line-no">576</span><span id="line-576">    case null -&gt; Optional.of(NULL);</span>
-<span class="source-line-no">577</span><span id="line-577">    case Constable c -&gt; c.describeConstable();</span>
-<span class="source-line-no">578</span><span id="line-578">    case ConstantDesc cd -&gt; Optional.of(cd); // future proofing?</span>
-<span class="source-line-no">579</span><span id="line-579">    default -&gt; {</span>
-<span class="source-line-no">580</span><span id="line-580">      final ConstantDesc domainDesc = d instanceof Constable c ? c.describeConstable().orElse(null) : null;</span>
-<span class="source-line-no">581</span><span id="line-581">      if (domainDesc == null) {</span>
-<span class="source-line-no">582</span><span id="line-582">        yield Optional.empty();</span>
-<span class="source-line-no">583</span><span id="line-583">      }</span>
-<span class="source-line-no">584</span><span id="line-584">      try (var lock = d.lock()) {</span>
-<span class="source-line-no">585</span><span id="line-585">        yield t.getKind().describeConstable()</span>
-<span class="source-line-no">586</span><span id="line-586">          .map(typeKindDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
-<span class="source-line-no">587</span><span id="line-587">                                                      MethodHandleDesc.ofMethod(VIRTUAL,</span>
-<span class="source-line-no">588</span><span id="line-588">                                                                                ClassDesc.of(d.getClass().getName()),</span>
-<span class="source-line-no">589</span><span id="line-589">                                                                                "noType",</span>
-<span class="source-line-no">590</span><span id="line-590">                                                                                MethodTypeDesc.of(CD_NoType,</span>
-<span class="source-line-no">591</span><span id="line-591">                                                                                                  CD_TypeKind)),</span>
-<span class="source-line-no">592</span><span id="line-592">                                                      domainDesc,</span>
-<span class="source-line-no">593</span><span id="line-593">                                                      typeKindDesc));</span>
-<span class="source-line-no">594</span><span id="line-594">      }</span>
-<span class="source-line-no">595</span><span id="line-595">    }</span>
-<span class="source-line-no">596</span><span id="line-596">    };</span>
-<span class="source-line-no">597</span><span id="line-597">  }</span>
-<span class="source-line-no">598</span><span id="line-598"></span>
-<span class="source-line-no">599</span><span id="line-599">  /**</span>
-<span class="source-line-no">600</span><span id="line-600">   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link</span>
-<span class="source-line-no">601</span><span id="line-601">   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.</span>
-<span class="source-line-no">602</span><span id="line-602">   *</span>
-<span class="source-line-no">603</span><span id="line-603">   * @param t the argument; may be {@code null}</span>
-<span class="source-line-no">604</span><span id="line-604">   *</span>
-<span class="source-line-no">605</span><span id="line-605">   * @param d the {@link Domain} from which the argument originated; must not be {@code null}</span>
-<span class="source-line-no">606</span><span id="line-606">   *</span>
-<span class="source-line-no">607</span><span id="line-607">   * @return a non-{@code null} {@link Optional}</span>
-<span class="source-line-no">608</span><span id="line-608">   *</span>
-<span class="source-line-no">609</span><span id="line-609">   * @exception NullPointerException if {@code d} is {@code null}</span>
-<span class="source-line-no">610</span><span id="line-610">   */</span>
-<span class="source-line-no">611</span><span id="line-611">  public static final Optional&lt;? extends ConstantDesc&gt; describe(final NullType t, final Domain d) {</span>
-<span class="source-line-no">612</span><span id="line-612">    return switch (t) {</span>
-<span class="source-line-no">613</span><span id="line-613">    case null -&gt; Optional.of(NULL);</span>
-<span class="source-line-no">614</span><span id="line-614">    case Constable c -&gt; c.describeConstable();</span>
-<span class="source-line-no">615</span><span id="line-615">    case ConstantDesc cd -&gt; Optional.of(cd); // future proofing?</span>
-<span class="source-line-no">616</span><span id="line-616">    default -&gt; (d instanceof Constable c ? c.describeConstable() : Optional.&lt;ConstantDesc&gt;empty())</span>
-<span class="source-line-no">617</span><span id="line-617">      .map(domainDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
-<span class="source-line-no">618</span><span id="line-618">                                                MethodHandleDesc.ofMethod(VIRTUAL,</span>
-<span class="source-line-no">619</span><span id="line-619">                                                                          ClassDesc.of(d.getClass().getName()),</span>
-<span class="source-line-no">620</span><span id="line-620">                                                                          "nullType",</span>
-<span class="source-line-no">621</span><span id="line-621">                                                                          MethodTypeDesc.of(CD_NullType)),</span>
-<span class="source-line-no">622</span><span id="line-622">                                                domainDesc));</span>
-<span class="source-line-no">623</span><span id="line-623">    };</span>
-<span class="source-line-no">624</span><span id="line-624">  }</span>
-<span class="source-line-no">625</span><span id="line-625"></span>
-<span class="source-line-no">626</span><span id="line-626">  /**</span>
-<span class="source-line-no">627</span><span id="line-627">   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link</span>
-<span class="source-line-no">628</span><span id="line-628">   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.</span>
-<span class="source-line-no">629</span><span id="line-629">   *</span>
-<span class="source-line-no">630</span><span id="line-630">   * @param t the argument; may be {@code null}</span>
-<span class="source-line-no">631</span><span id="line-631">   *</span>
-<span class="source-line-no">632</span><span id="line-632">   * @param d the {@link Domain} from which the argument originated; must not be {@code null}</span>
-<span class="source-line-no">633</span><span id="line-633">   *</span>
-<span class="source-line-no">634</span><span id="line-634">   * @return a non-{@code null} {@link Optional}</span>
-<span class="source-line-no">635</span><span id="line-635">   *</span>
-<span class="source-line-no">636</span><span id="line-636">   * @exception NullPointerException if {@code d} is {@code null}</span>
-<span class="source-line-no">637</span><span id="line-637">   */</span>
-<span class="source-line-no">638</span><span id="line-638">  public static final Optional&lt;? extends ConstantDesc&gt; describe(final PrimitiveType t, final Domain d) {</span>
-<span class="source-line-no">639</span><span id="line-639">    return switch (t) {</span>
-<span class="source-line-no">640</span><span id="line-640">    case null -&gt; Optional.of(NULL);</span>
-<span class="source-line-no">641</span><span id="line-641">    case Constable c -&gt; c.describeConstable();</span>
-<span class="source-line-no">642</span><span id="line-642">    case ConstantDesc cd -&gt; Optional.of(cd); // future proofing?</span>
-<span class="source-line-no">643</span><span id="line-643">    default -&gt; {</span>
-<span class="source-line-no">644</span><span id="line-644">      final ConstantDesc domainDesc = d instanceof Constable constableDomain ? constableDomain.describeConstable().orElse(null) : null;</span>
-<span class="source-line-no">645</span><span id="line-645">      if (domainDesc == null) {</span>
-<span class="source-line-no">646</span><span id="line-646">        yield Optional.empty();</span>
-<span class="source-line-no">647</span><span id="line-647">      }</span>
-<span class="source-line-no">648</span><span id="line-648">      try (var lock = d.lock()) {</span>
-<span class="source-line-no">649</span><span id="line-649">        yield t.getKind().describeConstable()</span>
-<span class="source-line-no">650</span><span id="line-650">          .map(typeKindDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
-<span class="source-line-no">651</span><span id="line-651">                                                      MethodHandleDesc.ofMethod(VIRTUAL,</span>
-<span class="source-line-no">652</span><span id="line-652">                                                                                ClassDesc.of(d.getClass().getName()),</span>
-<span class="source-line-no">653</span><span id="line-653">                                                                                "primitiveType",</span>
-<span class="source-line-no">654</span><span id="line-654">                                                                                MethodTypeDesc.of(CD_PrimitiveType,</span>
-<span class="source-line-no">655</span><span id="line-655">                                                                                                  CD_TypeKind)),</span>
-<span class="source-line-no">656</span><span id="line-656">                                                      domainDesc,</span>
-<span class="source-line-no">657</span><span id="line-657">                                                      typeKindDesc));</span>
-<span class="source-line-no">658</span><span id="line-658">      }</span>
-<span class="source-line-no">659</span><span id="line-659">    }</span>
-<span class="source-line-no">660</span><span id="line-660">    };</span>
-<span class="source-line-no">661</span><span id="line-661">  }</span>
-<span class="source-line-no">662</span><span id="line-662"></span>
-<span class="source-line-no">663</span><span id="line-663">  /**</span>
-<span class="source-line-no">664</span><span id="line-664">   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link</span>
-<span class="source-line-no">665</span><span id="line-665">   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.</span>
-<span class="source-line-no">666</span><span id="line-666">   *</span>
-<span class="source-line-no">667</span><span id="line-667">   * @param t the argument; may be {@code null}</span>
-<span class="source-line-no">668</span><span id="line-668">   *</span>
-<span class="source-line-no">669</span><span id="line-669">   * @param d the {@link Domain} from which the argument originated; must not be {@code null}</span>
-<span class="source-line-no">670</span><span id="line-670">   *</span>
-<span class="source-line-no">671</span><span id="line-671">   * @return a non-{@code null} {@link Optional}</span>
-<span class="source-line-no">672</span><span id="line-672">   *</span>
-<span class="source-line-no">673</span><span id="line-673">   * @exception NullPointerException if {@code d} is {@code null}</span>
-<span class="source-line-no">674</span><span id="line-674">   */</span>
-<span class="source-line-no">675</span><span id="line-675">  public static final Optional&lt;? extends ConstantDesc&gt; describe(final TypeVariable t, final Domain d) {</span>
-<span class="source-line-no">676</span><span id="line-676">    return switch (t) {</span>
-<span class="source-line-no">677</span><span id="line-677">    case null -&gt; Optional.of(NULL);</span>
-<span class="source-line-no">678</span><span id="line-678">    case Constable c -&gt; c.describeConstable();</span>
-<span class="source-line-no">679</span><span id="line-679">    case ConstantDesc cd -&gt; Optional.of(cd); // future proofing?</span>
-<span class="source-line-no">680</span><span id="line-680">    default -&gt; {</span>
-<span class="source-line-no">681</span><span id="line-681">      final ConstantDesc domainDesc = d instanceof Constable constableDomain ? constableDomain.describeConstable().orElse(null) : null;</span>
-<span class="source-line-no">682</span><span id="line-682">      if (domainDesc == null) {</span>
-<span class="source-line-no">683</span><span id="line-683">        yield Optional.empty();</span>
-<span class="source-line-no">684</span><span id="line-684">      }</span>
-<span class="source-line-no">685</span><span id="line-685">      try (var lock = d.lock()) {</span>
-<span class="source-line-no">686</span><span id="line-686">        final TypeParameterElement e = (TypeParameterElement)t.asElement();</span>
-<span class="source-line-no">687</span><span id="line-687">        final ConstantDesc parameterizableDesc = describe(e.getEnclosingElement(), d).orElse(null);</span>
-<span class="source-line-no">688</span><span id="line-688">        if (parameterizableDesc == null) {</span>
-<span class="source-line-no">689</span><span id="line-689">          yield Optional.empty();</span>
-<span class="source-line-no">690</span><span id="line-690">        }</span>
-<span class="source-line-no">691</span><span id="line-691">        final String name = d.toString(e.getSimpleName());</span>
-<span class="source-line-no">692</span><span id="line-692">        yield Optional.of(DynamicConstantDesc.of(BSM_INVOKE,</span>
-<span class="source-line-no">693</span><span id="line-693">                                                 MethodHandleDesc.ofMethod(VIRTUAL,</span>
-<span class="source-line-no">694</span><span id="line-694">                                                                           ClassDesc.of(d.getClass().getName()),</span>
-<span class="source-line-no">695</span><span id="line-695">                                                                           "typeVariable",</span>
-<span class="source-line-no">696</span><span id="line-696">                                                                           MethodTypeDesc.of(CD_TypeVariable,</span>
-<span class="source-line-no">697</span><span id="line-697">                                                                                             CD_Parameterizable,</span>
-<span class="source-line-no">698</span><span id="line-698">                                                                                             CD_CharSequence)),</span>
-<span class="source-line-no">699</span><span id="line-699">                                                 domainDesc,</span>
-<span class="source-line-no">700</span><span id="line-700">                                                 parameterizableDesc,</span>
-<span class="source-line-no">701</span><span id="line-701">                                                 name));</span>
-<span class="source-line-no">702</span><span id="line-702">      }</span>
-<span class="source-line-no">703</span><span id="line-703">    }</span>
-<span class="source-line-no">704</span><span id="line-704">    };</span>
-<span class="source-line-no">705</span><span id="line-705">  }</span>
-<span class="source-line-no">706</span><span id="line-706"></span>
-<span class="source-line-no">707</span><span id="line-707">  /**</span>
-<span class="source-line-no">708</span><span id="line-708">   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link</span>
-<span class="source-line-no">709</span><span id="line-709">   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.</span>
-<span class="source-line-no">710</span><span id="line-710">   *</span>
-<span class="source-line-no">711</span><span id="line-711">   * @param t the argument; may be {@code null}</span>
-<span class="source-line-no">712</span><span id="line-712">   *</span>
-<span class="source-line-no">713</span><span id="line-713">   * @param d the {@link Domain} from which the argument originated; must not be {@code null}</span>
-<span class="source-line-no">714</span><span id="line-714">   *</span>
-<span class="source-line-no">715</span><span id="line-715">   * @return a non-{@code null} {@link Optional}</span>
-<span class="source-line-no">716</span><span id="line-716">   *</span>
-<span class="source-line-no">717</span><span id="line-717">   * @exception NullPointerException if {@code d} is {@code null}</span>
-<span class="source-line-no">718</span><span id="line-718">   */</span>
-<span class="source-line-no">719</span><span id="line-719">  public static final Optional&lt;? extends ConstantDesc&gt; describe(final WildcardType t, final Domain d) {</span>
-<span class="source-line-no">720</span><span id="line-720">    return switch (t) {</span>
-<span class="source-line-no">721</span><span id="line-721">    case null -&gt; Optional.of(NULL);</span>
-<span class="source-line-no">722</span><span id="line-722">    case Constable c -&gt; c.describeConstable();</span>
-<span class="source-line-no">723</span><span id="line-723">    case ConstantDesc cd -&gt; Optional.of(cd); // future proofing?</span>
-<span class="source-line-no">724</span><span id="line-724">    default -&gt; {</span>
-<span class="source-line-no">725</span><span id="line-725">      try (var lock = d.lock()) {</span>
-<span class="source-line-no">726</span><span id="line-726">        yield describe(t.getExtendsBound(), d)</span>
-<span class="source-line-no">727</span><span id="line-727">          .flatMap(domainDesc -&gt; describe(t.getExtendsBound(), d)</span>
-<span class="source-line-no">728</span><span id="line-728">                   .flatMap(extendsBoundDesc -&gt; describe(t.getSuperBound(), d)</span>
-<span class="source-line-no">729</span><span id="line-729">                            .map(superBoundDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
-<span class="source-line-no">730</span><span id="line-730">                                                                          MethodHandleDesc.ofMethod(VIRTUAL,</span>
-<span class="source-line-no">731</span><span id="line-731">                                                                                                    ClassDesc.of(d.getClass().getName()),</span>
-<span class="source-line-no">732</span><span id="line-732">                                                                                                    "wildcardType",</span>
-<span class="source-line-no">733</span><span id="line-733">                                                                                                    MethodTypeDesc.of(CD_WildcardType,</span>
-<span class="source-line-no">734</span><span id="line-734">                                                                                                                      CD_TypeMirror,</span>
-<span class="source-line-no">735</span><span id="line-735">                                                                                                                      CD_TypeMirror)),</span>
-<span class="source-line-no">736</span><span id="line-736"></span>
-<span class="source-line-no">737</span><span id="line-737">                                                                          domainDesc,</span>
-<span class="source-line-no">738</span><span id="line-738">                                                                          extendsBoundDesc,</span>
-<span class="source-line-no">739</span><span id="line-739">                                                                          superBoundDesc))));</span>
-<span class="source-line-no">740</span><span id="line-740">      }</span>
-<span class="source-line-no">741</span><span id="line-741">    }</span>
-<span class="source-line-no">742</span><span id="line-742">    };</span>
-<span class="source-line-no">743</span><span id="line-743">  }</span>
-<span class="source-line-no">744</span><span id="line-744"></span>
-<span class="source-line-no">745</span><span id="line-745">}</span>
+<span class="source-line-no">530</span><span id="line-530">          // Call </span>
+<span class="source-line-no">531</span><span id="line-531">          args[0] = MethodHandleDesc.ofMethod(VIRTUAL,</span>
+<span class="source-line-no">532</span><span id="line-532">                                              ClassDesc.of(Domain.class.getName()),</span>
+<span class="source-line-no">533</span><span id="line-533">                                              "declaredType",</span>
+<span class="source-line-no">534</span><span id="line-534">                                              MethodTypeDesc.of(CD_DeclaredType,</span>
+<span class="source-line-no">535</span><span id="line-535">                                                                CD_DeclaredType,</span>
+<span class="source-line-no">536</span><span id="line-536">                                                                CD_TypeElement,</span>
+<span class="source-line-no">537</span><span id="line-537">                                                                CD_TypeMirror.arrayType()));</span>
+<span class="source-line-no">538</span><span id="line-538">          args[1] = domainDesc;</span>
+<span class="source-line-no">539</span><span id="line-539">          args[2] = enclosingType.getKind() == TypeKind.NONE ? NULL : describe(enclosingType, d).orElse(null);</span>
+<span class="source-line-no">540</span><span id="line-540">          if (args[2] == null) {</span>
+<span class="source-line-no">541</span><span id="line-541">            yield Optional.empty();</span>
+<span class="source-line-no">542</span><span id="line-542">          }</span>
+<span class="source-line-no">543</span><span id="line-543">          args[3] = describe((TypeElement)t.asElement(), d).orElse(null);</span>
+<span class="source-line-no">544</span><span id="line-544">          if (args[3] == null) {</span>
+<span class="source-line-no">545</span><span id="line-545">            yield Optional.empty();</span>
+<span class="source-line-no">546</span><span id="line-546">          }</span>
+<span class="source-line-no">547</span><span id="line-547">          for (int i = 0; i &lt; typeArgumentCount; i++) {</span>
+<span class="source-line-no">548</span><span id="line-548">            final int index = i + 3;</span>
+<span class="source-line-no">549</span><span id="line-549">            args[index] = describe(typeArguments.get(i), d).orElse(null);</span>
+<span class="source-line-no">550</span><span id="line-550">            if (args[index] == null) {</span>
+<span class="source-line-no">551</span><span id="line-551">              yield Optional.empty();</span>
+<span class="source-line-no">552</span><span id="line-552">            }</span>
+<span class="source-line-no">553</span><span id="line-553">          }</span>
+<span class="source-line-no">554</span><span id="line-554">          yield Optional.of(DynamicConstantDesc.of(BSM_INVOKE, args));</span>
+<span class="source-line-no">555</span><span id="line-555">        }</span>
+<span class="source-line-no">556</span><span id="line-556">        default -&gt; Optional.empty(); // could be an error type</span>
+<span class="source-line-no">557</span><span id="line-557">        };</span>
+<span class="source-line-no">558</span><span id="line-558">      }</span>
+<span class="source-line-no">559</span><span id="line-559">    }</span>
+<span class="source-line-no">560</span><span id="line-560">    };</span>
+<span class="source-line-no">561</span><span id="line-561">  }</span>
+<span class="source-line-no">562</span><span id="line-562"></span>
+<span class="source-line-no">563</span><span id="line-563">  /**</span>
+<span class="source-line-no">564</span><span id="line-564">   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link</span>
+<span class="source-line-no">565</span><span id="line-565">   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.</span>
+<span class="source-line-no">566</span><span id="line-566">   *</span>
+<span class="source-line-no">567</span><span id="line-567">   * @param t the argument; may be {@code null}</span>
+<span class="source-line-no">568</span><span id="line-568">   *</span>
+<span class="source-line-no">569</span><span id="line-569">   * @param d the {@link Domain} from which the argument originated; must not be {@code null}</span>
+<span class="source-line-no">570</span><span id="line-570">   *</span>
+<span class="source-line-no">571</span><span id="line-571">   * @return a non-{@code null} {@link Optional}</span>
+<span class="source-line-no">572</span><span id="line-572">   *</span>
+<span class="source-line-no">573</span><span id="line-573">   * @exception NullPointerException if {@code d} is {@code null}</span>
+<span class="source-line-no">574</span><span id="line-574">   */</span>
+<span class="source-line-no">575</span><span id="line-575">  public static final Optional&lt;? extends ConstantDesc&gt; describe(final NoType t, final Domain d) {</span>
+<span class="source-line-no">576</span><span id="line-576">    return switch (t) {</span>
+<span class="source-line-no">577</span><span id="line-577">    case null -&gt; Optional.of(NULL);</span>
+<span class="source-line-no">578</span><span id="line-578">    case Constable c -&gt; c.describeConstable();</span>
+<span class="source-line-no">579</span><span id="line-579">    case ConstantDesc cd -&gt; Optional.of(cd); // future proofing?</span>
+<span class="source-line-no">580</span><span id="line-580">    default -&gt; {</span>
+<span class="source-line-no">581</span><span id="line-581">      final ConstantDesc domainDesc = d instanceof Constable c ? c.describeConstable().orElse(null) : null;</span>
+<span class="source-line-no">582</span><span id="line-582">      if (domainDesc == null) {</span>
+<span class="source-line-no">583</span><span id="line-583">        yield Optional.empty();</span>
+<span class="source-line-no">584</span><span id="line-584">      }</span>
+<span class="source-line-no">585</span><span id="line-585">      try (var lock = d.lock()) {</span>
+<span class="source-line-no">586</span><span id="line-586">        yield t.getKind().describeConstable()</span>
+<span class="source-line-no">587</span><span id="line-587">          .map(typeKindDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
+<span class="source-line-no">588</span><span id="line-588">                                                      MethodHandleDesc.ofMethod(VIRTUAL,</span>
+<span class="source-line-no">589</span><span id="line-589">                                                                                ClassDesc.of(Domain.class.getName()),</span>
+<span class="source-line-no">590</span><span id="line-590">                                                                                "noType",</span>
+<span class="source-line-no">591</span><span id="line-591">                                                                                MethodTypeDesc.of(CD_NoType,</span>
+<span class="source-line-no">592</span><span id="line-592">                                                                                                  CD_TypeKind)),</span>
+<span class="source-line-no">593</span><span id="line-593">                                                      domainDesc,</span>
+<span class="source-line-no">594</span><span id="line-594">                                                      typeKindDesc));</span>
+<span class="source-line-no">595</span><span id="line-595">      }</span>
+<span class="source-line-no">596</span><span id="line-596">    }</span>
+<span class="source-line-no">597</span><span id="line-597">    };</span>
+<span class="source-line-no">598</span><span id="line-598">  }</span>
+<span class="source-line-no">599</span><span id="line-599"></span>
+<span class="source-line-no">600</span><span id="line-600">  /**</span>
+<span class="source-line-no">601</span><span id="line-601">   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link</span>
+<span class="source-line-no">602</span><span id="line-602">   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.</span>
+<span class="source-line-no">603</span><span id="line-603">   *</span>
+<span class="source-line-no">604</span><span id="line-604">   * @param t the argument; may be {@code null}</span>
+<span class="source-line-no">605</span><span id="line-605">   *</span>
+<span class="source-line-no">606</span><span id="line-606">   * @param d the {@link Domain} from which the argument originated; must not be {@code null}</span>
+<span class="source-line-no">607</span><span id="line-607">   *</span>
+<span class="source-line-no">608</span><span id="line-608">   * @return a non-{@code null} {@link Optional}</span>
+<span class="source-line-no">609</span><span id="line-609">   *</span>
+<span class="source-line-no">610</span><span id="line-610">   * @exception NullPointerException if {@code d} is {@code null}</span>
+<span class="source-line-no">611</span><span id="line-611">   */</span>
+<span class="source-line-no">612</span><span id="line-612">  public static final Optional&lt;? extends ConstantDesc&gt; describe(final NullType t, final Domain d) {</span>
+<span class="source-line-no">613</span><span id="line-613">    return switch (t) {</span>
+<span class="source-line-no">614</span><span id="line-614">    case null -&gt; Optional.of(NULL);</span>
+<span class="source-line-no">615</span><span id="line-615">    case Constable c -&gt; c.describeConstable();</span>
+<span class="source-line-no">616</span><span id="line-616">    case ConstantDesc cd -&gt; Optional.of(cd); // future proofing?</span>
+<span class="source-line-no">617</span><span id="line-617">    default -&gt; (d instanceof Constable c ? c.describeConstable() : Optional.&lt;ConstantDesc&gt;empty())</span>
+<span class="source-line-no">618</span><span id="line-618">      .map(domainDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
+<span class="source-line-no">619</span><span id="line-619">                                                MethodHandleDesc.ofMethod(VIRTUAL,</span>
+<span class="source-line-no">620</span><span id="line-620">                                                                          ClassDesc.of(Domain.class.getName()),</span>
+<span class="source-line-no">621</span><span id="line-621">                                                                          "nullType",</span>
+<span class="source-line-no">622</span><span id="line-622">                                                                          MethodTypeDesc.of(CD_NullType)),</span>
+<span class="source-line-no">623</span><span id="line-623">                                                domainDesc));</span>
+<span class="source-line-no">624</span><span id="line-624">    };</span>
+<span class="source-line-no">625</span><span id="line-625">  }</span>
+<span class="source-line-no">626</span><span id="line-626"></span>
+<span class="source-line-no">627</span><span id="line-627">  /**</span>
+<span class="source-line-no">628</span><span id="line-628">   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link</span>
+<span class="source-line-no">629</span><span id="line-629">   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.</span>
+<span class="source-line-no">630</span><span id="line-630">   *</span>
+<span class="source-line-no">631</span><span id="line-631">   * @param t the argument; may be {@code null}</span>
+<span class="source-line-no">632</span><span id="line-632">   *</span>
+<span class="source-line-no">633</span><span id="line-633">   * @param d the {@link Domain} from which the argument originated; must not be {@code null}</span>
+<span class="source-line-no">634</span><span id="line-634">   *</span>
+<span class="source-line-no">635</span><span id="line-635">   * @return a non-{@code null} {@link Optional}</span>
+<span class="source-line-no">636</span><span id="line-636">   *</span>
+<span class="source-line-no">637</span><span id="line-637">   * @exception NullPointerException if {@code d} is {@code null}</span>
+<span class="source-line-no">638</span><span id="line-638">   */</span>
+<span class="source-line-no">639</span><span id="line-639">  public static final Optional&lt;? extends ConstantDesc&gt; describe(final PrimitiveType t, final Domain d) {</span>
+<span class="source-line-no">640</span><span id="line-640">    return switch (t) {</span>
+<span class="source-line-no">641</span><span id="line-641">    case null -&gt; Optional.of(NULL);</span>
+<span class="source-line-no">642</span><span id="line-642">    case Constable c -&gt; c.describeConstable();</span>
+<span class="source-line-no">643</span><span id="line-643">    case ConstantDesc cd -&gt; Optional.of(cd); // future proofing?</span>
+<span class="source-line-no">644</span><span id="line-644">    default -&gt; {</span>
+<span class="source-line-no">645</span><span id="line-645">      final ConstantDesc domainDesc = d instanceof Constable constableDomain ? constableDomain.describeConstable().orElse(null) : null;</span>
+<span class="source-line-no">646</span><span id="line-646">      if (domainDesc == null) {</span>
+<span class="source-line-no">647</span><span id="line-647">        yield Optional.empty();</span>
+<span class="source-line-no">648</span><span id="line-648">      }</span>
+<span class="source-line-no">649</span><span id="line-649">      try (var lock = d.lock()) {</span>
+<span class="source-line-no">650</span><span id="line-650">        yield t.getKind().describeConstable()</span>
+<span class="source-line-no">651</span><span id="line-651">          .map(typeKindDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
+<span class="source-line-no">652</span><span id="line-652">                                                      MethodHandleDesc.ofMethod(VIRTUAL,</span>
+<span class="source-line-no">653</span><span id="line-653">                                                                                ClassDesc.of(Domain.class.getName()),</span>
+<span class="source-line-no">654</span><span id="line-654">                                                                                "primitiveType",</span>
+<span class="source-line-no">655</span><span id="line-655">                                                                                MethodTypeDesc.of(CD_PrimitiveType,</span>
+<span class="source-line-no">656</span><span id="line-656">                                                                                                  CD_TypeKind)),</span>
+<span class="source-line-no">657</span><span id="line-657">                                                      domainDesc,</span>
+<span class="source-line-no">658</span><span id="line-658">                                                      typeKindDesc));</span>
+<span class="source-line-no">659</span><span id="line-659">      }</span>
+<span class="source-line-no">660</span><span id="line-660">    }</span>
+<span class="source-line-no">661</span><span id="line-661">    };</span>
+<span class="source-line-no">662</span><span id="line-662">  }</span>
+<span class="source-line-no">663</span><span id="line-663"></span>
+<span class="source-line-no">664</span><span id="line-664">  /**</span>
+<span class="source-line-no">665</span><span id="line-665">   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link</span>
+<span class="source-line-no">666</span><span id="line-666">   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.</span>
+<span class="source-line-no">667</span><span id="line-667">   *</span>
+<span class="source-line-no">668</span><span id="line-668">   * @param t the argument; may be {@code null}</span>
+<span class="source-line-no">669</span><span id="line-669">   *</span>
+<span class="source-line-no">670</span><span id="line-670">   * @param d the {@link Domain} from which the argument originated; must not be {@code null}</span>
+<span class="source-line-no">671</span><span id="line-671">   *</span>
+<span class="source-line-no">672</span><span id="line-672">   * @return a non-{@code null} {@link Optional}</span>
+<span class="source-line-no">673</span><span id="line-673">   *</span>
+<span class="source-line-no">674</span><span id="line-674">   * @exception NullPointerException if {@code d} is {@code null}</span>
+<span class="source-line-no">675</span><span id="line-675">   */</span>
+<span class="source-line-no">676</span><span id="line-676">  public static final Optional&lt;? extends ConstantDesc&gt; describe(final TypeVariable t, final Domain d) {</span>
+<span class="source-line-no">677</span><span id="line-677">    return switch (t) {</span>
+<span class="source-line-no">678</span><span id="line-678">    case null -&gt; Optional.of(NULL);</span>
+<span class="source-line-no">679</span><span id="line-679">    case Constable c -&gt; c.describeConstable();</span>
+<span class="source-line-no">680</span><span id="line-680">    case ConstantDesc cd -&gt; Optional.of(cd); // future proofing?</span>
+<span class="source-line-no">681</span><span id="line-681">    default -&gt; {</span>
+<span class="source-line-no">682</span><span id="line-682">      final ConstantDesc domainDesc = d instanceof Constable constableDomain ? constableDomain.describeConstable().orElse(null) : null;</span>
+<span class="source-line-no">683</span><span id="line-683">      if (domainDesc == null) {</span>
+<span class="source-line-no">684</span><span id="line-684">        yield Optional.empty();</span>
+<span class="source-line-no">685</span><span id="line-685">      }</span>
+<span class="source-line-no">686</span><span id="line-686">      try (var lock = d.lock()) {</span>
+<span class="source-line-no">687</span><span id="line-687">        final TypeParameterElement e = (TypeParameterElement)t.asElement();</span>
+<span class="source-line-no">688</span><span id="line-688">        final ConstantDesc parameterizableDesc = describe(e.getEnclosingElement(), d).orElse(null);</span>
+<span class="source-line-no">689</span><span id="line-689">        if (parameterizableDesc == null) {</span>
+<span class="source-line-no">690</span><span id="line-690">          yield Optional.empty();</span>
+<span class="source-line-no">691</span><span id="line-691">        }</span>
+<span class="source-line-no">692</span><span id="line-692">        final String name = d.toString(e.getSimpleName());</span>
+<span class="source-line-no">693</span><span id="line-693">        yield Optional.of(DynamicConstantDesc.of(BSM_INVOKE,</span>
+<span class="source-line-no">694</span><span id="line-694">                                                 MethodHandleDesc.ofMethod(VIRTUAL,</span>
+<span class="source-line-no">695</span><span id="line-695">                                                                           ClassDesc.of(Domain.class.getName()),</span>
+<span class="source-line-no">696</span><span id="line-696">                                                                           "typeVariable",</span>
+<span class="source-line-no">697</span><span id="line-697">                                                                           MethodTypeDesc.of(CD_TypeVariable,</span>
+<span class="source-line-no">698</span><span id="line-698">                                                                                             CD_Parameterizable,</span>
+<span class="source-line-no">699</span><span id="line-699">                                                                                             CD_CharSequence)),</span>
+<span class="source-line-no">700</span><span id="line-700">                                                 domainDesc,</span>
+<span class="source-line-no">701</span><span id="line-701">                                                 parameterizableDesc,</span>
+<span class="source-line-no">702</span><span id="line-702">                                                 name));</span>
+<span class="source-line-no">703</span><span id="line-703">      }</span>
+<span class="source-line-no">704</span><span id="line-704">    }</span>
+<span class="source-line-no">705</span><span id="line-705">    };</span>
+<span class="source-line-no">706</span><span id="line-706">  }</span>
+<span class="source-line-no">707</span><span id="line-707"></span>
+<span class="source-line-no">708</span><span id="line-708">  /**</span>
+<span class="source-line-no">709</span><span id="line-709">   * Returns a nominal descriptor for the supplied argument, presuming it to have originated from the supplied {@link</span>
+<span class="source-line-no">710</span><span id="line-710">   * Domain}, or an {@linkplain Optional#empty() empty} {@link Optional} if the supplied argument cannot be described.</span>
+<span class="source-line-no">711</span><span id="line-711">   *</span>
+<span class="source-line-no">712</span><span id="line-712">   * @param t the argument; may be {@code null}</span>
+<span class="source-line-no">713</span><span id="line-713">   *</span>
+<span class="source-line-no">714</span><span id="line-714">   * @param d the {@link Domain} from which the argument originated; must not be {@code null}</span>
+<span class="source-line-no">715</span><span id="line-715">   *</span>
+<span class="source-line-no">716</span><span id="line-716">   * @return a non-{@code null} {@link Optional}</span>
+<span class="source-line-no">717</span><span id="line-717">   *</span>
+<span class="source-line-no">718</span><span id="line-718">   * @exception NullPointerException if {@code d} is {@code null}</span>
+<span class="source-line-no">719</span><span id="line-719">   */</span>
+<span class="source-line-no">720</span><span id="line-720">  public static final Optional&lt;? extends ConstantDesc&gt; describe(final WildcardType t, final Domain d) {</span>
+<span class="source-line-no">721</span><span id="line-721">    return switch (t) {</span>
+<span class="source-line-no">722</span><span id="line-722">    case null -&gt; Optional.of(NULL);</span>
+<span class="source-line-no">723</span><span id="line-723">    case Constable c -&gt; c.describeConstable();</span>
+<span class="source-line-no">724</span><span id="line-724">    case ConstantDesc cd -&gt; Optional.of(cd); // future proofing?</span>
+<span class="source-line-no">725</span><span id="line-725">    default -&gt; {</span>
+<span class="source-line-no">726</span><span id="line-726">      try (var lock = d.lock()) {</span>
+<span class="source-line-no">727</span><span id="line-727">        yield describe(t.getExtendsBound(), d)</span>
+<span class="source-line-no">728</span><span id="line-728">          .flatMap(domainDesc -&gt; describe(t.getExtendsBound(), d)</span>
+<span class="source-line-no">729</span><span id="line-729">                   .flatMap(extendsBoundDesc -&gt; describe(t.getSuperBound(), d)</span>
+<span class="source-line-no">730</span><span id="line-730">                            .map(superBoundDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
+<span class="source-line-no">731</span><span id="line-731">                                                                          MethodHandleDesc.ofMethod(VIRTUAL,</span>
+<span class="source-line-no">732</span><span id="line-732">                                                                                                    ClassDesc.of(Domain.class.getName()),</span>
+<span class="source-line-no">733</span><span id="line-733">                                                                                                    "wildcardType",</span>
+<span class="source-line-no">734</span><span id="line-734">                                                                                                    MethodTypeDesc.of(CD_WildcardType,</span>
+<span class="source-line-no">735</span><span id="line-735">                                                                                                                      CD_TypeMirror,</span>
+<span class="source-line-no">736</span><span id="line-736">                                                                                                                      CD_TypeMirror)),</span>
+<span class="source-line-no">737</span><span id="line-737"></span>
+<span class="source-line-no">738</span><span id="line-738">                                                                          domainDesc,</span>
+<span class="source-line-no">739</span><span id="line-739">                                                                          extendsBoundDesc,</span>
+<span class="source-line-no">740</span><span id="line-740">                                                                          superBoundDesc))));</span>
+<span class="source-line-no">741</span><span id="line-741">      }</span>
+<span class="source-line-no">742</span><span id="line-742">    }</span>
+<span class="source-line-no">743</span><span id="line-743">    };</span>
+<span class="source-line-no">744</span><span id="line-744">  }</span>
+<span class="source-line-no">745</span><span id="line-745"></span>
+<span class="source-line-no">746</span><span id="line-746">}</span>
 
 
 
