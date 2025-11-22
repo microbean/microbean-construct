@@ -39,6 +39,7 @@ import org.microbean.construct.Domain;
 
 import org.microbean.construct.element.UniversalElement;
 
+import static javax.lang.model.type.TypeKind.DECLARED;
 import static javax.lang.model.type.TypeKind.NONE;
 import static javax.lang.model.type.TypeKind.VOID;
 
@@ -64,6 +65,7 @@ public final class UniversalType
              UnionType,
              WildcardType {
 
+  // Eventually this should become a lazy constant/stable value
   private volatile UniversalType erasure;
 
   /**
@@ -293,13 +295,8 @@ public final class UniversalType
     };
   }
 
-  @Override // TypeMirror
-  public final int hashCode() {
-    return this.delegate().hashCode();
-  }
-
   /**
-   * A convenience method that returns {@code true} if and only if this is the type declared by the {@code
+   * A convenience method that returns {@code true} if and only if this represents the type declared by the {@code
    * java.lang.Object} class.
    *
    * @return {@code true} if and only if this is the type declared by the {@code java.lang.Object} class
@@ -307,7 +304,7 @@ public final class UniversalType
    * @see UniversalElement#javaLangObject()
    */
   public final boolean javaLangObject() {
-    return this.getKind() == TypeKind.DECLARED && this.asElement().javaLangObject();
+    return this.getKind() == DECLARED && this.asElement().javaLangObject();
   }
 
   /**
@@ -319,7 +316,22 @@ public final class UniversalType
    * 4.5
    */
   public final boolean parameterized() {
-    return this.getKind() == TypeKind.DECLARED && !this.getTypeArguments().isEmpty();
+    return this.getKind() == DECLARED && !this.getTypeArguments().isEmpty();
+  }
+
+  /**
+   * Returns {@code true} if and only if this {@link UniversalType} represents a <dfn>prototypical type</dfn>.
+   *
+   * <p>Prototypical types are not defined by the Java Language Specification. They are partially defined by the
+   * {@linkplain javax.lang.model.element.TypeElement#asType() specification of the <code>TypeElement#asType()</code>
+   * method}.</p>
+   *
+   * @return {@code true} if and only if this {@link UniversalType} represents a <dfn>prototypical type</dfn>
+   *
+   * @see javax.lang.model.element.TypeElement#asType()
+   */
+  public final boolean prototypical() {
+    return this.getKind() == DECLARED && this.equals(this.asElement().asType());
   }
 
   /**
@@ -362,13 +374,29 @@ public final class UniversalType
     };
   }
 
-  @Override // TypeMirror
-  public final boolean equals(final Object other) {
-    return this == other || switch (other) {
-    case null -> false;
-    case TypeMirror her -> this.domain().sameType(this, her);
-    default -> false;
-    };
+  /**
+   * Returns {@code true} if and only if this {@link UniversalType} is the <dfn>same type</dfn> as the supplied {@link
+   * TypeMirror}.
+   *
+   * <p>The definition of <dfn>type sameness</dfn> appears in the contract of the {@link Domain#sameType(TypeMirror,
+   * TypeMirror)} method, which, in turn, relies on the contract of the {@link
+   * javax.lang.model.util.Types#isSameType(TypeMirror, TypeMirror)} method.</p>
+   *
+   * @param t a {@link TypeMirror}; may be {@code null} in which case {@code false} will be returned
+   *
+   * @return {@code true} if and only if this {@link UniversalType} is the <dfn>same type</dfn> as the supplied {@link
+   * TypeMirror}
+   *
+   * @see Domain#sameType(TypeMirror, TypeMirror)
+   *
+   * @see javax.lang.model.util.Types#isSameType(TypeMirror, TypeMirror)
+   *
+   * @see #equals(Object)
+   *
+   * @see TypeMirror#equals(Object)
+   */
+  public final boolean sameType(final TypeMirror t) {
+    return this.domain().sameType(this, t);
   }
 
   private final List<? extends UniversalType> wrap(final Collection<? extends TypeMirror> ts) {

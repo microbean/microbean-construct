@@ -127,17 +127,6 @@ public final class UniversalElement
     return UniversalType.of(this.delegate().asType(), this.domain());
   }
 
-  @Override // Element
-  @SuppressWarnings("try")
-  public final boolean equals(final Object other) {
-    return this == other || switch (other) {
-    case null -> false;
-    case UniversalElement her -> this.delegate().equals(her.delegate());
-    case Element her -> this.delegate().equals(her);
-    default -> false;
-    };
-  }
-
   /**
    * Returns {@code true} if and only if this {@link UniversalElement} is a <dfn>generic class declaration</dfn>.
    *
@@ -186,12 +175,12 @@ public final class UniversalElement
   }
 
   @Override // ExecutableElement
-  public final AnnotationValueRecord getDefaultValue() {
+  public final UniversalAnnotationValue getDefaultValue() {
     return switch (this.getKind()) {
       // See
       // https://github.com/openjdk/jdk/blob/jdk-25%2B3/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Symbol.java#L2287-L2290;
       // no concurrent Name access so no lock needed
-    case METHOD -> AnnotationValueRecord.of(((ExecutableElement)this.delegate()).getDefaultValue(), this.domain());
+    case METHOD -> UniversalAnnotationValue.of(((ExecutableElement)this.delegate()).getDefaultValue(), this.domain());
     default -> null;
     };
   }
@@ -339,11 +328,6 @@ public final class UniversalElement
     };
   }
 
-  @Override // Element
-  public final int hashCode() {
-    return this.delegate().hashCode();
-  }
-
   @Override // ExecutableElement
   public final boolean isDefault() {
     return switch (this.getKind()) {
@@ -378,8 +362,8 @@ public final class UniversalElement
   }
 
   /**
-   * A convenience method that returns {@code true} if this {@link UniversalElement} is the class declaration for {@code
-   * java.lang.Object}.
+   * A convenience method that returns {@code true} if this {@link UniversalElement} represents the class declaration
+   * for {@code java.lang.Object}.
    *
    * @return {@code true} if this {@link UniversalElement} is the class declaration for {@code java.lang.Object}
    */

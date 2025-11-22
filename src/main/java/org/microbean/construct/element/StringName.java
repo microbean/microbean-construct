@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024 microBean™.
+ * Copyright © 2024–2025 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -113,6 +113,20 @@ public final record StringName(String value, Domain domain) implements Constable
                                                                                ClassDesc.of(Domain.class.getName())),
                                                 this.value(),
                                                 domainDesc));
+  }
+
+  @Override // Record
+  public final boolean equals(final Object other) {
+    return this == other || switch (other) {
+    case null -> false;
+    case StringName sn when this.getClass() == sn.getClass() -> Objects.equals(this.value(), sn.value());
+    default -> false;
+    };
+  }
+
+  @Override // Record
+  public final int hashCode() {
+    return this.value().hashCode();
   }
 
   @Override // Name (CharSequence)

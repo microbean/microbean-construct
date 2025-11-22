@@ -59,6 +59,8 @@ import org.microbean.construct.type.UniversalType;
 import static javax.lang.model.element.ElementKind.CONSTRUCTOR;
 import static javax.lang.model.element.ElementKind.METHOD;
 
+import static javax.lang.model.type.TypeKind.DECLARED;
+
 /**
  * A representation of a domain of valid Java constructs.
  *
@@ -82,6 +84,8 @@ import static javax.lang.model.element.ElementKind.METHOD;
  * <p>{@link Domain} implementations must be thread-safe.</p>
  *
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
+ *
+ * @see <a href="https://bugs.openjdk.org/browse/JDK-8055219">JDK-8055219</a>
  */
 @SuppressWarnings("try")
 public interface Domain {
@@ -646,7 +650,7 @@ public interface Domain {
     default -> {
       try (var lock = this.lock()) {
         yield
-          t.getKind() == TypeKind.DECLARED &&
+          t.getKind() == DECLARED &&
           javaLangObject(((DeclaredType)t).asElement());
       }
     }
@@ -839,7 +843,7 @@ public interface Domain {
     case UniversalType ut -> ut.parameterized();
     default -> {
       try (var lock = this.lock()) {
-        yield t.getKind() == TypeKind.DECLARED && !((DeclaredType)t).getTypeArguments().isEmpty();
+        yield t.getKind() == DECLARED && !((DeclaredType)t).getTypeArguments().isEmpty();
       }
     }
     };
@@ -958,6 +962,35 @@ public interface Domain {
   public PrimitiveType primitiveType(final TypeMirror t);
 
   /**
+   * A convenience method that returns {@code true} if and only if the supplied {@link TypeMirror} represents a
+   * <dfn>prototypical type</dfn>.
+   *
+   * <p>Prototypical types are not defined by the Java Language Specification. They are partially defined by the
+   * {@linkplain TypeElement#asType() specification of the <code>TypeElement#asType()</code>
+   * method}.</p>
+   *
+   * @param t a {@link TypeMirror}; must not be {@code null}
+   *
+   * @return {@code true} if and only if this {@link UniversalType} represents a <dfn>prototypical type</dfn>
+   *
+   * @exception NullPointerException if {@code t} is {@code null}
+   *
+   * @see TypeElement#asType()
+   */
+  // (Convenience.)
+  public default boolean prototypical(final TypeMirror t) {
+    return switch (t) {
+    case null -> throw new NullPointerException("t");
+    case UniversalType ut -> ut.prototypical();
+    default -> {
+      try (var lock = this.lock()) {
+        yield t.getKind() == DECLARED && t.equals(((DeclaredType)t).asElement().asType());
+      }
+    }
+    };
+  }
+  
+  /**
    * A convenience method that returns {@code true} if and only if the supplied {@link TypeMirror} is a <dfn>raw
    * type</dfn> according to <a href="https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8">the rules
    * of the Java Language Specification</a>
@@ -1063,6 +1096,8 @@ public interface Domain {
    * @return {@code true} if and only if the two arguments represent the <dfn>same type</dfn>; {@code false} otherwise
    *
    * @see javax.lang.model.util.Types#isSameType(TypeMirror, TypeMirror)
+   *
+   * @see <a href="https://bugs.openjdk.org/browse/JDK-8055219">JDK-8055219</a>
    *
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.3.4 Java Language Specification, section
    * 4.3.4
