@@ -545,7 +545,7 @@ public final class Constables {
             yield Optional.empty();
           }
           for (int i = 0; i < typeArgumentCount; i++) {
-            final int index = i + 3;
+            final int index = i + 4;
             args[index] = describe(typeArguments.get(i), d).orElse(null);
             if (args[index] == null) {
               yield Optional.empty();

@@ -178,7 +178,7 @@ final class TestDefaultDomain {
     final UniversalType t0 = domain.declaredType("java.lang.String");
     final UniversalType t1 = domain.declaredType("java.lang.String");
     assertNotSame(t0, t1);
-    assertEquals(t0, t1);
+    assertEquals(t0, t1); // see https://github.com/microbean/microbean-construct/issues/31
     assertTrue(domain.sameType(t0, t1));
   }
 

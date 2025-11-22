@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024 microBean™.
+ * Copyright © 2024–2025 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -98,8 +98,7 @@ public final class UniversalDirective
   public final boolean equals(final Object other) {
     return other == this || switch (other) {
     case null -> false;
-    case UniversalDirective her -> this.delegate().equals(her.delegate());
-    case Directive her -> this.delegate().equals(her);
+    case UniversalDirective her when this.getClass() == her.getClass() -> this.delegate().equals(her.delegate());
     default -> false;
     };
   }

@@ -46,6 +46,7 @@ final class Processor implements AutoCloseable, javax.annotation.processing.Proc
 
   private final Consumer<? super ProcessingEnvironment> cpe;
 
+  // run() method invoked under lock
   private final Runnable r;
 
   private final Lock lock;
