@@ -19,34 +19,44 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
-import java.lang.constant.MethodHandleDesc;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 import java.util.function.Supplier;
 
 import javax.lang.model.AnnotatedConstruct;
 
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 
 import javax.lang.model.type.TypeMirror;
 
 import org.microbean.construct.constant.Constables;
 
+import org.microbean.construct.element.SyntheticAnnotationMirror;
 import org.microbean.construct.element.UniversalAnnotation;
 import org.microbean.construct.element.UniversalElement;
 
 import org.microbean.construct.type.UniversalType;
 
 import static java.lang.constant.ConstantDescs.BSM_INVOKE;
+import static java.lang.constant.ConstantDescs.CD_List;
+
+import static java.lang.constant.MethodHandleDesc.ofConstructor;
+
+import static java.util.Collections.unmodifiableList;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * An abstract implementation of {@link AnnotatedConstruct} from which only {@link UniversalElement} and {@link
  * UniversalType} descend.
  *
  * @param <T> a type of {@link AnnotatedConstruct}, which may be only either {@link Element} or {@link TypeMirror}
+ *
+ * @param <U> a type representing one of the permitted subclasses
  *
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
  *
@@ -56,7 +66,8 @@ import static java.lang.constant.ConstantDescs.BSM_INVOKE;
  *
  * @see UniversalType
  */
-public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct> implements AnnotatedConstruct, Constable
+public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct, U extends UniversalConstruct<T, U>>
+  implements AnnotatedConstruct, Constable
   permits UniversalElement, UniversalType {
 
 
@@ -65,7 +76,8 @@ public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct> im
    */
 
 
-  private final Domain domain;
+  // Retained only for Constable implementation
+  private final PrimordialDomain domain;
 
   // Eventually this should become a lazy constant/stable value
   // volatile not needed
@@ -73,6 +85,11 @@ public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct> im
 
   // Eventually this should become a lazy constant/stable value
   private volatile String s;
+
+  // Eventually this should become a lazy constant/stable value
+  private volatile List<? extends UniversalAnnotation> annotations;
+
+  private final List<? extends UniversalAnnotation> syntheticAnnotations;
 
 
   /*
@@ -85,33 +102,81 @@ public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct> im
    *
    * @param delegate a delegate to which operations are delegated; must not be {@code null}
    *
-   * @param domain; a {@link Domain} from which the supplied {@code delegate} is presumed to have originated; must not
-   * be {@code null}
+   * @param domain a {@link PrimordialDomain} representing the construct domain from which the supplied {@code
+   * delegate} is presumed to have originated; must not be {@code null}
    *
    * @exception NullPointerException if either argument is {@code null}
+   *
+   * @see #UniversalConstruct(AnnotatedConstruct, List, PrimordialDomain)
+   */
+  protected UniversalConstruct(final T delegate, final PrimordialDomain domain) {
+    this(delegate, null, domain);
+  }
+
+  /**
+   * Creates a new {@link AnnotatedConstruct}.
+   *
+   * @param delegate a delegate to which operations are delegated; must not be {@code null}
+   *
+   * @param annotations a {@link List} of {@link AnnotationMirror} instances representing annotations, often
+   * synthetic, that this {@link UniversalConstruct} should bear; may be {@code null} in which case only the annotations
+   * from the supplied {@code delegate} will be used
+   *
+   * @param domain a {@link PrimordialDomain} representing the construct domain from which the supplied {@code
+   * delegate} is presumed to have originated; must not be {@code null}
+   *
+   * @exception NullPointerException if any argument is {@code null}
+   *
+   * @see #annotate(List)
    */
   @SuppressWarnings("try")
-  protected UniversalConstruct(final T delegate, final Domain domain) {
+  protected UniversalConstruct(final T delegate,
+                               final List<? extends AnnotationMirror> annotations,
+                               final PrimordialDomain domain) {
     super();
-    this.domain = Objects.requireNonNull(domain, "domain");
-    final T unwrappedDelegate = unwrap(Objects.requireNonNull(delegate, "delegate"));
+    this.domain = requireNonNull(domain, "domain");
+    if (annotations == null) {
+      this.syntheticAnnotations = List.of();
+    } else if (annotations.isEmpty()) {
+      this.syntheticAnnotations = List.of();
+      this.annotations = List.of(); // volatile write
+    } else {
+      final List<UniversalAnnotation> delegateAnnotations = new ArrayList<>(annotations.size());
+      final List<UniversalAnnotation> syntheticAnnotations = new ArrayList<>(annotations.size());
+      for (final AnnotationMirror annotation : annotations) {
+        switch (annotation) {
+        case null -> throw new IllegalArgumentException("annotations: " + annotations);
+        case SyntheticAnnotationMirror sam -> syntheticAnnotations.add(UniversalAnnotation.of(sam, domain));
+        case UniversalAnnotation ua -> {
+          switch (ua.delegate()) {
+          case SyntheticAnnotationMirror sam -> syntheticAnnotations.add(ua);
+          case UniversalAnnotation x -> throw new AssertionError();
+          default -> delegateAnnotations.add(UniversalAnnotation.of(annotation, domain));
+          }
+        }
+        default -> delegateAnnotations.add(UniversalAnnotation.of(annotation, domain));
+        }
+      }
+      this.annotations = delegateAnnotations.isEmpty() ? List.of() : unmodifiableList(delegateAnnotations); // volatile write
+      this.syntheticAnnotations = syntheticAnnotations.isEmpty() ? List.of() : unmodifiableList(syntheticAnnotations);
+    }
+    final T unwrappedDelegate = unwrap(requireNonNull(delegate, "delegate"));
     if (unwrappedDelegate == delegate) {
-      // No unwrapping happened so do symbol completion early; most common case.
-      final Runnable symbolCompleter = switch (unwrappedDelegate) {
-      case Element e    -> e::getModifiers;
-      case TypeMirror t -> t::getKind;
-      default           -> UniversalConstruct::doNothing;
-      };
       this.delegateSupplier = () -> {
         try (var lock = domain.lock()) {
-          symbolCompleter.run();
+          // No unwrapping happened so do symbol completion early; most common case.
+          if (unwrappedDelegate instanceof Element) {
+            ((Element)unwrappedDelegate).getModifiers();
+          } else {
+            ((TypeMirror)unwrappedDelegate).getKind();
+          }
           this.delegateSupplier = () -> unwrappedDelegate;
         }
         return unwrappedDelegate;
       };
     } else {
-      assert delegate instanceof UniversalConstruct<?>;
-      // Symbol completion already happened
+      assert delegate instanceof UniversalConstruct<?, ?>;
+      // Symbol completion already happened because unwrapping actually happened
       this.delegateSupplier = () -> unwrappedDelegate;
     }
   }
@@ -121,6 +186,19 @@ public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct> im
    * Instance methods.
    */
 
+
+  /**
+   * <strong>Experimental</strong>; returns a new {@link UniversalConstruct} instance annotated with only the supplied
+   * annotations, which are often synthetic.
+   *
+   * @param replacementAnnotations a {@link List} of {@link AnnotationMirror}s; must not be {@code null}
+   *
+   * @return a new {@link UniversalConstruct} instance; never {@code null}
+   *
+   * @exception NullPointerException if {@code replacementAnnotations} is {@code null}
+   */
+  // Experimental. Unsupported.
+  protected abstract U annotate(final List<? extends AnnotationMirror> replacementAnnotations);
 
   /**
    * Returns the delegate to which operations are delegated.
@@ -142,22 +220,26 @@ public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct> im
   @Override // Constable
   public final Optional<? extends ConstantDesc> describeConstable() {
     final T delegate = this.delegate();
-    final Domain domain = this.domain();
-    return Constables.describe(delegate, domain)
-      .map(delegateDesc -> DynamicConstantDesc.of(BSM_INVOKE,
-                                                  MethodHandleDesc.ofConstructor(ClassDesc.of(this.getClass().getName()),
-                                                                                 ClassDesc.of(delegate instanceof TypeMirror ? TypeMirror.class.getName() : Element.class.getName()),
-                                                                                 ClassDesc.of(Domain.class.getName())),
-                                                   delegateDesc,
-                                                   ((Constable)domain).describeConstable().orElseThrow()));
+    final List<? extends UniversalAnnotation> annotations = this.annotations; // volatile read; may be null and that's OK
+    return this.domain() instanceof Domain d ? Constables.describe(delegate, d)
+      .flatMap(delegateDesc -> Constables.describe(annotations, Constable::describeConstable)
+               .map(annosDesc -> DynamicConstantDesc.of(BSM_INVOKE,
+                                                        ofConstructor(ClassDesc.of(this.getClass().getName()),
+                                                                      ClassDesc.of(delegate instanceof TypeMirror ? TypeMirror.class.getName() : Element.class.getName()),
+                                                                      CD_List,
+                                                                      ClassDesc.of(PrimordialDomain.class.getName())),
+                                                        delegateDesc,
+                                                        annosDesc,
+                                                        ((Constable)d).describeConstable().orElseThrow()))) :
+      Optional.empty();
   }
 
   /**
-   * Returns the {@link Domain} supplied at construction time.
+   * Returns the {@link PrimordialDomain} supplied at construction time.
    *
-   * @return the non-{@code null} {@link Domain} supplied at construction time
+   * @return the non-{@code null} {@link PrimordialDomain} supplied at construction time
    */
-  public final Domain domain() {
+  public final PrimordialDomain domain() {
     return this.domain;
   }
 
@@ -173,14 +255,31 @@ public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct> im
     // (Symbol (Element) doesn't override it at all.)
     return this == other || switch (other) {
     case null -> false;
-    case UniversalConstruct<?> uc when this.getClass() == uc.getClass() -> this.delegate().equals(uc.delegate());
+    case UniversalConstruct<?, ?> uc when this.getClass() == uc.getClass() -> this.delegate().equals(uc.delegate());
     default -> false;
     };
   }
 
   @Override // AnnotatedConstruct
+  @SuppressWarnings("try")
   public final List<? extends UniversalAnnotation> getAnnotationMirrors() {
-    return UniversalAnnotation.of(this.delegate().getAnnotationMirrors(), this.domain());
+    List<? extends UniversalAnnotation> annotations = this.annotations; // volatile read
+    if (annotations == null) {
+      try (var lock = this.domain().lock()) {
+        annotations =
+          this.annotations = UniversalAnnotation.of(this.delegate().getAnnotationMirrors(), this.domain()); // volatile read/write
+      }
+      assert annotations != null;
+    }
+    if (annotations.isEmpty()) {
+      return this.syntheticAnnotations;
+    } else if (this.syntheticAnnotations.isEmpty()) {
+      return annotations;
+    } else {
+      final List<UniversalAnnotation> rv = new ArrayList<>(annotations);
+      rv.addAll(this.syntheticAnnotations);
+      return unmodifiableList(rv);
+    }
   }
 
   @Override // AnnotatedConstruct
@@ -246,12 +345,10 @@ public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct> im
    */
   @SuppressWarnings("unchecked")
   public static final <T extends AnnotatedConstruct> T unwrap(T t) {
-    while (t instanceof UniversalConstruct<?> uc) {
+    while (t instanceof UniversalConstruct<?, ?> uc) {
       t = (T)uc.delegate();
     }
     return t;
   }
-
-  private static final void doNothing() {}
 
 }

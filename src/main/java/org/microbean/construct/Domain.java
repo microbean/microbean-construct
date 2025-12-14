@@ -21,9 +21,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -51,13 +53,11 @@ import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Elements.Origin;
 
-import org.microbean.construct.element.StringName;
 import org.microbean.construct.element.UniversalElement;
 
 import org.microbean.construct.type.UniversalType;
 
-import static javax.lang.model.element.ElementKind.CONSTRUCTOR;
-import static javax.lang.model.element.ElementKind.METHOD;
+import static java.util.Collections.unmodifiableList;
 
 import static javax.lang.model.type.TypeKind.DECLARED;
 
@@ -85,10 +85,56 @@ import static javax.lang.model.type.TypeKind.DECLARED;
  *
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
  *
+ * @see PrimordialDomain
+ *
  * @see <a href="https://bugs.openjdk.org/browse/JDK-8055219">JDK-8055219</a>
  */
 @SuppressWarnings("try")
-public interface Domain {
+public interface Domain extends PrimordialDomain {
+
+  /**
+   * Returns an immutable, determinate, non-{@code null} {@link List} of {@link AnnotationMirror} instances representing
+   * all annotations <dfn>present</dfn> on an element, whether <dfn>directly present</dfn> or present via inheritance.
+   *
+   * @param element the {@link Element} whose present annotations should be returned; must not be {@code null}
+   *
+   * @return an immutable, determinate, non-{@code null} {@link List} of {@link AnnotationMirror} instances representing
+   * all annotations <dfn>present</dfn> on an element, whether <dfn>directly present</dfn> or present via inheritance
+   *
+   * @exception NullPointerException if {@code element} is {@code null}
+   *
+   * @see javax.lang.model.util.Elements#getAllAnnotationMirrors(Element)
+   */
+  public default List<? extends AnnotationMirror> allAnnotationMirrors(Element element) {
+    element = UniversalElement.of(element, this); // handles locking, symbol completion, etc.
+    final List<AnnotationMirror> annotations = new ArrayList<>(8);
+    annotations.addAll(element.getAnnotationMirrors().reversed());
+    TypeMirror sc = ((TypeElement)element).getSuperclass();
+    if (sc.getKind() == DECLARED) {
+      element = ((DeclaredType)sc).asElement();
+      WHILE_LOOP:
+      while (element != null && element.getKind().isDeclaredType()) {
+        for (final AnnotationMirror a : element.getAnnotationMirrors().reversed()) {
+          // See if it's inherited
+          final TypeElement annotationTypeElement = (TypeElement)a.getAnnotationType().asElement();
+          for (final AnnotationMirror metaAnnotation : annotationTypeElement.getAnnotationMirrors()) {
+            if (((TypeElement)metaAnnotation.getAnnotationType().asElement()).getQualifiedName().contentEquals("java.lang.annotation.Inherited")) {
+              for (final AnnotationMirror existingAnnotation : annotations) {
+                if (existingAnnotation.getAnnotationType().asElement().equals(annotationTypeElement)) {
+                  continue WHILE_LOOP;
+                }
+              }
+              annotations.add(a);
+              break;
+            }
+          }
+        }
+        sc = ((TypeElement)element).getSuperclass();
+        element = sc.getKind() == DECLARED ? ((DeclaredType)sc).asElement() : null;
+      }
+    }
+    return annotations.isEmpty() ? List.of() : unmodifiableList(annotations.reversed());
+  }
 
   /**
    * Returns an {@link ArrayType} whose {@linkplain ArrayType#getComponentType() component type} is {@linkplain
@@ -105,6 +151,7 @@ public interface Domain {
    *
    * @see javax.lang.model.util.Types#getArrayType(TypeMirror)
    */
+  // Type factory method
   public ArrayType arrayTypeOf(final TypeMirror componentType);
 
   /**
@@ -136,13 +183,20 @@ public interface Domain {
    * Returns {@code true} if and only if the supplied {@code payload} (the first argument) is considered assignable to
    * the supplied {@code receiver} (the second argument) according to <a
    * href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-5.html#jls-5.2">the rules of the Java Language
-   * Specification</a>.
+   * Specification</a>; <strong>note the counterintuitive order of the parameters</strong>.
+   *
+   * <p>Perhaps surprisingly, the "left hand side" of the putative assignment is represented by the second parameter
+   * ({@code receiver}). The "right hand side" of the putative assignment is represented by the first parameter
+   * ({@code payload}). This follows the contract of the {@link javax.lang.model.util.Types#isAssignable(TypeMirror,
+   * TypeMirror)} method, on which this method is modeled.</p>
    *
    * @param payload the {@link TypeMirror} being assigned; must not be {@code null}
    *
    * @param receiver the {@link TypeMirror} receiving the assignment; must not be {@code null}
    *
-   * @return {@code true} if and only if {@code payload} is assignable to {@code receiver}
+   * @return {@code true} if and only if {@code payload} is assignable to {@code receiver} according to <a
+   * href="https://docs.oracle.com/javase/specs/jls/se21/html/jls-5.html#jls-5.2">the rules of the Java Language
+   * Specification</a>
    *
    * @exception NullPointerException if either {@code payload} or {@code receiver} is {@code null}
    *
@@ -254,6 +308,7 @@ public interface Domain {
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-6.html#jls-6.7 Java Language Specification, section
    * 6.7
    */
+  // (Convenience.)
   public default DeclaredType declaredType(final CharSequence canonicalName) {
     final TypeElement e = this.typeElement(canonicalName);
     return e == null ? null : this.declaredType(e);
@@ -270,8 +325,8 @@ public interface Domain {
    *
    * <p>The number of supplied type arguments must either equal the number of the supplied {@link TypeElement}'s
    * {@linkplain TypeElement#getTypeParameters() formal type parameters}, or must be zero. If it is zero, and if the
-   * supplied {@link TypeElement} {@link #generic(Element) is generic}, then the supplied {@link TypeElement}'s raw type
-   * is returned.</p>
+   * supplied {@link TypeElement} {@linkplain #generic(Element) is generic}, then the supplied {@link TypeElement}'s raw
+   * type is returned.</p>
    *
    * <p>If a parameterized type is returned, {@linkplain DeclaredType#asElement() its <code>TypeElement</code>} must not
    * be contained within a {@linkplain #generic(Element) generic} outer class. The parameterized type {@code
@@ -290,6 +345,7 @@ public interface Domain {
    *
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.5 Java Language Specification, section 4.5
    */
+  // Type factory method.
   public DeclaredType declaredType(final TypeElement typeElement,
                                    final TypeMirror... typeArguments);
 
@@ -326,6 +382,7 @@ public interface Domain {
    *
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.5 Java Language Specification, section 4.5
    */
+  // Type factory method.
   public DeclaredType declaredType(final DeclaredType enclosingType,
                                    final TypeElement typeElement,
                                    final TypeMirror... typeArguments);
@@ -333,6 +390,13 @@ public interface Domain {
   /**
    * Returns a non-{@code null} {@link List} of the <dfn>direct supertypes</dfn> of the supplied {@link TypeMirror},
    * which is normally a {@linkplain TypeKind#DECLARED declared type}.
+   *
+   * <p>The direct supertypes returned by this method are actually a subset of the direct supertypes of a type as
+   * defined in the <a href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-4.html#jls-4.10">Java Language
+   * Specification, section 4.10</a>. Specifically, the subset contains only those types that can be expressed in the
+   * {@code extends} or {@code implements} clauses of the Java language. For example, a type {@code Baz} can declare
+   * only that it {@code extends Foo<Bar>}, not {@code Foo<?>}, even though {@code Foo<?>} is a specification-described
+   * direct supertype of {@code Baz}.</p>
    *
    * @param t a {@link TypeMirror}; must not be {@code null}; must not be an {@linkplain TypeKind#EXECUTABLE executable
    * type}, a {@linkplain TypeKind#MODULE module type}, or a {@linkplain TypeKind#PACKAGE package type}
@@ -346,7 +410,9 @@ public interface Domain {
    *
    * @see javax.lang.model.util.Types#directSupertypes(TypeMirror)
    *
-   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.10 Java Language Specification, section
+   * @see <a href="https://bugs.openjdk.org/browse/JDK-8055219">JDK-8055219</a>
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se25/html/jls-4.html#jls-4.10 Java Language Specification, section
    * 4.10
    */
   public List<? extends TypeMirror> directSupertypes(final TypeMirror t);
@@ -386,6 +452,7 @@ public interface Domain {
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-10.html#jls-10.1 Java Language Specification, section
    * 10.1
    */
+  // (Convenience.)
   public default TypeMirror elementType(final TypeMirror t) {
     return switch (t) {
     case null -> throw new NullPointerException("t");
@@ -430,6 +497,7 @@ public interface Domain {
    *
    * @exception IllegalArgumentException if somehow {@code e} is neither a {@link Constructor} nor a {@link Method}
    */
+  // (Convenience.)
   public default ExecutableElement executableElement(final Executable e) {
     return switch (e) {
     case null -> throw new NullPointerException("e");
@@ -469,6 +537,7 @@ public interface Domain {
    *
    * @exception NullPointerException if any argument is {@code null}
    */
+  // (Convenience.)
   public default ExecutableElement executableElement(final TypeElement declaringElement,
                                                      final TypeMirror returnType,
                                                      final CharSequence name,
@@ -551,6 +620,7 @@ public interface Domain {
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-9.html#jls-9.1.2 Java Language Specification, section
    * 9.1.2
    */
+  // (Convenience.)
   public default boolean generic(final Element e) {
     return switch (e) {
     case null -> throw new NullPointerException("e");
@@ -592,6 +662,7 @@ public interface Domain {
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-9.html#jls-9.1.2 Java Language Specification, section
    * 9.1.2
    */
+  // (Convenience.)
   public default boolean generic(final TypeMirror t) {
     return switch (t) {
     case null -> throw new NullPointerException("t");
@@ -616,6 +687,7 @@ public interface Domain {
    *
    * @exception NullPointerException if {@code e} is {@code null}
    */
+  // (Convenience.)
   public default boolean javaLangObject(final Element e) {
     return switch (e) {
     case null -> throw new NullPointerException("e");
@@ -643,6 +715,7 @@ public interface Domain {
    *
    * @see #javaLangObject(Element)
    */
+  // (Convenience.)
   public default boolean javaLangObject(final TypeMirror t) {
     return switch (t) {
     case null -> throw new NullPointerException("t");
@@ -666,21 +739,16 @@ public interface Domain {
    *
    * @see #typeElement(CharSequence)
    */
+  // (Convenience.)
   public default TypeElement javaLangObject() {
     return this.typeElement("java.lang.Object");
   }
 
-  /**
-   * Semantically locks an opaque lock used to serialize symbol completion, and returns it in the form of an {@link
-   * Unlockable}.
-   *
-   * <p>Implementations of this method must not return {@code null}.</p>
-   *
-   * @return an {@link Unlockable} in a semantically locked state; never {@code null}
-   *
-   * @see Unlockable#close()
-   */
-  public Unlockable lock();
+  // (Convenience.)
+  @Override // PrimordialDomain
+  public default DeclaredType javaLangObjectType() {
+    return (DeclaredType)this.javaLangObject().asType();
+  }
 
   /**
    * Returns a {@link ModuleElement} representing the module {@linkplain ModuleElement#getQualifiedName() named} by the
@@ -699,6 +767,7 @@ public interface Domain {
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-7.html#jls-7.7 Java Language Specification, section
    * 7.7
    */
+  // Element factory method.
   public ModuleElement moduleElement(final CharSequence qualifiedName);
 
   /**
@@ -714,6 +783,7 @@ public interface Domain {
    *
    * @see javax.lang.model.util.Elements#getName(CharSequence)
    */
+  // Element factory method.
   public Name name(final CharSequence name);
 
   /**
@@ -735,9 +805,13 @@ public interface Domain {
    *
    * @see javax.lang.model.util.Types#getNoType(TypeKind)
    *
+   * @see NoType
+   *
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-8.html#jls-8.4.5 Java Language Specification, section
    * 8.4.5
    */
+  // Type factory method.
+  @Override // PrimordialDomain
   public NoType noType(final TypeKind kind);
 
   /**
@@ -748,8 +822,12 @@ public interface Domain {
    *
    * @see javax.lang.model.util.Types#getNullType()
    *
+   * @see NullType
+   *
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.1 Java Language Specification, section 4.1
    */
+  // Type factory method.
+  @Override // PrimordialDomain
   public NullType nullType();
 
   /**
@@ -760,6 +838,8 @@ public interface Domain {
    * @return a non-{@code null} {@link Origin}
    *
    * @see Elements#getOrigin(Element)
+   *
+   * @see Origin
    */
   public Origin origin(final Element e);
 
@@ -777,9 +857,12 @@ public interface Domain {
    *
    * @see javax.lang.model.util.Elements#getPackageElement(CharSequence)
    *
+   * @see PackageElement
+   *
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-6.html#jls-6.7 Java Language Specification, section
    * 6.7
    */
+  // Element factory method.
   public PackageElement packageElement(final CharSequence canonicalName);
 
   /**
@@ -799,9 +882,12 @@ public interface Domain {
    *
    * @see javax.lang.model.util.Elements#getPackageElement(ModuleElement, CharSequence)
    *
+   * @see PackageElement
+   *
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-6.html#jls-6.7 Java Language Specification, section
    * 6.7
    */
+  // Element factory method.
   public PackageElement packageElement(final ModuleElement asSeenFrom, final CharSequence canonicalName);
 
   /**
@@ -814,7 +900,10 @@ public interface Domain {
    * @exception NullPointerException if {@code gd} is {@code null}
    *
    * @exception IllegalArgumentException if {@code gd} is neither a {@link Class} nor an {@link Executable}
+   *
+   * @see Parameterizable
    */
+  // (Convenience.)
   public default Parameterizable parameterizable(final GenericDeclaration gd) {
     return switch (gd) {
     case null -> throw new NullPointerException("gd");
@@ -827,16 +916,17 @@ public interface Domain {
   /**
    * A convenience method that returns {@code true} if and only if {@code t} is a {@link DeclaredType}, {@linkplain
    * TypeMirror#getKind() has a <code>TypeKind</code>} of {@link TypeKind#DECLARED DECLARED}, and {@linkplain
-   * DeclaredType#getTypeArguments() has an empty type arguments list}.
+   * DeclaredType#getTypeArguments() has a non-empty type arguments list}.
    *
    * @param t a {@link TypeMirror}; must not be {@code null}
    *
    * @return {@code true} if and only if {@code t} is a {@link DeclaredType}, {@linkplain
    * TypeMirror#getKind() has a <code>TypeKind</code>} of {@link TypeKind#DECLARED DECLARED}, and {@linkplain
-   * DeclaredType#getTypeArguments() has an empty type arguments list}; {@code false} otherwise
+   * DeclaredType#getTypeArguments() has a non-empty type arguments list}; {@code false} otherwise
    *
    * @exception NullPointerException if {@code t} is {@code null}
    */
+  // (Convenience.)
   public default boolean parameterized(final TypeMirror t) {
     return switch (t) {
     case null -> throw new NullPointerException("t");
@@ -868,6 +958,8 @@ public interface Domain {
    * java.lang.Float}, {@link Integer java.lang.Integer}, {@link Long java.lang.Long}, or {@link Short java.lang.Short}
    *
    * @see #primitiveType(TypeKind)
+   *
+   * @see PrimitiveType
    *
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-5.html#jls-5.1.8 Java Language Specification, section
    * 5.1.8
@@ -910,6 +1002,8 @@ public interface Domain {
    *
    * @see #primitiveType(TypeMirror)
    *
+   * @see PrimitiveType
+   *
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-5.html#jls-5.1.8 Java Language Specification, section
    * 5.1.8
    */
@@ -934,10 +1028,13 @@ public interface Domain {
    *
    * @see javax.lang.model.util.Types#getPrimitiveType(TypeKind)
    *
+   * @see PrimitiveType
+   *
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.2 Java Language Specification, section
    * 4.2
    */
   // (Canonical.)
+  // Type factory method.
   public PrimitiveType primitiveType(final TypeKind kind);
 
   /**
@@ -959,6 +1056,7 @@ public interface Domain {
    */
   // (Canonical.)
   // (Unboxing.)
+  // Type factory method.
   public PrimitiveType primitiveType(final TypeMirror t);
 
   /**
@@ -971,7 +1069,7 @@ public interface Domain {
    *
    * @param t a {@link TypeMirror}; must not be {@code null}
    *
-   * @return {@code true} if and only if this {@link UniversalType} represents a <dfn>prototypical type</dfn>
+   * @return {@code true} if and only if {@code t} represents a <dfn>prototypical type</dfn>
    *
    * @exception NullPointerException if {@code t} is {@code null}
    *
@@ -989,7 +1087,7 @@ public interface Domain {
     }
     };
   }
-  
+
   /**
    * A convenience method that returns {@code true} if and only if the supplied {@link TypeMirror} is a <dfn>raw
    * type</dfn> according to <a href="https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8">the rules
@@ -1005,6 +1103,7 @@ public interface Domain {
    *
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8 Java Language Specification, section 4.8
    */
+  // (Convenience.)
   public default boolean raw(final TypeMirror t) {
     return switch (t) {
     case null -> throw new NullPointerException("t");
@@ -1039,21 +1138,21 @@ public interface Domain {
    *
    * @exception NullPointerException if {@code t} is {@code null}
    *
+   * @see #parameterized(TypeMirror)
+   *
+   * @see #elementType(TypeMirror)
+   *
+   * @see #erasure(TypeMirror)
+   *
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8 Java Language Specification, section
    * 4.8
    */
-  public default TypeMirror rawType(final TypeMirror t) {
+  // (Convenience.)
+  public default TypeMirror rawType(TypeMirror t) {
     return switch (t) {
     case null -> throw new NullPointerException("t");
-    case UniversalType ut -> ut.rawType();
-    default -> {
-      try (var lock = this.lock()) {
-        yield switch (t.getKind()) {
-        case ARRAY -> this.rawType(this.elementType(t)); // recursive
-        default -> this.parameterized(t) ? this.erasure(t) : null;
-        };
-      }
-    }
+    case UniversalType ut -> ut.elementType().parameterized() ? this.erasure(ut) : null;
+    default -> this.parameterized(this.elementType(t)) ? this.erasure(t) : null;
     };
   }
 
@@ -1145,34 +1244,10 @@ public interface Domain {
    *
    * @see javax.lang.model.util.Types#isSubtype(TypeMirror, TypeMirror)
    *
-   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.10 Java Language Specification, section
+   * @spec https://docs.oracle.com/javase/specs/jls/se25/html/jls-4.html#jls-4.10 Java Language Specification, section
    * 4.10
    */
   public boolean subtype(TypeMirror candidateSubtype, TypeMirror supertype);
-
-  /**
-   * Converts the supplied {@link CharSequence}, which is often a {@link Name}, into a {@link String}, and returns the
-   * conversion, {@linkplain #lock() locking} when appropriate to serialize symbol completion.
-   *
-   * @param name the {@link CharSequence} to convert; may be {@code null} in which case {@code null} will be returned
-   *
-   * @return a {@link String}, or {@code null} if {@code name} was {@code null}
-   *
-   * @see #lock()
-   */
-  public default String toString(final CharSequence name) {
-    return switch (name) {
-    case null -> null;
-    case String s -> s;
-    case StringName sn -> sn.value();
-    case Name n -> {
-      try (var lock = this.lock()) {
-        yield n.toString();
-      }
-    }
-    default -> name.toString();
-    };
-  }
 
   /**
    * A convenience method that returns the {@link TypeMirror} corresponding to the supplied (reflective) {@link Type}.
@@ -1186,6 +1261,7 @@ public interface Domain {
    * @exception IllegalArgumentException if {@code t} is not a {@link Class}, {@link GenericArrayType}, {@link
    * ParameterizedType}, {@link java.lang.reflect.TypeVariable} or {@link java.lang.reflect.WildcardType}
    */
+  // (Convenience.)
   public default TypeMirror type(final Type t) {
     // TODO: anywhere there is domain.declaredType(), consider passing
     // domain.moduleElement(this.getClass().getModule().getName()) as the first argument. Not sure how this works
@@ -1235,6 +1311,7 @@ public interface Domain {
    *
    * @see #type(Type)
    */
+  // (Convenience.)
   public default TypeMirror[] types(final Type[] ts) {
     return switch (ts.length) {
     case 0 -> new TypeMirror[0];
@@ -1264,6 +1341,7 @@ public interface Domain {
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-6.html#jls-6.7 Java Language Specification, section
    * 6.7
    */
+  // Element factory method.
   public TypeElement typeElement(final CharSequence canonicalName);
 
   /**
@@ -1284,6 +1362,7 @@ public interface Domain {
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-6.html#jls-6.7 Java Language Specification, section
    * 6.7
    */
+  // Element factory method.
   public TypeElement typeElement(final ModuleElement asSeenFrom, final CharSequence canonicalName);
 
   /**
@@ -1318,6 +1397,7 @@ public interface Domain {
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-5.html#jls-5.1.7 Java Language Specification, section
    * 5.1.7
    */
+  // Element factory method.
   // (Canonical.)
   // (Boxing.)
   public default TypeElement typeElement(final PrimitiveType t) {
@@ -1380,6 +1460,7 @@ public interface Domain {
    *
    * @return a {@link TypeParameterElement}, or {@code null}
    */
+  // (Convenience.)
   public default TypeParameterElement typeParameterElement(Parameterizable p, final CharSequence name) {
     Objects.requireNonNull(p, "p");
     Objects.requireNonNull(name, "name");
@@ -1423,6 +1504,7 @@ public interface Domain {
    *
    * @see #typeParameterElement(Parameterizable, CharSequence)
    */
+  // (Convenience.)
   public default TypeVariable typeVariable(Parameterizable p, final CharSequence name) {
     final TypeParameterElement e = this.typeParameterElement(p, name);
     return e == null ? null : (TypeVariable)e.asType();
@@ -1450,6 +1532,7 @@ public interface Domain {
    *
    * @see VariableElement
    */
+  // (Convenience.)
   public default VariableElement variableElement(final Element enclosingElement, final CharSequence simpleName) {
     Objects.requireNonNull(simpleName, "simpleName");
     return switch (enclosingElement) {
@@ -1489,6 +1572,7 @@ public interface Domain {
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.5.1 Java Language Specification, section
    * 4.5.1
    */
+  // (Convenience.)
   public default WildcardType wildcardType() {
     return this.wildcardType(null, null);
   }
@@ -1514,6 +1598,7 @@ public interface Domain {
    * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.5.1 Java Language Specification, section
    * 4.5.1
    */
+  // Type factory method.
   public WildcardType wildcardType(TypeMirror extendsBound, TypeMirror superBound);
 
 }

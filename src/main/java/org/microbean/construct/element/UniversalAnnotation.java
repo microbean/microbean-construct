@@ -13,6 +13,12 @@
  */
 package org.microbean.construct.element;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.Constable;
+import java.lang.constant.ConstantDesc;
+import java.lang.constant.DynamicConstantDesc;
+import java.lang.constant.MethodTypeDesc;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -21,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import java.util.function.Supplier;
@@ -29,9 +36,16 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ExecutableElement;
 
-import org.microbean.construct.Domain;
+import org.microbean.construct.PrimordialDomain;
+import org.microbean.construct.UniversalConstruct;
 
 import org.microbean.construct.type.UniversalType;
+
+import static java.lang.constant.ConstantDescs.BSM_INVOKE;
+
+import static java.lang.constant.DirectMethodHandleDesc.Kind.STATIC;
+
+import static java.lang.constant.MethodHandleDesc.ofMethod;
 
 import static java.util.Objects.requireNonNull;
 
@@ -42,7 +56,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @see AnnotationMirror
  */
-public final class UniversalAnnotation implements AnnotationMirror {
+public final class UniversalAnnotation implements AnnotationMirror, Constable {
 
 
   /*
@@ -54,7 +68,7 @@ public final class UniversalAnnotation implements AnnotationMirror {
   // volatile not needed
   private Supplier<? extends AnnotationMirror> delegateSupplier;
 
-  private final Domain domain;
+  private final PrimordialDomain domain;
 
 
   /*
@@ -67,12 +81,12 @@ public final class UniversalAnnotation implements AnnotationMirror {
    *
    * @param delegate an {@link AnnotationMirror} to which operations will be delegated; must not be {@code null}
    *
-   * @param domain a {@link Domain}; must not be {@code null}
+   * @param domain a {@link PrimordialDomain}; must not be {@code null}
    *
    * @exception NullPointerException if either argument is {@code null}
    */
   @SuppressWarnings("try")
-  public UniversalAnnotation(final AnnotationMirror delegate, final Domain domain) {
+  public UniversalAnnotation(final AnnotationMirror delegate, final PrimordialDomain domain) {
     super();
     this.domain = requireNonNull(domain, "domain");
     final AnnotationMirror unwrappedDelegate = unwrap(requireNonNull(delegate, "delegate"));
@@ -111,12 +125,27 @@ public final class UniversalAnnotation implements AnnotationMirror {
     return delegate;
   }
 
+  @Override // Constable
+  public Optional<? extends ConstantDesc> describeConstable() {
+    return this.domain instanceof Constable c0 ? c0.describeConstable() : Optional.<ConstantDesc>empty()
+      .flatMap(primordialDomainDesc -> this.delegate() instanceof Constable c1 ? c1.describeConstable() : Optional.<ConstantDesc>empty()
+               .map(delegateDesc -> DynamicConstantDesc.of(BSM_INVOKE,
+                                                           ofMethod(STATIC,
+                                                                    ClassDesc.of(this.getClass().getName()),
+                                                                    "of",
+                                                                    MethodTypeDesc.of(ClassDesc.of(this.getClass().getName()),
+                                                                                      ClassDesc.of(AnnotationMirror.class.getName()),
+                                                                                      ClassDesc.of(PrimordialDomain.class.getName()))),
+                                                           delegateDesc,
+                                                           primordialDomainDesc)));
+  }
+
   /**
-   * Returns the {@link Domain} supplied at construction time.
+   * Returns the {@link PrimordialDomain} supplied at construction time.
    *
-   * @return the non-{@code null} {@link Domain} supplied at construction time
+   * @return the non-{@code null} {@link PrimordialDomain} supplied at construction time
    */
-  public final Domain domain() {
+  public final PrimordialDomain domain() {
     return this.domain;
   }
 
@@ -144,7 +173,7 @@ public final class UniversalAnnotation implements AnnotationMirror {
   @SuppressWarnings("try")
   public final Map<? extends UniversalElement, ? extends UniversalAnnotationValue> getElementValues() {
     final Map<UniversalElement, UniversalAnnotationValue> map = new LinkedHashMap<>(17);
-    final Domain d = this.domain();
+    final PrimordialDomain d = this.domain();
     // TODO: is this lock actually needed, given how delegateSupplier works?
     // try (var lock = d.lock()) {
       for (final Entry<? extends ExecutableElement, ? extends AnnotationValue> e : this.delegate().getElementValues().entrySet()) {
@@ -173,15 +202,15 @@ public final class UniversalAnnotation implements AnnotationMirror {
    *
    * @param a an {@link AnnotationMirror}; must not be {@code null}
    *
-   * @param d a {@link Domain}; must not be {@code null}
+   * @param d a {@link PrimordialDomain}; must not be {@code null}
    *
    * @return a non-{@code null} {@link UniversalAnnotation}
    *
    * @exception NullPointerException if either argument is {@code null}
    *
-   * @see #UniversalAnnotation(AnnotationMirror, Domain)
+   * @see #UniversalAnnotation(AnnotationMirror, PrimordialDomain)
    */
-  public static final UniversalAnnotation of(final AnnotationMirror a, final Domain d) {
+  public static final UniversalAnnotation of(final AnnotationMirror a, final PrimordialDomain d) {
     return a instanceof UniversalAnnotation ar ? ar : new UniversalAnnotation(a, d);
   }
 
@@ -191,14 +220,14 @@ public final class UniversalAnnotation implements AnnotationMirror {
    *
    * @param as a {@link Collection} of {@link AnnotationMirror}s; must not be {@code null}
    *
-   * @param domain a {@link Domain}; must not be {@code null}
+   * @param domain a {@link PrimordialDomain}; must not be {@code null}
    *
    * @return a non-{@code null}, immutable {@link List} of {@link UniversalAnnotation}s
    *
    * @exception NullPointerException if either argument is {@code null}
    */
   public static final List<? extends UniversalAnnotation> of(final Collection<? extends AnnotationMirror> as,
-                                                          final Domain domain) {
+                                                             final PrimordialDomain domain) {
     if (as.isEmpty()) {
       return List.of();
     }

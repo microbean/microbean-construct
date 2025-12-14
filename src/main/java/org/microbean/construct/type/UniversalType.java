@@ -19,6 +19,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import javax.lang.model.element.AnnotationMirror;
+
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ErrorType;
@@ -35,8 +37,9 @@ import javax.lang.model.type.UnionType;
 import javax.lang.model.type.WildcardType;
 
 import org.microbean.construct.UniversalConstruct;
-import org.microbean.construct.Domain;
+import org.microbean.construct.PrimordialDomain;
 
+import org.microbean.construct.element.UniversalAnnotation;
 import org.microbean.construct.element.UniversalElement;
 
 import static javax.lang.model.type.TypeKind.DECLARED;
@@ -53,7 +56,7 @@ import static javax.lang.model.type.TypeKind.VOID;
  * @see UniversalConstruct
  */
 public final class UniversalType
-  extends UniversalConstruct<TypeMirror>
+  extends UniversalConstruct<TypeMirror, UniversalType>
   implements ArrayType,
              ErrorType,
              ExecutableType,
@@ -65,15 +68,12 @@ public final class UniversalType
              UnionType,
              WildcardType {
 
-  // Eventually this should become a lazy constant/stable value
-  private volatile UniversalType erasure;
-
   /**
    * Creates a new {@link UniversalType}.
    *
    * @param delegate a {@link TypeMirror} to which operations will be delegated; must not be {@code null}
    *
-   * @param domain a {@link Domain} from which the supplied {@code delegate} is presumed to have originated; must not be
+   * @param domain a {@link PrimordialDomain} from which the supplied {@code delegate} is presumed to have originated; must not be
    * {@code null}
    *
    * @exception NullPointerException if either argument is {@code null}
@@ -81,8 +81,30 @@ public final class UniversalType
    * @see #delegate()
    */
   @SuppressWarnings("try")
-  public UniversalType(final TypeMirror delegate, final Domain domain) {
-    super(delegate, domain);
+  public UniversalType(final TypeMirror delegate, final PrimordialDomain domain) {
+    this(delegate, null, domain);
+  }
+
+  /**
+   * Creates a new {@link UniversalType}.
+   *
+   * @param delegate a {@link TypeMirror} to which operations will be delegated; must not be {@code null}
+   *
+   * @param annotations a {@link List} of {@link AnnotationMirror} instances representing annotations, often synthetic,
+   * that this {@link UniversalType} should bear; may be {@code null} in which case only the annotations from the
+   * supplied {@code delegate} will be used
+   *
+   * @param domain a {@link PrimordialDomain} from which the supplied {@code delegate} is presumed to have originated;
+   * must not be {@code null}
+   *
+   * @exception NullPointerException if any argument is {@code null}
+   *
+   * @see #delegate()
+   */
+  public UniversalType(final TypeMirror delegate,
+                       final List<? extends AnnotationMirror> annotations,
+                       final PrimordialDomain domain) {
+    super(delegate, annotations, domain);
   }
 
   @Override // TypeMirror
@@ -115,6 +137,11 @@ public final class UniversalType
     };
   }
 
+  @Override // UniversalConstruct<TypeMirror, UniversalType<TypeMirror>>
+  protected UniversalType annotate(final List<? extends AnnotationMirror> replacementAnnotations) {
+    return new UniversalType(this.delegate(), replacementAnnotations, this.domain());
+  }
+  
   @Override // Various
   public final UniversalElement asElement() {
     return switch (this.getKind()) {
@@ -130,6 +157,9 @@ public final class UniversalType
    *
    * @return the <dfn>element type</dfn> of this {@link UniversalType} if it is an array type, or this {@link
    * UniversalType} if it is not; never {@code null}
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-10.html#jls-10.1 Java Language Specification, section
+   * 10.1
    */
   public final UniversalType elementType() {
     return this.elementType(this);
@@ -140,25 +170,6 @@ public final class UniversalType
     case ARRAY -> this.elementType(t.getComponentType());
     default -> t;
     };
-  }
-
-  /**
-   * Returns the <dfn>erasure</dfn> of this {@link UniversalType}.
-   *
-   * @return the erasure of this {@link UniversalType}; never {@code null}
-   *
-   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.6 Java Language Specification, section
-   * 4.6
-   */
-  public final UniversalType erasure() {
-    UniversalType t = this.erasure; // volatile read
-    if (t == null) {
-      t = this.erasure = switch (this.getKind()) { // volatile write, read
-      case ARRAY, DECLARED, TYPEVAR -> this.wrap(this.domain().erasure(this));
-      default -> this;
-      };
-    }
-    return t;
   }
 
   /**
@@ -235,7 +246,7 @@ public final class UniversalType
   public final UniversalType getUpperBound() {
     return switch (this.getKind()) {
     case TYPEVAR -> this.wrap(((TypeVariable)this.delegate()).getUpperBound());
-    default -> this.wrap(this.domain().javaLangObject().asType());
+    default -> this.wrap(this.domain().javaLangObjectType());
     };
   }
 
@@ -356,49 +367,6 @@ public final class UniversalType
     };
   }
 
-  /**
-   * Returns the {@link UniversalType} that is the <dfn>raw</dfn> usage of this {@link UniversalType}, if it is capable
-   * of having such a usage, <strong>or {@code null} if it is not</strong>.
-   *
-   * @return a {@link UniversalType} whose {@link #raw()} method is guaranteed to return {@code true}, or {@code null}
-   *
-   * @see #raw()
-   *
-   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.8 Java Language Specification, section
-   * 4.8
-   */
-  public final UniversalType rawType() {
-    return switch (this.getKind()) {
-    case ARRAY -> this.elementType().rawType();
-    default -> this.parameterized() ? this.erasure() : null;
-    };
-  }
-
-  /**
-   * Returns {@code true} if and only if this {@link UniversalType} is the <dfn>same type</dfn> as the supplied {@link
-   * TypeMirror}.
-   *
-   * <p>The definition of <dfn>type sameness</dfn> appears in the contract of the {@link Domain#sameType(TypeMirror,
-   * TypeMirror)} method, which, in turn, relies on the contract of the {@link
-   * javax.lang.model.util.Types#isSameType(TypeMirror, TypeMirror)} method.</p>
-   *
-   * @param t a {@link TypeMirror}; may be {@code null} in which case {@code false} will be returned
-   *
-   * @return {@code true} if and only if this {@link UniversalType} is the <dfn>same type</dfn> as the supplied {@link
-   * TypeMirror}
-   *
-   * @see Domain#sameType(TypeMirror, TypeMirror)
-   *
-   * @see javax.lang.model.util.Types#isSameType(TypeMirror, TypeMirror)
-   *
-   * @see #equals(Object)
-   *
-   * @see TypeMirror#equals(Object)
-   */
-  public final boolean sameType(final TypeMirror t) {
-    return this.domain().sameType(this, t);
-  }
-
   private final List<? extends UniversalType> wrap(final Collection<? extends TypeMirror> ts) {
     return of(ts, this.domain());
   }
@@ -419,13 +387,13 @@ public final class UniversalType
    *
    * @param ts a {@link Collection} of {@link TypeMirror}s; must not be {@code null}
    *
-   * @param domain a {@link Domain}; must not be {@code null}
+   * @param domain a {@link PrimordialDomain}; must not be {@code null}
    *
    * @return a non-{@code null}, immutable {@link List} of {@link UniversalType}s
    *
    * @exception NullPointerException if either argument is {@code null}
    */
-  public static final List<? extends UniversalType> of(final Collection<? extends TypeMirror> ts, final Domain domain) {
+  public static final List<? extends UniversalType> of(final Collection<? extends TypeMirror> ts, final PrimordialDomain domain) {
     if (ts.isEmpty()) {
       return List.of();
     }
@@ -442,15 +410,15 @@ public final class UniversalType
    *
    * @param t a {@link TypeMirror}; may be {@code null} in which case {@code null} will be returned
    *
-   * @param domain a {@link Domain}; must not be {@code null}
+   * @param domain a {@link PrimordialDomain}; must not be {@code null}
    *
    * @return a {@link UniversalType}, or {@code null} (if {@code t} is {@code null})
    *
    * @exception NullPointerException if {@code domain} is {@code null}
    *
-   * @see #UniversalType(TypeMirror, Domain)
+   * @see #UniversalType(TypeMirror, PrimordialDomain)
    */
-  public static final UniversalType of(final TypeMirror t, final Domain domain) {
+  public static final UniversalType of(final TypeMirror t, final PrimordialDomain domain) {
     return switch (t) {
     case null -> null;
     case UniversalType ut -> ut;

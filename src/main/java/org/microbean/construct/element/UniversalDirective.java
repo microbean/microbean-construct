@@ -30,7 +30,7 @@ import javax.lang.model.element.ModuleElement.ProvidesDirective;
 import javax.lang.model.element.ModuleElement.RequiresDirective;
 import javax.lang.model.element.ModuleElement.UsesDirective;
 
-import org.microbean.construct.Domain;
+import org.microbean.construct.PrimordialDomain;
 
 /**
  * A {@link Directive} implementation.
@@ -42,7 +42,7 @@ import org.microbean.construct.Domain;
 public final class UniversalDirective
   implements ExportsDirective, OpensDirective, ProvidesDirective, RequiresDirective, UsesDirective {
 
-  private final Domain domain;
+  private final PrimordialDomain domain;
 
   // volatile not needed
   private Supplier<? extends Directive> delegateSupplier;
@@ -52,13 +52,13 @@ public final class UniversalDirective
    *
    * @param delegate a {@link Directive} to which operations will be delegated; must not be {@code null}
    *
-   * @param domain a {@link Domain} from which the supplied {@code delegate} is presumed to have originated; must not be
+   * @param domain a {@link PrimordialDomain} from which the supplied {@code delegate} is presumed to have originated; must not be
    * {@code null}
    *
    * @exception NullPointerException if either argument is {@code null}
    */
   @SuppressWarnings("try")
-  public UniversalDirective(final Directive delegate, final Domain domain) {
+  public UniversalDirective(final Directive delegate, final PrimordialDomain domain) {
     super();
     this.domain = Objects.requireNonNull(domain, "domain");
     final Directive unwrappedDelegate = unwrap(Objects.requireNonNull(delegate, "delegate"));
@@ -192,15 +192,15 @@ public final class UniversalDirective
    *
    * @param d an {@link Directive}; may be {@code null} in which case {@code null} will be returned
    *
-   * @param domain a {@link Domain}; must not be {@code null}
+   * @param domain a {@link PrimordialDomain}; must not be {@code null}
    *
    * @return a {@link UniversalDirective}, or {@code null} (if {@code e} is {@code null})
    *
    * @exception NullPointerException if {@code domain} is {@code null}
    *
-   * @see #UniversalDirective(Directive, Domain)
+   * @see #UniversalDirective(Directive, PrimordialDomain)
    */
-  public static final UniversalDirective of(final Directive d, final Domain domain) {
+  public static final UniversalDirective of(final Directive d, final PrimordialDomain domain) {
     return switch (d) {
     case null -> null;
     case UniversalDirective ud -> ud;
@@ -214,13 +214,13 @@ public final class UniversalDirective
    *
    * @param es a {@link Collection} of {@link Directive}s; must not be {@code null}
    *
-   * @param domain a {@link Domain}; must not be {@code null}
+   * @param domain a {@link PrimordialDomain}; must not be {@code null}
    *
    * @return a non-{@code null}, immutable {@link List} of {@link UniversalDirective}s
    *
    * @exception NullPointerException if either argument is {@code null}
    */
-  public static final List<? extends UniversalDirective> of(final Collection<? extends Directive> es, final Domain domain) {
+  public static final List<? extends UniversalDirective> of(final Collection<? extends Directive> es, final PrimordialDomain domain) {
     if (es.isEmpty()) {
       return List.of();
     }

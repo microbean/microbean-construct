@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024 microBean™.
+ * Copyright © 2024–2025 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,11 +13,16 @@
  */
 package org.microbean.construct;
 
+import java.lang.annotation.Inherited;
+
 import java.util.List;
 
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Name;
+import javax.lang.model.element.TypeElement;
 
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 
@@ -25,6 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -181,5 +187,27 @@ final class TestDefaultDomain {
     assertEquals(t0, t1); // see https://github.com/microbean/microbean-construct/issues/31
     assertTrue(domain.sameType(t0, t1));
   }
+
+  @Test
+  final void testAllAnnotations0() {
+    final TypeElement e0 = domain.typeElement("java.lang.annotation.Documented");
+    final List<? extends AnnotationMirror> as = domain.allAnnotationMirrors(e0);
+    assertEquals(3, as.size()); // @Documented, @Retention, @Target
+  }
+
+  @Test
+  final void testAllAnnotation1() {
+    final TypeElement e0 = domain.typeElement(Bottom.class.getCanonicalName());
+    final List<? extends AnnotationMirror> as = domain.allAnnotationMirrors(e0);
+    assertEquals(1, as.size()); // @InheritMe
+  }
+
+  @Inherited
+  @interface InheritMe {}
+
+  @InheritMe
+  private static class Top {}
+
+  private static class Bottom extends Top {}
 
 }
