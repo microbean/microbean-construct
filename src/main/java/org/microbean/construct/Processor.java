@@ -38,8 +38,6 @@ import javax.lang.model.element.TypeElement;
 
 import static java.lang.System.getLogger;
 
-import static java.lang.System.Logger.Level.DEBUG;
-
 final class Processor implements AutoCloseable, javax.annotation.processing.Processor {
 
   private static final Logger LOGGER = getLogger(Processor.class.getName());

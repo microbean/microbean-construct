@@ -22,6 +22,7 @@ import java.util.Set;
 
 import java.util.function.Supplier;
 
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ElementVisitor;
@@ -41,7 +42,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 
 import org.microbean.construct.UniversalConstruct;
-import org.microbean.construct.Domain;
+import org.microbean.construct.PrimordialDomain;
 
 import org.microbean.construct.type.UniversalType;
 
@@ -56,7 +57,7 @@ import org.microbean.construct.type.UniversalType;
  */
 @SuppressWarnings("preview")
 public final class UniversalElement
-  extends UniversalConstruct<Element>
+  extends UniversalConstruct<Element, UniversalElement>
   implements ExecutableElement,
              ModuleElement,
              PackageElement,
@@ -73,16 +74,36 @@ public final class UniversalElement
    *
    * @param delegate an {@link Element} to which operations will be delegated; must not be {@code null}
    *
-   * @param domain a {@link Domain} from which the supplied {@code delegate} is presumed to have originated; must not be
-   * {@code null}
+   * @param domain a {@link PrimordialDomain} from which the supplied {@code delegate} is presumed to have originated;
+   * must not be {@code null}
    *
    * @exception NullPointerException if either argument is {@code null}
+   */
+  public UniversalElement(final Element delegate, final PrimordialDomain domain) {
+    this(delegate, null, domain);
+  }
+
+  /**
+   * Creates a new {@link UniversalElement}.
+   *
+   * @param delegate an {@link Element} to which operations will be delegated; must not be {@code null}
+   *
+   * @param annotations a {@link List} of {@link AnnotationMirror} instances representing annotations, often synthetic,
+   * that this {@link UniversalElement} should bear; may be {@code null} in which case only the annotations from the
+   * supplied {@code delegate} will be used
+   *
+   * @param domain a {@link PrimordialDomain} from which the supplied {@code delegate} is presumed to have originated;
+   * must not be {@code null}
+   *
+   * @exception NullPointerException if any argument is {@code null}
    *
    * @see #delegate()
    */
   @SuppressWarnings("try")
-  public UniversalElement(final Element delegate, final Domain domain) {
-    super(delegate, domain);
+  private UniversalElement(final Element delegate,
+                           final List<? extends AnnotationMirror> annotations,
+                           final PrimordialDomain domain) {
+    super(delegate, annotations, domain);
     this.enclosedElementsSupplier = () -> {
       final List<? extends UniversalElement> ees;
       try (var lock = domain.lock()) {
@@ -107,7 +128,8 @@ public final class UniversalElement
       BINDING_VARIABLE,
       ENUM_CONSTANT,
       EXCEPTION_PARAMETER,
-      FIELD, LOCAL_VARIABLE,
+      FIELD,
+      LOCAL_VARIABLE,
       PARAMETER,
       RESOURCE_VARIABLE      -> v.visitVariable(this, p);
     case RECORD_COMPONENT    -> v.visitRecordComponent(this, p);
@@ -120,6 +142,11 @@ public final class UniversalElement
     case MODULE              -> v.visitModule(this, p);
     case OTHER               -> v.visitUnknown(this, p);
     };
+  }
+
+  @Override // UniversalConstruct<Element, UniversalElement<Element>>
+  protected final UniversalElement annotate(final List<? extends AnnotationMirror> replacementAnnotations) {
+    return new UniversalElement(this.delegate(), replacementAnnotations, this.domain());
   }
 
   @Override // Element
@@ -394,13 +421,13 @@ public final class UniversalElement
    *
    * @param es a {@link Collection} of {@link Element}s; must not be {@code null}
    *
-   * @param domain a {@link Domain}; must not be {@code null}
+   * @param domain a {@link PrimordialDomain}; must not be {@code null}
    *
    * @return a non-{@code null}, immutable {@link List} of {@link UniversalElement}s
    *
    * @exception NullPointerException if either argument is {@code null}
    */
-  public static final List<? extends UniversalElement> of(final Collection<? extends Element> es, final Domain domain) {
+  public static final List<? extends UniversalElement> of(final Collection<? extends Element> es, final PrimordialDomain domain) {
     if (es.isEmpty()) {
       return List.of();
     }
@@ -417,15 +444,15 @@ public final class UniversalElement
    *
    * @param e an {@link Element}; may be {@code null} in which case {@code null} will be returned
    *
-   * @param domain a {@link Domain}; must not be {@code null}
+   * @param domain a {@link PrimordialDomain}; must not be {@code null}
    *
    * @return a {@link UniversalElement}, or {@code null} (if {@code e} is {@code null})
    *
    * @exception NullPointerException if {@code domain} is {@code null}
    *
-   * @see #UniversalElement(Element, Domain)
+   * @see #UniversalElement(Element, PrimordialDomain)
    */
-  public static final UniversalElement of(final Element e, final Domain domain) {
+  public static final UniversalElement of(final Element e, final PrimordialDomain domain) {
     return switch (e) {
     case null -> null;
     case UniversalElement ue -> ue;

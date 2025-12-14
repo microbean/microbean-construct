@@ -26,36 +26,42 @@ import java.util.stream.IntStream;
 
 import javax.lang.model.element.Name;
 
-import org.microbean.construct.Domain;
+import org.microbean.construct.PrimordialDomain;
 
 import static java.lang.constant.ConstantDescs.BSM_INVOKE;
 
 /**
  * A {@link Name} implementation based on {@link String}s.
  *
+ * <p>This {@link Name} implementation differs from {@link SyntheticName} in that it involves usage of the {@link
+ * PrimordialDomain#toString(Name)} method, which gives a {@link PrimordialDomain} implementation a chance to cache the
+ * underlying resulting {@link Name}.</p>
+ *
  * @param value the actual name; must not be {@code null}
  *
- * @param domain a {@link Domain}; must not be {@code null}
+ * @param domain a {@link PrimordialDomain}; must not be {@code null}
  *
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
  *
  * @see Name
  *
- * @see Domain#toString(CharSequence)
+ * @see SyntheticName
+ *
+ * @see PrimordialDomain#toString(CharSequence)
  */
-public final record StringName(String value, Domain domain) implements Constable, Name {
+public final record StringName(String value, PrimordialDomain domain) implements Constable, Name {
 
   /**
    * Creates a new {@link StringName}.
    *
    * @param value the actual name; must not be {@code null}
    *
-   * @param domain a {@link Domain}; must not be {@code null}
+   * @param domain a {@link PrimordialDomain}; must not be {@code null}
    *
    * @exception NullPointerException if either argument is {@code null}
    */
-  public StringName(final CharSequence value, final Domain domain) {
-    // We deliberately route even String-typed values through Domain#toString(CharSequence) in case the Domain wishes to
+  public StringName(final CharSequence value, final PrimordialDomain domain) {
+    // We deliberately route even String-typed values through PrimordialDomain#toString(CharSequence) in case the PrimordialDomain wishes to
     // cache the intermediate Name.
     this(switch (value) {
       case StringName sn -> sn.value();
@@ -68,7 +74,7 @@ public final record StringName(String value, Domain domain) implements Constable
    *
    * @param value the actual name; must not be {@code null}
    *
-   * @param domain a {@link Domain}; must not be {@code null}
+   * @param domain a {@link PrimordialDomain}; must not be {@code null}
    *
    * @exception NullPointerException if either argument is {@code null}
    */
@@ -110,7 +116,7 @@ public final record StringName(String value, Domain domain) implements Constable
       .map(domainDesc -> DynamicConstantDesc.of(BSM_INVOKE,
                                                 MethodHandleDesc.ofConstructor(ClassDesc.of(this.getClass().getName()),
                                                                                ClassDesc.of(CharSequence.class.getName()),
-                                                                               ClassDesc.of(Domain.class.getName())),
+                                                                               ClassDesc.of(PrimordialDomain.class.getName())),
                                                 this.value(),
                                                 domainDesc));
   }
@@ -157,21 +163,21 @@ public final record StringName(String value, Domain domain) implements Constable
 
   /**
    * Returns a {@link StringName} whose {@link #value()} method will return a {@link String} {@linkplain
-   * String#equals(Object) equal to} the {@linkplain Domain#toString(CharSequence) <code>String</code> conversion of}
-   * the supplied {@link CharSequence}, and whose {@link #domain()} method will return a {@link Domain} {@linkplain
-   * #equals(Object) equal to} the supplied {@link Domain}.
+   * String#equals(Object) equal to} the {@linkplain PrimordialDomain#toString(CharSequence) <code>String</code> conversion of}
+   * the supplied {@link CharSequence}, and whose {@link #domain()} method will return a {@link PrimordialDomain} {@linkplain
+   * #equals(Object) equal to} the supplied {@link PrimordialDomain}.
    *
    * @param cs a {@link CharSequence}; must not be {@code null}
    *
-   * @param domain a {@link Domain}; must not be {@code null}
+   * @param domain a {@link PrimordialDomain}; must not be {@code null}
    *
    * @return a {@link StringName}; never {@code null}
    *
    * @exception NullPointerException if either argument is {@code null}
    *
-   * @see Domain#toString(CharSequence)
+   * @see PrimordialDomain#toString(CharSequence)
    */
-  public static final StringName of(final CharSequence cs, final Domain domain) {
+  public static final StringName of(final CharSequence cs, final PrimordialDomain domain) {
     return cs instanceof StringName sn ? sn : new StringName(domain.toString(cs), domain);
   }
 

@@ -35,8 +35,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.Parameterizable;
-import javax.lang.model.element.QualifiedNameable;
-import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 
 import javax.lang.model.util.Elements;
@@ -82,7 +80,8 @@ public class DefaultDomain implements Constable, Domain {
   }
 
   /**
-   * Creates a new {@link DefaultDomain} whose usage type is determined by the argument supplied to this constructor.
+   * Creates a new {@link DefaultDomain} <strong>normally for use at annotation processing time</strong>, whose usage
+   * type is actually determined by the argument supplied to this constructor.
    *
    * @param pe a {@link ProcessingEnvironment}; may be {@code null} in which case the return value of an invocation of
    * {@link Supplier#get()} on the return value of an invocation of {@link RuntimeProcessingEnvironmentSupplier#of()}
@@ -113,7 +112,8 @@ public class DefaultDomain implements Constable, Domain {
   }
 
   /**
-   * Creates a new {@link DefaultDomain} whose usage type is determined by the arguments supplied to this constructor.
+   * Creates a new {@link DefaultDomain} <strong>normally for use at annotation processing time</strong>, whose usage
+   * type is actually determined by the arguments supplied to this constructor.
    *
    * @param pe a {@link ProcessingEnvironment}; may be {@code null} in which case the return value of an invocation of
    * {@link Supplier#get()} on the return value of an invocation of {@link RuntimeProcessingEnvironmentSupplier#of()}
@@ -121,8 +121,8 @@ public class DefaultDomain implements Constable, Domain {
    *
    * @param lock a {@link Lock} to use to serialize symbol completion; if {@code null} and {@code pe} is {@code null},
    * then a global {@link ReentrantLock} will be used instead; if {@code null} and {@code pe} is non-{@code null}, then
-   * no serialization of symbol completion will occur and this {@link DefaultDomain} will not be safe for concurrent use
-   * by multiple threads
+   * no serialization of symbol completion will occur <strong>and this {@link DefaultDomain} therefore will not be safe
+   * for concurrent use by multiple threads</strong>
    *
    * @see RuntimeProcessingEnvironmentSupplier
    *
@@ -285,7 +285,8 @@ public class DefaultDomain implements Constable, Domain {
     return UniversalType.of(Domain.super.elementType(t), this);
   }
 
-  private final Elements elements() {
+  // Non-private for testing only.
+  final Elements elements() {
     return this.pe().getElementUtils();
   }
 
@@ -329,6 +330,12 @@ public class DefaultDomain implements Constable, Domain {
   @Override // Domain
   public UniversalElement javaLangObject() {
     return UniversalElement.of(Domain.super.javaLangObject(), this);
+  }
+
+  // (Convenience.)
+  @Override // Domain
+  public UniversalType javaLangObjectType() {
+    return UniversalType.of(Domain.super.javaLangObjectType(), this);
   }
 
   /**
@@ -559,7 +566,8 @@ public class DefaultDomain implements Constable, Domain {
     return UniversalElement.of(Domain.super.typeParameterElement(p, name), this);
   }
 
-  private final Types types() {
+  // Non-private for testing only.
+  final Types types() {
     return this.pe().getTypeUtils();
   }
 

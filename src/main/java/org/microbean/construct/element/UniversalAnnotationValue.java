@@ -28,7 +28,7 @@ import javax.lang.model.element.VariableElement;
 
 import javax.lang.model.type.TypeMirror;
 
-import org.microbean.construct.Domain;
+import org.microbean.construct.PrimordialDomain;
 
 import org.microbean.construct.type.UniversalType;
 
@@ -48,7 +48,7 @@ public final class UniversalAnnotationValue implements AnnotationValue {
   // volatile not needed
   private Supplier<? extends AnnotationValue> delegateSupplier;
 
-  private final Domain domain;
+  private final PrimordialDomain domain;
 
   private String s;
 
@@ -65,12 +65,12 @@ public final class UniversalAnnotationValue implements AnnotationValue {
    *
    * @param delegate an {@link AnnotationValue} to which operations will be delegated; must not be {@code null}
    *
-   * @param domain a {@link Domain}; must not be {@code null}
+   * @param domain a {@link PrimordialDomain}; must not be {@code null}
    *
    * @exception NullPointerException if either argument is {@code null}
    */
   @SuppressWarnings("try")
-  public UniversalAnnotationValue(final AnnotationValue delegate, final Domain domain) {
+  public UniversalAnnotationValue(final AnnotationValue delegate, final PrimordialDomain domain) {
     super();
     this.domain = requireNonNull(domain, "domain");
     final AnnotationValue unwrappedDelegate = unwrap(requireNonNull(delegate, "delegate"));
@@ -142,11 +142,11 @@ public final class UniversalAnnotationValue implements AnnotationValue {
   }
 
   /**
-   * Returns the {@link Domain} supplied at construction time.
+   * Returns the {@link PrimordialDomain} supplied at construction time.
    *
-   * @return the non-{@code null} {@link Domain} supplied at construction time
+   * @return the non-{@code null} {@link PrimordialDomain} supplied at construction time
    */
-  public final Domain domain() {
+  public final PrimordialDomain domain() {
     return this.domain;
   }
 
@@ -165,7 +165,7 @@ public final class UniversalAnnotationValue implements AnnotationValue {
   @Override // AnnotationValue
   @SuppressWarnings("unchecked")
   public final Object getValue() {
-    final Domain domain = this.domain();
+    final PrimordialDomain domain = this.domain();
     final Object value = this.v;
     return switch (value) {
     case null -> throw new AssertionError();
@@ -203,15 +203,15 @@ public final class UniversalAnnotationValue implements AnnotationValue {
    *
    * @param av an {@link AnnotationValue}; may be {@code null}
    *
-   * @param domain a {@link Domain}; must not be {@code null}
+   * @param domain a {@link PrimordialDomain}; must not be {@code null}
    *
    * @return an {@link UniversalAnnotationValue}, or {@code null} (if {@code av} is {@code null})
    *
    * @exception NullPointerException if {@code domain} is {@code null}
    *
-   * @see #UniversalAnnotationValue(AnnotationValue, Domain)
+   * @see #UniversalAnnotationValue(AnnotationValue, PrimordialDomain)
    */
-  public static final UniversalAnnotationValue of(final AnnotationValue av, final Domain domain) {
+  public static final UniversalAnnotationValue of(final AnnotationValue av, final PrimordialDomain domain) {
     return switch (av) {
     case null -> null;
     case UniversalAnnotationValue uav -> uav;
@@ -225,14 +225,14 @@ public final class UniversalAnnotationValue implements AnnotationValue {
    *
    * @param avs a {@link Collection} of {@link AnnotationValue}s; must not be {@code null}
    *
-   * @param domain a {@link Domain}; must not be {@code null}
+   * @param domain a {@link PrimordialDomain}; must not be {@code null}
    *
    * @return a non-{@code null}, immutable {@link List} of {@link UniversalAnnotationValue}s
    *
    * @exception NullPointerException if either argument is {@code null}
    */
   public static final List<? extends UniversalAnnotationValue> of(final Collection<? extends AnnotationValue> avs,
-                                                                  final Domain domain) {
+                                                                  final PrimordialDomain domain) {
     if (avs.isEmpty()) {
       return List.of();
     }

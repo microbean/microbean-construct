@@ -15,9 +15,6 @@ package org.microbean.construct;
 
 import java.lang.System.Logger;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.RunnableFuture;
-
 import java.util.concurrent.atomic.AtomicReference;
 
 import java.util.function.Consumer;
@@ -83,8 +80,8 @@ public final class RuntimeProcessingEnvironmentSupplier implements AutoCloseable
 
 
   /**
-   * Closes this {@link RuntimeProcessingEnvironmentSupplier}, which invalidates all {@link ProcessingEnvironment}s
-   * {@linkplain #get() supplied} by it.
+   * Closes this {@link RuntimeProcessingEnvironmentSupplier}, <strong>which invalidates all {@link
+   * ProcessingEnvironment}s {@linkplain #get() supplied} by it</strong>.
    *
    * <p>A subsequent call to {@link #get()} will reset this {@link RuntimeProcessingEnvironmentSupplier}.</p>
    *
@@ -103,7 +100,8 @@ public final class RuntimeProcessingEnvironmentSupplier implements AutoCloseable
   /**
    * Returns a non-{@code null}, {@link ProcessingEnvironment} suitable for runtime use.
    *
-   * <p>{@link ProcessingEnvironment} instances are not guaranteed to be thread-safe.</p>
+   * <p><strong>{@link ProcessingEnvironment} instances are not guaranteed to be safe for concurrent use by multiple
+   * threads.</strong></p>
    *
    * @return a non-{@code null} {@link ProcessingEnvironment}
    *
