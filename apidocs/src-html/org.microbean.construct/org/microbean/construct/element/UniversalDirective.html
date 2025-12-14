@@ -43,7 +43,7 @@
 <span class="source-line-no">030</span><span id="line-30">import javax.lang.model.element.ModuleElement.RequiresDirective;</span>
 <span class="source-line-no">031</span><span id="line-31">import javax.lang.model.element.ModuleElement.UsesDirective;</span>
 <span class="source-line-no">032</span><span id="line-32"></span>
-<span class="source-line-no">033</span><span id="line-33">import org.microbean.construct.Domain;</span>
+<span class="source-line-no">033</span><span id="line-33">import org.microbean.construct.PrimordialDomain;</span>
 <span class="source-line-no">034</span><span id="line-34"></span>
 <span class="source-line-no">035</span><span id="line-35">/**</span>
 <span class="source-line-no">036</span><span id="line-36"> * A {@link Directive} implementation.</span>
@@ -55,7 +55,7 @@
 <span class="source-line-no">042</span><span id="line-42">public final class UniversalDirective</span>
 <span class="source-line-no">043</span><span id="line-43">  implements ExportsDirective, OpensDirective, ProvidesDirective, RequiresDirective, UsesDirective {</span>
 <span class="source-line-no">044</span><span id="line-44"></span>
-<span class="source-line-no">045</span><span id="line-45">  private final Domain domain;</span>
+<span class="source-line-no">045</span><span id="line-45">  private final PrimordialDomain domain;</span>
 <span class="source-line-no">046</span><span id="line-46"></span>
 <span class="source-line-no">047</span><span id="line-47">  // volatile not needed</span>
 <span class="source-line-no">048</span><span id="line-48">  private Supplier&lt;? extends Directive&gt; delegateSupplier;</span>
@@ -65,13 +65,13 @@
 <span class="source-line-no">052</span><span id="line-52">   *</span>
 <span class="source-line-no">053</span><span id="line-53">   * @param delegate a {@link Directive} to which operations will be delegated; must not be {@code null}</span>
 <span class="source-line-no">054</span><span id="line-54">   *</span>
-<span class="source-line-no">055</span><span id="line-55">   * @param domain a {@link Domain} from which the supplied {@code delegate} is presumed to have originated; must not be</span>
+<span class="source-line-no">055</span><span id="line-55">   * @param domain a {@link PrimordialDomain} from which the supplied {@code delegate} is presumed to have originated; must not be</span>
 <span class="source-line-no">056</span><span id="line-56">   * {@code null}</span>
 <span class="source-line-no">057</span><span id="line-57">   *</span>
 <span class="source-line-no">058</span><span id="line-58">   * @exception NullPointerException if either argument is {@code null}</span>
 <span class="source-line-no">059</span><span id="line-59">   */</span>
 <span class="source-line-no">060</span><span id="line-60">  @SuppressWarnings("try")</span>
-<span class="source-line-no">061</span><span id="line-61">  public UniversalDirective(final Directive delegate, final Domain domain) {</span>
+<span class="source-line-no">061</span><span id="line-61">  public UniversalDirective(final Directive delegate, final PrimordialDomain domain) {</span>
 <span class="source-line-no">062</span><span id="line-62">    super();</span>
 <span class="source-line-no">063</span><span id="line-63">    this.domain = Objects.requireNonNull(domain, "domain");</span>
 <span class="source-line-no">064</span><span id="line-64">    final Directive unwrappedDelegate = unwrap(Objects.requireNonNull(delegate, "delegate"));</span>
@@ -205,15 +205,15 @@
 <span class="source-line-no">192</span><span id="line-192">   *</span>
 <span class="source-line-no">193</span><span id="line-193">   * @param d an {@link Directive}; may be {@code null} in which case {@code null} will be returned</span>
 <span class="source-line-no">194</span><span id="line-194">   *</span>
-<span class="source-line-no">195</span><span id="line-195">   * @param domain a {@link Domain}; must not be {@code null}</span>
+<span class="source-line-no">195</span><span id="line-195">   * @param domain a {@link PrimordialDomain}; must not be {@code null}</span>
 <span class="source-line-no">196</span><span id="line-196">   *</span>
 <span class="source-line-no">197</span><span id="line-197">   * @return a {@link UniversalDirective}, or {@code null} (if {@code e} is {@code null})</span>
 <span class="source-line-no">198</span><span id="line-198">   *</span>
 <span class="source-line-no">199</span><span id="line-199">   * @exception NullPointerException if {@code domain} is {@code null}</span>
 <span class="source-line-no">200</span><span id="line-200">   *</span>
-<span class="source-line-no">201</span><span id="line-201">   * @see #UniversalDirective(Directive, Domain)</span>
+<span class="source-line-no">201</span><span id="line-201">   * @see #UniversalDirective(Directive, PrimordialDomain)</span>
 <span class="source-line-no">202</span><span id="line-202">   */</span>
-<span class="source-line-no">203</span><span id="line-203">  public static final UniversalDirective of(final Directive d, final Domain domain) {</span>
+<span class="source-line-no">203</span><span id="line-203">  public static final UniversalDirective of(final Directive d, final PrimordialDomain domain) {</span>
 <span class="source-line-no">204</span><span id="line-204">    return switch (d) {</span>
 <span class="source-line-no">205</span><span id="line-205">    case null -&gt; null;</span>
 <span class="source-line-no">206</span><span id="line-206">    case UniversalDirective ud -&gt; ud;</span>
@@ -227,13 +227,13 @@
 <span class="source-line-no">214</span><span id="line-214">   *</span>
 <span class="source-line-no">215</span><span id="line-215">   * @param es a {@link Collection} of {@link Directive}s; must not be {@code null}</span>
 <span class="source-line-no">216</span><span id="line-216">   *</span>
-<span class="source-line-no">217</span><span id="line-217">   * @param domain a {@link Domain}; must not be {@code null}</span>
+<span class="source-line-no">217</span><span id="line-217">   * @param domain a {@link PrimordialDomain}; must not be {@code null}</span>
 <span class="source-line-no">218</span><span id="line-218">   *</span>
 <span class="source-line-no">219</span><span id="line-219">   * @return a non-{@code null}, immutable {@link List} of {@link UniversalDirective}s</span>
 <span class="source-line-no">220</span><span id="line-220">   *</span>
 <span class="source-line-no">221</span><span id="line-221">   * @exception NullPointerException if either argument is {@code null}</span>
 <span class="source-line-no">222</span><span id="line-222">   */</span>
-<span class="source-line-no">223</span><span id="line-223">  public static final List&lt;? extends UniversalDirective&gt; of(final Collection&lt;? extends Directive&gt; es, final Domain domain) {</span>
+<span class="source-line-no">223</span><span id="line-223">  public static final List&lt;? extends UniversalDirective&gt; of(final Collection&lt;? extends Directive&gt; es, final PrimordialDomain domain) {</span>
 <span class="source-line-no">224</span><span id="line-224">    if (es.isEmpty()) {</span>
 <span class="source-line-no">225</span><span id="line-225">      return List.of();</span>
 <span class="source-line-no">226</span><span id="line-226">    }</span>

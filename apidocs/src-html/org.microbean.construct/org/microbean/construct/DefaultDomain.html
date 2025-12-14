@@ -48,85 +48,85 @@
 <span class="source-line-no">035</span><span id="line-35">import javax.lang.model.element.ModuleElement;</span>
 <span class="source-line-no">036</span><span id="line-36">import javax.lang.model.element.Name;</span>
 <span class="source-line-no">037</span><span id="line-37">import javax.lang.model.element.Parameterizable;</span>
-<span class="source-line-no">038</span><span id="line-38">import javax.lang.model.element.QualifiedNameable;</span>
-<span class="source-line-no">039</span><span id="line-39">import javax.lang.model.element.RecordComponentElement;</span>
-<span class="source-line-no">040</span><span id="line-40">import javax.lang.model.element.TypeElement;</span>
-<span class="source-line-no">041</span><span id="line-41"></span>
-<span class="source-line-no">042</span><span id="line-42">import javax.lang.model.util.Elements;</span>
-<span class="source-line-no">043</span><span id="line-43">import javax.lang.model.util.Elements.Origin;</span>
-<span class="source-line-no">044</span><span id="line-44">import javax.lang.model.util.Types;</span>
-<span class="source-line-no">045</span><span id="line-45"></span>
-<span class="source-line-no">046</span><span id="line-46">import javax.lang.model.type.DeclaredType;</span>
-<span class="source-line-no">047</span><span id="line-47">import javax.lang.model.type.ExecutableType;</span>
-<span class="source-line-no">048</span><span id="line-48">import javax.lang.model.type.PrimitiveType;</span>
-<span class="source-line-no">049</span><span id="line-49">import javax.lang.model.type.TypeKind;</span>
-<span class="source-line-no">050</span><span id="line-50">import javax.lang.model.type.TypeMirror;</span>
-<span class="source-line-no">051</span><span id="line-51"></span>
-<span class="source-line-no">052</span><span id="line-52">import org.microbean.construct.element.StringName;</span>
-<span class="source-line-no">053</span><span id="line-53">import org.microbean.construct.element.UniversalElement;</span>
+<span class="source-line-no">038</span><span id="line-38">import javax.lang.model.element.TypeElement;</span>
+<span class="source-line-no">039</span><span id="line-39"></span>
+<span class="source-line-no">040</span><span id="line-40">import javax.lang.model.util.Elements;</span>
+<span class="source-line-no">041</span><span id="line-41">import javax.lang.model.util.Elements.Origin;</span>
+<span class="source-line-no">042</span><span id="line-42">import javax.lang.model.util.Types;</span>
+<span class="source-line-no">043</span><span id="line-43"></span>
+<span class="source-line-no">044</span><span id="line-44">import javax.lang.model.type.DeclaredType;</span>
+<span class="source-line-no">045</span><span id="line-45">import javax.lang.model.type.ExecutableType;</span>
+<span class="source-line-no">046</span><span id="line-46">import javax.lang.model.type.PrimitiveType;</span>
+<span class="source-line-no">047</span><span id="line-47">import javax.lang.model.type.TypeKind;</span>
+<span class="source-line-no">048</span><span id="line-48">import javax.lang.model.type.TypeMirror;</span>
+<span class="source-line-no">049</span><span id="line-49"></span>
+<span class="source-line-no">050</span><span id="line-50">import org.microbean.construct.element.StringName;</span>
+<span class="source-line-no">051</span><span id="line-51">import org.microbean.construct.element.UniversalElement;</span>
+<span class="source-line-no">052</span><span id="line-52"></span>
+<span class="source-line-no">053</span><span id="line-53">import org.microbean.construct.type.UniversalType;</span>
 <span class="source-line-no">054</span><span id="line-54"></span>
-<span class="source-line-no">055</span><span id="line-55">import org.microbean.construct.type.UniversalType;</span>
+<span class="source-line-no">055</span><span id="line-55">import static java.lang.constant.ConstantDescs.BSM_INVOKE;</span>
 <span class="source-line-no">056</span><span id="line-56"></span>
-<span class="source-line-no">057</span><span id="line-57">import static java.lang.constant.ConstantDescs.BSM_INVOKE;</span>
-<span class="source-line-no">058</span><span id="line-58"></span>
-<span class="source-line-no">059</span><span id="line-59">/**</span>
-<span class="source-line-no">060</span><span id="line-60"> * A {@linkplain Domain domain of Java constructs} that can be used at annotation processing time or at runtime.</span>
+<span class="source-line-no">057</span><span id="line-57">/**</span>
+<span class="source-line-no">058</span><span id="line-58"> * A {@linkplain Domain domain of Java constructs} that can be used at annotation processing time or at runtime.</span>
+<span class="source-line-no">059</span><span id="line-59"> *</span>
+<span class="source-line-no">060</span><span id="line-60"> * @author &lt;a href="https://about.me/lairdnelson" target="_top"&gt;Laird Nelson&lt;/a&gt;</span>
 <span class="source-line-no">061</span><span id="line-61"> *</span>
-<span class="source-line-no">062</span><span id="line-62"> * @author &lt;a href="https://about.me/lairdnelson" target="_top"&gt;Laird Nelson&lt;/a&gt;</span>
+<span class="source-line-no">062</span><span id="line-62"> * @see Domain</span>
 <span class="source-line-no">063</span><span id="line-63"> *</span>
-<span class="source-line-no">064</span><span id="line-64"> * @see Domain</span>
-<span class="source-line-no">065</span><span id="line-65"> *</span>
-<span class="source-line-no">066</span><span id="line-66"> * @see RuntimeProcessingEnvironmentSupplier</span>
-<span class="source-line-no">067</span><span id="line-67"> */</span>
-<span class="source-line-no">068</span><span id="line-68">@SuppressWarnings({ "try", "unchecked" })</span>
-<span class="source-line-no">069</span><span id="line-69">public class DefaultDomain implements Constable, Domain {</span>
+<span class="source-line-no">064</span><span id="line-64"> * @see RuntimeProcessingEnvironmentSupplier</span>
+<span class="source-line-no">065</span><span id="line-65"> */</span>
+<span class="source-line-no">066</span><span id="line-66">@SuppressWarnings({ "try", "unchecked" })</span>
+<span class="source-line-no">067</span><span id="line-67">public class DefaultDomain implements Constable, Domain {</span>
+<span class="source-line-no">068</span><span id="line-68"></span>
+<span class="source-line-no">069</span><span id="line-69">  private final Supplier&lt;? extends ProcessingEnvironment&gt; pe;</span>
 <span class="source-line-no">070</span><span id="line-70"></span>
-<span class="source-line-no">071</span><span id="line-71">  private final Supplier&lt;? extends ProcessingEnvironment&gt; pe;</span>
+<span class="source-line-no">071</span><span id="line-71">  private final Supplier&lt;? extends Unlockable&gt; locker;</span>
 <span class="source-line-no">072</span><span id="line-72"></span>
-<span class="source-line-no">073</span><span id="line-73">  private final Supplier&lt;? extends Unlockable&gt; locker;</span>
-<span class="source-line-no">074</span><span id="line-74"></span>
-<span class="source-line-no">075</span><span id="line-75">  /**</span>
-<span class="source-line-no">076</span><span id="line-76">   * Creates a new {@link DefaultDomain} &lt;strong&gt;for use at runtime&lt;/strong&gt;.</span>
-<span class="source-line-no">077</span><span id="line-77">   *</span>
-<span class="source-line-no">078</span><span id="line-78">   * @see #DefaultDomain(ProcessingEnvironment, Lock)</span>
-<span class="source-line-no">079</span><span id="line-79">   */</span>
-<span class="source-line-no">080</span><span id="line-80">  public DefaultDomain() {</span>
-<span class="source-line-no">081</span><span id="line-81">    this(null, null);</span>
-<span class="source-line-no">082</span><span id="line-82">  }</span>
-<span class="source-line-no">083</span><span id="line-83"></span>
-<span class="source-line-no">084</span><span id="line-84">  /**</span>
-<span class="source-line-no">085</span><span id="line-85">   * Creates a new {@link DefaultDomain} whose usage type is determined by the argument supplied to this constructor.</span>
-<span class="source-line-no">086</span><span id="line-86">   *</span>
-<span class="source-line-no">087</span><span id="line-87">   * @param pe a {@link ProcessingEnvironment}; may be {@code null} in which case the return value of an invocation of</span>
-<span class="source-line-no">088</span><span id="line-88">   * {@link Supplier#get()} on the return value of an invocation of {@link RuntimeProcessingEnvironmentSupplier#of()}</span>
-<span class="source-line-no">089</span><span id="line-89">   * will be used instead</span>
-<span class="source-line-no">090</span><span id="line-90">   *</span>
-<span class="source-line-no">091</span><span id="line-91">   * @see #DefaultDomain(ProcessingEnvironment, Lock)</span>
-<span class="source-line-no">092</span><span id="line-92">   *</span>
-<span class="source-line-no">093</span><span id="line-93">   * @see SymbolCompletionLock</span>
-<span class="source-line-no">094</span><span id="line-94">   */</span>
-<span class="source-line-no">095</span><span id="line-95">  public DefaultDomain(final ProcessingEnvironment pe) {</span>
-<span class="source-line-no">096</span><span id="line-96">    this(pe, null);</span>
-<span class="source-line-no">097</span><span id="line-97">  }</span>
-<span class="source-line-no">098</span><span id="line-98"></span>
-<span class="source-line-no">099</span><span id="line-99">  /**</span>
-<span class="source-line-no">100</span><span id="line-100">   * Creates a new {@link DefaultDomain} &lt;strong&gt;for use at runtime&lt;/strong&gt;.</span>
-<span class="source-line-no">101</span><span id="line-101">   *</span>
-<span class="source-line-no">102</span><span id="line-102">   * @param lock a {@link Lock} to use to serialize symbol completion; may be {@code null} in which case a global {@link</span>
-<span class="source-line-no">103</span><span id="line-103">   * ReentrantLock} will be used instead</span>
-<span class="source-line-no">104</span><span id="line-104">   *</span>
-<span class="source-line-no">105</span><span id="line-105">   * @see #DefaultDomain(ProcessingEnvironment, Lock)</span>
-<span class="source-line-no">106</span><span id="line-106">   *</span>
-<span class="source-line-no">107</span><span id="line-107">   * @see RuntimeProcessingEnvironmentSupplier</span>
-<span class="source-line-no">108</span><span id="line-108">   *</span>
-<span class="source-line-no">109</span><span id="line-109">   * @see SymbolCompletionLock</span>
-<span class="source-line-no">110</span><span id="line-110">   */</span>
-<span class="source-line-no">111</span><span id="line-111">  public DefaultDomain(final Lock lock) {</span>
-<span class="source-line-no">112</span><span id="line-112">    this(null, lock);</span>
-<span class="source-line-no">113</span><span id="line-113">  }</span>
-<span class="source-line-no">114</span><span id="line-114"></span>
-<span class="source-line-no">115</span><span id="line-115">  /**</span>
-<span class="source-line-no">116</span><span id="line-116">   * Creates a new {@link DefaultDomain} whose usage type is determined by the arguments supplied to this constructor.</span>
+<span class="source-line-no">073</span><span id="line-73">  /**</span>
+<span class="source-line-no">074</span><span id="line-74">   * Creates a new {@link DefaultDomain} &lt;strong&gt;for use at runtime&lt;/strong&gt;.</span>
+<span class="source-line-no">075</span><span id="line-75">   *</span>
+<span class="source-line-no">076</span><span id="line-76">   * @see #DefaultDomain(ProcessingEnvironment, Lock)</span>
+<span class="source-line-no">077</span><span id="line-77">   */</span>
+<span class="source-line-no">078</span><span id="line-78">  public DefaultDomain() {</span>
+<span class="source-line-no">079</span><span id="line-79">    this(null, null);</span>
+<span class="source-line-no">080</span><span id="line-80">  }</span>
+<span class="source-line-no">081</span><span id="line-81"></span>
+<span class="source-line-no">082</span><span id="line-82">  /**</span>
+<span class="source-line-no">083</span><span id="line-83">   * Creates a new {@link DefaultDomain} &lt;strong&gt;normally for use at annotation processing time&lt;/strong&gt;, whose usage</span>
+<span class="source-line-no">084</span><span id="line-84">   * type is actually determined by the argument supplied to this constructor.</span>
+<span class="source-line-no">085</span><span id="line-85">   *</span>
+<span class="source-line-no">086</span><span id="line-86">   * @param pe a {@link ProcessingEnvironment}; may be {@code null} in which case the return value of an invocation of</span>
+<span class="source-line-no">087</span><span id="line-87">   * {@link Supplier#get()} on the return value of an invocation of {@link RuntimeProcessingEnvironmentSupplier#of()}</span>
+<span class="source-line-no">088</span><span id="line-88">   * will be used instead</span>
+<span class="source-line-no">089</span><span id="line-89">   *</span>
+<span class="source-line-no">090</span><span id="line-90">   * @see #DefaultDomain(ProcessingEnvironment, Lock)</span>
+<span class="source-line-no">091</span><span id="line-91">   *</span>
+<span class="source-line-no">092</span><span id="line-92">   * @see SymbolCompletionLock</span>
+<span class="source-line-no">093</span><span id="line-93">   */</span>
+<span class="source-line-no">094</span><span id="line-94">  public DefaultDomain(final ProcessingEnvironment pe) {</span>
+<span class="source-line-no">095</span><span id="line-95">    this(pe, null);</span>
+<span class="source-line-no">096</span><span id="line-96">  }</span>
+<span class="source-line-no">097</span><span id="line-97"></span>
+<span class="source-line-no">098</span><span id="line-98">  /**</span>
+<span class="source-line-no">099</span><span id="line-99">   * Creates a new {@link DefaultDomain} &lt;strong&gt;for use at runtime&lt;/strong&gt;.</span>
+<span class="source-line-no">100</span><span id="line-100">   *</span>
+<span class="source-line-no">101</span><span id="line-101">   * @param lock a {@link Lock} to use to serialize symbol completion; may be {@code null} in which case a global {@link</span>
+<span class="source-line-no">102</span><span id="line-102">   * ReentrantLock} will be used instead</span>
+<span class="source-line-no">103</span><span id="line-103">   *</span>
+<span class="source-line-no">104</span><span id="line-104">   * @see #DefaultDomain(ProcessingEnvironment, Lock)</span>
+<span class="source-line-no">105</span><span id="line-105">   *</span>
+<span class="source-line-no">106</span><span id="line-106">   * @see RuntimeProcessingEnvironmentSupplier</span>
+<span class="source-line-no">107</span><span id="line-107">   *</span>
+<span class="source-line-no">108</span><span id="line-108">   * @see SymbolCompletionLock</span>
+<span class="source-line-no">109</span><span id="line-109">   */</span>
+<span class="source-line-no">110</span><span id="line-110">  public DefaultDomain(final Lock lock) {</span>
+<span class="source-line-no">111</span><span id="line-111">    this(null, lock);</span>
+<span class="source-line-no">112</span><span id="line-112">  }</span>
+<span class="source-line-no">113</span><span id="line-113"></span>
+<span class="source-line-no">114</span><span id="line-114">  /**</span>
+<span class="source-line-no">115</span><span id="line-115">   * Creates a new {@link DefaultDomain} &lt;strong&gt;normally for use at annotation processing time&lt;/strong&gt;, whose usage</span>
+<span class="source-line-no">116</span><span id="line-116">   * type is actually determined by the arguments supplied to this constructor.</span>
 <span class="source-line-no">117</span><span id="line-117">   *</span>
 <span class="source-line-no">118</span><span id="line-118">   * @param pe a {@link ProcessingEnvironment}; may be {@code null} in which case the return value of an invocation of</span>
 <span class="source-line-no">119</span><span id="line-119">   * {@link Supplier#get()} on the return value of an invocation of {@link RuntimeProcessingEnvironmentSupplier#of()}</span>
@@ -134,8 +134,8 @@
 <span class="source-line-no">121</span><span id="line-121">   *</span>
 <span class="source-line-no">122</span><span id="line-122">   * @param lock a {@link Lock} to use to serialize symbol completion; if {@code null} and {@code pe} is {@code null},</span>
 <span class="source-line-no">123</span><span id="line-123">   * then a global {@link ReentrantLock} will be used instead; if {@code null} and {@code pe} is non-{@code null}, then</span>
-<span class="source-line-no">124</span><span id="line-124">   * no serialization of symbol completion will occur and this {@link DefaultDomain} will not be safe for concurrent use</span>
-<span class="source-line-no">125</span><span id="line-125">   * by multiple threads</span>
+<span class="source-line-no">124</span><span id="line-124">   * no serialization of symbol completion will occur &lt;strong&gt;and this {@link DefaultDomain} therefore will not be safe</span>
+<span class="source-line-no">125</span><span id="line-125">   * for concurrent use by multiple threads&lt;/strong&gt;</span>
 <span class="source-line-no">126</span><span id="line-126">   *</span>
 <span class="source-line-no">127</span><span id="line-127">   * @see RuntimeProcessingEnvironmentSupplier</span>
 <span class="source-line-no">128</span><span id="line-128">   *</span>
@@ -298,342 +298,350 @@
 <span class="source-line-no">285</span><span id="line-285">    return UniversalType.of(Domain.super.elementType(t), this);</span>
 <span class="source-line-no">286</span><span id="line-286">  }</span>
 <span class="source-line-no">287</span><span id="line-287"></span>
-<span class="source-line-no">288</span><span id="line-288">  private final Elements elements() {</span>
-<span class="source-line-no">289</span><span id="line-289">    return this.pe().getElementUtils();</span>
-<span class="source-line-no">290</span><span id="line-290">  }</span>
-<span class="source-line-no">291</span><span id="line-291"></span>
-<span class="source-line-no">292</span><span id="line-292">  @Override // Object</span>
-<span class="source-line-no">293</span><span id="line-293">  public boolean equals(final Object other) {</span>
-<span class="source-line-no">294</span><span id="line-294">    if (this == other) {</span>
-<span class="source-line-no">295</span><span id="line-295">      return true;</span>
-<span class="source-line-no">296</span><span id="line-296">    } else if (other != null &amp;&amp; other.getClass() == this.getClass()) {</span>
-<span class="source-line-no">297</span><span id="line-297">      final DefaultDomain her = (DefaultDomain)other;</span>
-<span class="source-line-no">298</span><span id="line-298">      return</span>
-<span class="source-line-no">299</span><span id="line-299">        Objects.equals(this.pe(), her.pe()) &amp;&amp;</span>
-<span class="source-line-no">300</span><span id="line-300">        Objects.equals(this.locker, her.locker);</span>
-<span class="source-line-no">301</span><span id="line-301">    } else {</span>
-<span class="source-line-no">302</span><span id="line-302">      return false;</span>
-<span class="source-line-no">303</span><span id="line-303">    }</span>
-<span class="source-line-no">304</span><span id="line-304">  }</span>
-<span class="source-line-no">305</span><span id="line-305"></span>
-<span class="source-line-no">306</span><span id="line-306">  @Override // Domain</span>
-<span class="source-line-no">307</span><span id="line-307">  public UniversalType erasure(TypeMirror t) {</span>
-<span class="source-line-no">308</span><span id="line-308">    t = unwrap(t);</span>
-<span class="source-line-no">309</span><span id="line-309">    try (var lock = lock()) {</span>
-<span class="source-line-no">310</span><span id="line-310">      return UniversalType.of(this.types().erasure(t), this);</span>
-<span class="source-line-no">311</span><span id="line-311">    }</span>
-<span class="source-line-no">312</span><span id="line-312">  }</span>
-<span class="source-line-no">313</span><span id="line-313"></span>
-<span class="source-line-no">314</span><span id="line-314">  // (Convenience.)</span>
-<span class="source-line-no">315</span><span id="line-315">  @Override // Domain</span>
-<span class="source-line-no">316</span><span id="line-316">  public UniversalElement executableElement(final TypeElement declaringElement,</span>
-<span class="source-line-no">317</span><span id="line-317">                                            final TypeMirror returnType,</span>
-<span class="source-line-no">318</span><span id="line-318">                                            final CharSequence name,</span>
-<span class="source-line-no">319</span><span id="line-319">                                            final TypeMirror... parameterTypes) {</span>
-<span class="source-line-no">320</span><span id="line-320">    return UniversalElement.of(Domain.super.executableElement(declaringElement, returnType, name, parameterTypes), this);</span>
-<span class="source-line-no">321</span><span id="line-321">  }</span>
-<span class="source-line-no">322</span><span id="line-322"></span>
-<span class="source-line-no">323</span><span id="line-323">  @Override // Object</span>
-<span class="source-line-no">324</span><span id="line-324">  public int hashCode() {</span>
-<span class="source-line-no">325</span><span id="line-325">    return this.pe().hashCode() ^ this.locker.hashCode();</span>
-<span class="source-line-no">326</span><span id="line-326">  }</span>
-<span class="source-line-no">327</span><span id="line-327"></span>
-<span class="source-line-no">328</span><span id="line-328">  // (Convenience.)</span>
-<span class="source-line-no">329</span><span id="line-329">  @Override // Domain</span>
-<span class="source-line-no">330</span><span id="line-330">  public UniversalElement javaLangObject() {</span>
-<span class="source-line-no">331</span><span id="line-331">    return UniversalElement.of(Domain.super.javaLangObject(), this);</span>
-<span class="source-line-no">332</span><span id="line-332">  }</span>
-<span class="source-line-no">333</span><span id="line-333"></span>
-<span class="source-line-no">334</span><span id="line-334">  /**</span>
-<span class="source-line-no">335</span><span id="line-335">   * Returns a non-{@code null} {@link Unlockable} that should be used in a {@code try}-with-resources block guarding</span>
-<span class="source-line-no">336</span><span id="line-336">   * operations that might cause symbol completion.</span>
-<span class="source-line-no">337</span><span id="line-337">   *</span>
-<span class="source-line-no">338</span><span id="line-338">   * @return a non-{@code null} {@link Unlockable}</span>
-<span class="source-line-no">339</span><span id="line-339">   *</span>
-<span class="source-line-no">340</span><span id="line-340">   * @see Unlockable#close()</span>
-<span class="source-line-no">341</span><span id="line-341">   */</span>
-<span class="source-line-no">342</span><span id="line-342">  public final Unlockable lock() {</span>
-<span class="source-line-no">343</span><span id="line-343">    return this.locker.get();</span>
-<span class="source-line-no">344</span><span id="line-344">  }</span>
-<span class="source-line-no">345</span><span id="line-345"></span>
-<span class="source-line-no">346</span><span id="line-346">  // (Canonical.)</span>
-<span class="source-line-no">347</span><span id="line-347">  @Override // Domain</span>
-<span class="source-line-no">348</span><span id="line-348">  public UniversalElement moduleElement(final CharSequence canonicalName) {</span>
-<span class="source-line-no">349</span><span id="line-349">    try (var lock = lock()) {</span>
-<span class="source-line-no">350</span><span id="line-350">      return UniversalElement.of(this.elements().getModuleElement(canonicalName), this);</span>
-<span class="source-line-no">351</span><span id="line-351">    }</span>
-<span class="source-line-no">352</span><span id="line-352">  }</span>
-<span class="source-line-no">353</span><span id="line-353"></span>
-<span class="source-line-no">354</span><span id="line-354">  // (Canonical.)</span>
-<span class="source-line-no">355</span><span id="line-355">  @Override // Domain</span>
-<span class="source-line-no">356</span><span id="line-356">  public StringName name(final CharSequence name) {</span>
-<span class="source-line-no">357</span><span id="line-357">    return switch (name) {</span>
-<span class="source-line-no">358</span><span id="line-358">    case StringName sn -&gt; sn;</span>
-<span class="source-line-no">359</span><span id="line-359">    // You will be tempted to add other efficient cases here. Do not.</span>
-<span class="source-line-no">360</span><span id="line-360">    default -&gt; {</span>
-<span class="source-line-no">361</span><span id="line-361">      try (var lock = lock()) {</span>
-<span class="source-line-no">362</span><span id="line-362">        yield StringName.of(this.elements().getName(name).toString(), this);</span>
-<span class="source-line-no">363</span><span id="line-363">      }</span>
-<span class="source-line-no">364</span><span id="line-364">    }</span>
-<span class="source-line-no">365</span><span id="line-365">    };</span>
-<span class="source-line-no">366</span><span id="line-366">  }</span>
-<span class="source-line-no">367</span><span id="line-367"></span>
-<span class="source-line-no">368</span><span id="line-368">  // (Canonical.)</span>
-<span class="source-line-no">369</span><span id="line-369">  @Override // Domain</span>
-<span class="source-line-no">370</span><span id="line-370">  public UniversalType noType(final TypeKind kind) {</span>
-<span class="source-line-no">371</span><span id="line-371">    return UniversalType.of(this.types().getNoType(kind), this);</span>
-<span class="source-line-no">372</span><span id="line-372">  }</span>
-<span class="source-line-no">373</span><span id="line-373"></span>
-<span class="source-line-no">374</span><span id="line-374">  // (Canonical.)</span>
-<span class="source-line-no">375</span><span id="line-375">  @Override // Domain</span>
-<span class="source-line-no">376</span><span id="line-376">  public UniversalType nullType() {</span>
-<span class="source-line-no">377</span><span id="line-377">    return UniversalType.of(this.types().getNullType(), this);</span>
-<span class="source-line-no">378</span><span id="line-378">  }</span>
-<span class="source-line-no">379</span><span id="line-379"></span>
-<span class="source-line-no">380</span><span id="line-380">  @Override // Domain</span>
-<span class="source-line-no">381</span><span id="line-381">  public Origin origin(Element e) {</span>
-<span class="source-line-no">382</span><span id="line-382">    e = unwrap(e);</span>
-<span class="source-line-no">383</span><span id="line-383">    try (var lock = lock()) {</span>
-<span class="source-line-no">384</span><span id="line-384">      return this.elements().getOrigin(e);</span>
-<span class="source-line-no">385</span><span id="line-385">    }</span>
-<span class="source-line-no">386</span><span id="line-386">  }</span>
-<span class="source-line-no">387</span><span id="line-387"></span>
-<span class="source-line-no">388</span><span id="line-388">  // (Canonical.)</span>
-<span class="source-line-no">389</span><span id="line-389">  @Override // Domain</span>
-<span class="source-line-no">390</span><span id="line-390">  public UniversalElement packageElement(final CharSequence canonicalName) {</span>
-<span class="source-line-no">391</span><span id="line-391">    try (var lock = lock()) {</span>
-<span class="source-line-no">392</span><span id="line-392">      return UniversalElement.of(this.elements().getPackageElement(canonicalName), this);</span>
-<span class="source-line-no">393</span><span id="line-393">    }</span>
-<span class="source-line-no">394</span><span id="line-394">  }</span>
-<span class="source-line-no">395</span><span id="line-395"></span>
-<span class="source-line-no">396</span><span id="line-396">  // (Canonical.)</span>
-<span class="source-line-no">397</span><span id="line-397">  @Override // Domain</span>
-<span class="source-line-no">398</span><span id="line-398">  public UniversalElement packageElement(ModuleElement asSeenFrom, final CharSequence canonicalName) {</span>
-<span class="source-line-no">399</span><span id="line-399">    asSeenFrom = unwrap(asSeenFrom);</span>
-<span class="source-line-no">400</span><span id="line-400">    try (var lock = lock()) {</span>
-<span class="source-line-no">401</span><span id="line-401">      return UniversalElement.of(this.elements().getPackageElement(asSeenFrom, canonicalName), this);</span>
-<span class="source-line-no">402</span><span id="line-402">    }</span>
-<span class="source-line-no">403</span><span id="line-403">  }</span>
-<span class="source-line-no">404</span><span id="line-404"></span>
-<span class="source-line-no">405</span><span id="line-405">  private final ProcessingEnvironment pe() {</span>
-<span class="source-line-no">406</span><span id="line-406">    return this.pe.get();</span>
-<span class="source-line-no">407</span><span id="line-407">  }</span>
-<span class="source-line-no">408</span><span id="line-408"></span>
-<span class="source-line-no">409</span><span id="line-409">  // (Canonical.)</span>
-<span class="source-line-no">410</span><span id="line-410">  @Override // Domain</span>
-<span class="source-line-no">411</span><span id="line-411">  public UniversalType primitiveType(final TypeKind kind) {</span>
-<span class="source-line-no">412</span><span id="line-412">    return UniversalType.of(this.types().getPrimitiveType(kind), this);</span>
-<span class="source-line-no">413</span><span id="line-413">  }</span>
-<span class="source-line-no">414</span><span id="line-414"></span>
-<span class="source-line-no">415</span><span id="line-415">  // (Convenience.)</span>
-<span class="source-line-no">416</span><span id="line-416">  // (Unboxing.)</span>
+<span class="source-line-no">288</span><span id="line-288">  // Non-private for testing only.</span>
+<span class="source-line-no">289</span><span id="line-289">  final Elements elements() {</span>
+<span class="source-line-no">290</span><span id="line-290">    return this.pe().getElementUtils();</span>
+<span class="source-line-no">291</span><span id="line-291">  }</span>
+<span class="source-line-no">292</span><span id="line-292"></span>
+<span class="source-line-no">293</span><span id="line-293">  @Override // Object</span>
+<span class="source-line-no">294</span><span id="line-294">  public boolean equals(final Object other) {</span>
+<span class="source-line-no">295</span><span id="line-295">    if (this == other) {</span>
+<span class="source-line-no">296</span><span id="line-296">      return true;</span>
+<span class="source-line-no">297</span><span id="line-297">    } else if (other != null &amp;&amp; other.getClass() == this.getClass()) {</span>
+<span class="source-line-no">298</span><span id="line-298">      final DefaultDomain her = (DefaultDomain)other;</span>
+<span class="source-line-no">299</span><span id="line-299">      return</span>
+<span class="source-line-no">300</span><span id="line-300">        Objects.equals(this.pe(), her.pe()) &amp;&amp;</span>
+<span class="source-line-no">301</span><span id="line-301">        Objects.equals(this.locker, her.locker);</span>
+<span class="source-line-no">302</span><span id="line-302">    } else {</span>
+<span class="source-line-no">303</span><span id="line-303">      return false;</span>
+<span class="source-line-no">304</span><span id="line-304">    }</span>
+<span class="source-line-no">305</span><span id="line-305">  }</span>
+<span class="source-line-no">306</span><span id="line-306"></span>
+<span class="source-line-no">307</span><span id="line-307">  @Override // Domain</span>
+<span class="source-line-no">308</span><span id="line-308">  public UniversalType erasure(TypeMirror t) {</span>
+<span class="source-line-no">309</span><span id="line-309">    t = unwrap(t);</span>
+<span class="source-line-no">310</span><span id="line-310">    try (var lock = lock()) {</span>
+<span class="source-line-no">311</span><span id="line-311">      return UniversalType.of(this.types().erasure(t), this);</span>
+<span class="source-line-no">312</span><span id="line-312">    }</span>
+<span class="source-line-no">313</span><span id="line-313">  }</span>
+<span class="source-line-no">314</span><span id="line-314"></span>
+<span class="source-line-no">315</span><span id="line-315">  // (Convenience.)</span>
+<span class="source-line-no">316</span><span id="line-316">  @Override // Domain</span>
+<span class="source-line-no">317</span><span id="line-317">  public UniversalElement executableElement(final TypeElement declaringElement,</span>
+<span class="source-line-no">318</span><span id="line-318">                                            final TypeMirror returnType,</span>
+<span class="source-line-no">319</span><span id="line-319">                                            final CharSequence name,</span>
+<span class="source-line-no">320</span><span id="line-320">                                            final TypeMirror... parameterTypes) {</span>
+<span class="source-line-no">321</span><span id="line-321">    return UniversalElement.of(Domain.super.executableElement(declaringElement, returnType, name, parameterTypes), this);</span>
+<span class="source-line-no">322</span><span id="line-322">  }</span>
+<span class="source-line-no">323</span><span id="line-323"></span>
+<span class="source-line-no">324</span><span id="line-324">  @Override // Object</span>
+<span class="source-line-no">325</span><span id="line-325">  public int hashCode() {</span>
+<span class="source-line-no">326</span><span id="line-326">    return this.pe().hashCode() ^ this.locker.hashCode();</span>
+<span class="source-line-no">327</span><span id="line-327">  }</span>
+<span class="source-line-no">328</span><span id="line-328"></span>
+<span class="source-line-no">329</span><span id="line-329">  // (Convenience.)</span>
+<span class="source-line-no">330</span><span id="line-330">  @Override // Domain</span>
+<span class="source-line-no">331</span><span id="line-331">  public UniversalElement javaLangObject() {</span>
+<span class="source-line-no">332</span><span id="line-332">    return UniversalElement.of(Domain.super.javaLangObject(), this);</span>
+<span class="source-line-no">333</span><span id="line-333">  }</span>
+<span class="source-line-no">334</span><span id="line-334"></span>
+<span class="source-line-no">335</span><span id="line-335">  // (Convenience.)</span>
+<span class="source-line-no">336</span><span id="line-336">  @Override // Domain</span>
+<span class="source-line-no">337</span><span id="line-337">  public UniversalType javaLangObjectType() {</span>
+<span class="source-line-no">338</span><span id="line-338">    return UniversalType.of(Domain.super.javaLangObjectType(), this);</span>
+<span class="source-line-no">339</span><span id="line-339">  }</span>
+<span class="source-line-no">340</span><span id="line-340"></span>
+<span class="source-line-no">341</span><span id="line-341">  /**</span>
+<span class="source-line-no">342</span><span id="line-342">   * Returns a non-{@code null} {@link Unlockable} that should be used in a {@code try}-with-resources block guarding</span>
+<span class="source-line-no">343</span><span id="line-343">   * operations that might cause symbol completion.</span>
+<span class="source-line-no">344</span><span id="line-344">   *</span>
+<span class="source-line-no">345</span><span id="line-345">   * @return a non-{@code null} {@link Unlockable}</span>
+<span class="source-line-no">346</span><span id="line-346">   *</span>
+<span class="source-line-no">347</span><span id="line-347">   * @see Unlockable#close()</span>
+<span class="source-line-no">348</span><span id="line-348">   */</span>
+<span class="source-line-no">349</span><span id="line-349">  public final Unlockable lock() {</span>
+<span class="source-line-no">350</span><span id="line-350">    return this.locker.get();</span>
+<span class="source-line-no">351</span><span id="line-351">  }</span>
+<span class="source-line-no">352</span><span id="line-352"></span>
+<span class="source-line-no">353</span><span id="line-353">  // (Canonical.)</span>
+<span class="source-line-no">354</span><span id="line-354">  @Override // Domain</span>
+<span class="source-line-no">355</span><span id="line-355">  public UniversalElement moduleElement(final CharSequence canonicalName) {</span>
+<span class="source-line-no">356</span><span id="line-356">    try (var lock = lock()) {</span>
+<span class="source-line-no">357</span><span id="line-357">      return UniversalElement.of(this.elements().getModuleElement(canonicalName), this);</span>
+<span class="source-line-no">358</span><span id="line-358">    }</span>
+<span class="source-line-no">359</span><span id="line-359">  }</span>
+<span class="source-line-no">360</span><span id="line-360"></span>
+<span class="source-line-no">361</span><span id="line-361">  // (Canonical.)</span>
+<span class="source-line-no">362</span><span id="line-362">  @Override // Domain</span>
+<span class="source-line-no">363</span><span id="line-363">  public StringName name(final CharSequence name) {</span>
+<span class="source-line-no">364</span><span id="line-364">    return switch (name) {</span>
+<span class="source-line-no">365</span><span id="line-365">    case StringName sn -&gt; sn;</span>
+<span class="source-line-no">366</span><span id="line-366">    // You will be tempted to add other efficient cases here. Do not.</span>
+<span class="source-line-no">367</span><span id="line-367">    default -&gt; {</span>
+<span class="source-line-no">368</span><span id="line-368">      try (var lock = lock()) {</span>
+<span class="source-line-no">369</span><span id="line-369">        yield StringName.of(this.elements().getName(name).toString(), this);</span>
+<span class="source-line-no">370</span><span id="line-370">      }</span>
+<span class="source-line-no">371</span><span id="line-371">    }</span>
+<span class="source-line-no">372</span><span id="line-372">    };</span>
+<span class="source-line-no">373</span><span id="line-373">  }</span>
+<span class="source-line-no">374</span><span id="line-374"></span>
+<span class="source-line-no">375</span><span id="line-375">  // (Canonical.)</span>
+<span class="source-line-no">376</span><span id="line-376">  @Override // Domain</span>
+<span class="source-line-no">377</span><span id="line-377">  public UniversalType noType(final TypeKind kind) {</span>
+<span class="source-line-no">378</span><span id="line-378">    return UniversalType.of(this.types().getNoType(kind), this);</span>
+<span class="source-line-no">379</span><span id="line-379">  }</span>
+<span class="source-line-no">380</span><span id="line-380"></span>
+<span class="source-line-no">381</span><span id="line-381">  // (Canonical.)</span>
+<span class="source-line-no">382</span><span id="line-382">  @Override // Domain</span>
+<span class="source-line-no">383</span><span id="line-383">  public UniversalType nullType() {</span>
+<span class="source-line-no">384</span><span id="line-384">    return UniversalType.of(this.types().getNullType(), this);</span>
+<span class="source-line-no">385</span><span id="line-385">  }</span>
+<span class="source-line-no">386</span><span id="line-386"></span>
+<span class="source-line-no">387</span><span id="line-387">  @Override // Domain</span>
+<span class="source-line-no">388</span><span id="line-388">  public Origin origin(Element e) {</span>
+<span class="source-line-no">389</span><span id="line-389">    e = unwrap(e);</span>
+<span class="source-line-no">390</span><span id="line-390">    try (var lock = lock()) {</span>
+<span class="source-line-no">391</span><span id="line-391">      return this.elements().getOrigin(e);</span>
+<span class="source-line-no">392</span><span id="line-392">    }</span>
+<span class="source-line-no">393</span><span id="line-393">  }</span>
+<span class="source-line-no">394</span><span id="line-394"></span>
+<span class="source-line-no">395</span><span id="line-395">  // (Canonical.)</span>
+<span class="source-line-no">396</span><span id="line-396">  @Override // Domain</span>
+<span class="source-line-no">397</span><span id="line-397">  public UniversalElement packageElement(final CharSequence canonicalName) {</span>
+<span class="source-line-no">398</span><span id="line-398">    try (var lock = lock()) {</span>
+<span class="source-line-no">399</span><span id="line-399">      return UniversalElement.of(this.elements().getPackageElement(canonicalName), this);</span>
+<span class="source-line-no">400</span><span id="line-400">    }</span>
+<span class="source-line-no">401</span><span id="line-401">  }</span>
+<span class="source-line-no">402</span><span id="line-402"></span>
+<span class="source-line-no">403</span><span id="line-403">  // (Canonical.)</span>
+<span class="source-line-no">404</span><span id="line-404">  @Override // Domain</span>
+<span class="source-line-no">405</span><span id="line-405">  public UniversalElement packageElement(ModuleElement asSeenFrom, final CharSequence canonicalName) {</span>
+<span class="source-line-no">406</span><span id="line-406">    asSeenFrom = unwrap(asSeenFrom);</span>
+<span class="source-line-no">407</span><span id="line-407">    try (var lock = lock()) {</span>
+<span class="source-line-no">408</span><span id="line-408">      return UniversalElement.of(this.elements().getPackageElement(asSeenFrom, canonicalName), this);</span>
+<span class="source-line-no">409</span><span id="line-409">    }</span>
+<span class="source-line-no">410</span><span id="line-410">  }</span>
+<span class="source-line-no">411</span><span id="line-411"></span>
+<span class="source-line-no">412</span><span id="line-412">  private final ProcessingEnvironment pe() {</span>
+<span class="source-line-no">413</span><span id="line-413">    return this.pe.get();</span>
+<span class="source-line-no">414</span><span id="line-414">  }</span>
+<span class="source-line-no">415</span><span id="line-415"></span>
+<span class="source-line-no">416</span><span id="line-416">  // (Canonical.)</span>
 <span class="source-line-no">417</span><span id="line-417">  @Override // Domain</span>
-<span class="source-line-no">418</span><span id="line-418">  public UniversalType primitiveType(final CharSequence canonicalName) {</span>
-<span class="source-line-no">419</span><span id="line-419">    return UniversalType.of(Domain.super.primitiveType(canonicalName), this);</span>
+<span class="source-line-no">418</span><span id="line-418">  public UniversalType primitiveType(final TypeKind kind) {</span>
+<span class="source-line-no">419</span><span id="line-419">    return UniversalType.of(this.types().getPrimitiveType(kind), this);</span>
 <span class="source-line-no">420</span><span id="line-420">  }</span>
 <span class="source-line-no">421</span><span id="line-421"></span>
 <span class="source-line-no">422</span><span id="line-422">  // (Convenience.)</span>
 <span class="source-line-no">423</span><span id="line-423">  // (Unboxing.)</span>
 <span class="source-line-no">424</span><span id="line-424">  @Override // Domain</span>
-<span class="source-line-no">425</span><span id="line-425">  public UniversalType primitiveType(final TypeElement e) {</span>
-<span class="source-line-no">426</span><span id="line-426">    return UniversalType.of(Domain.super.primitiveType(e), this);</span>
+<span class="source-line-no">425</span><span id="line-425">  public UniversalType primitiveType(final CharSequence canonicalName) {</span>
+<span class="source-line-no">426</span><span id="line-426">    return UniversalType.of(Domain.super.primitiveType(canonicalName), this);</span>
 <span class="source-line-no">427</span><span id="line-427">  }</span>
 <span class="source-line-no">428</span><span id="line-428"></span>
-<span class="source-line-no">429</span><span id="line-429">  // (Canonical.)</span>
+<span class="source-line-no">429</span><span id="line-429">  // (Convenience.)</span>
 <span class="source-line-no">430</span><span id="line-430">  // (Unboxing.)</span>
 <span class="source-line-no">431</span><span id="line-431">  @Override // Domain</span>
-<span class="source-line-no">432</span><span id="line-432">  public UniversalType primitiveType(TypeMirror t) {</span>
-<span class="source-line-no">433</span><span id="line-433">    t = unwrap(t);</span>
-<span class="source-line-no">434</span><span id="line-434">    try (var lock = lock()) {</span>
-<span class="source-line-no">435</span><span id="line-435">      return UniversalType.of(this.types().unboxedType(t), this);</span>
-<span class="source-line-no">436</span><span id="line-436">    }</span>
-<span class="source-line-no">437</span><span id="line-437">  }</span>
-<span class="source-line-no">438</span><span id="line-438"></span>
-<span class="source-line-no">439</span><span id="line-439">  @Override // Domain</span>
-<span class="source-line-no">440</span><span id="line-440">  public UniversalType rawType(final TypeMirror t) {</span>
-<span class="source-line-no">441</span><span id="line-441">    return UniversalType.of(Domain.super.rawType(t), this);</span>
-<span class="source-line-no">442</span><span id="line-442">  }</span>
-<span class="source-line-no">443</span><span id="line-443"></span>
-<span class="source-line-no">444</span><span id="line-444">  // (Canonical.)</span>
-<span class="source-line-no">445</span><span id="line-445">  @Override // Domain</span>
-<span class="source-line-no">446</span><span id="line-446">  public UniversalElement recordComponentElement(ExecutableElement e) {</span>
-<span class="source-line-no">447</span><span id="line-447">    e = unwrap(e);</span>
-<span class="source-line-no">448</span><span id="line-448">    try (var lock = lock()) {</span>
-<span class="source-line-no">449</span><span id="line-449">      return UniversalElement.of(this.elements().recordComponentFor(e), this);</span>
-<span class="source-line-no">450</span><span id="line-450">    }</span>
-<span class="source-line-no">451</span><span id="line-451">  }</span>
-<span class="source-line-no">452</span><span id="line-452"></span>
-<span class="source-line-no">453</span><span id="line-453">  @Override // Domain</span>
-<span class="source-line-no">454</span><span id="line-454">  public boolean sameType(TypeMirror t0, TypeMirror t1) {</span>
-<span class="source-line-no">455</span><span id="line-455">    if (t0 == t1) {</span>
-<span class="source-line-no">456</span><span id="line-456">      // Critical; javax.lang.model.Types#isSameType(TypeMirror, TypeMirror) returns false here, on purpose, if the two</span>
-<span class="source-line-no">457</span><span id="line-457">      // identical references are wildcards. This is almost never what anyone wants.</span>
-<span class="source-line-no">458</span><span id="line-458">      return true;</span>
-<span class="source-line-no">459</span><span id="line-459">    } else if (t0 == null || t1 == null) {</span>
-<span class="source-line-no">460</span><span id="line-460">      return false;</span>
-<span class="source-line-no">461</span><span id="line-461">    }</span>
-<span class="source-line-no">462</span><span id="line-462">    t0 = unwrap(t0);</span>
-<span class="source-line-no">463</span><span id="line-463">    t1 = unwrap(t1);</span>
-<span class="source-line-no">464</span><span id="line-464">    try (var lock = lock()) {</span>
-<span class="source-line-no">465</span><span id="line-465">      return this.types().isSameType(t0, t1);</span>
-<span class="source-line-no">466</span><span id="line-466">    }</span>
-<span class="source-line-no">467</span><span id="line-467">  }</span>
-<span class="source-line-no">468</span><span id="line-468"></span>
-<span class="source-line-no">469</span><span id="line-469">  @Override // Domain</span>
-<span class="source-line-no">470</span><span id="line-470">  public boolean subsignature(ExecutableType t0, ExecutableType t1) {</span>
-<span class="source-line-no">471</span><span id="line-471">    t0 = unwrap(t0);</span>
-<span class="source-line-no">472</span><span id="line-472">    t1 = unwrap(t1);</span>
-<span class="source-line-no">473</span><span id="line-473">    try (var lock = lock()) {</span>
-<span class="source-line-no">474</span><span id="line-474">      return this.types().isSubsignature(t0, t1);</span>
-<span class="source-line-no">475</span><span id="line-475">    }</span>
-<span class="source-line-no">476</span><span id="line-476">  }</span>
-<span class="source-line-no">477</span><span id="line-477"></span>
-<span class="source-line-no">478</span><span id="line-478">  @Override // Domain</span>
-<span class="source-line-no">479</span><span id="line-479">  public boolean subtype(TypeMirror candidateSubtype, TypeMirror candidateSupertype) {</span>
-<span class="source-line-no">480</span><span id="line-480">    candidateSubtype = unwrap(candidateSubtype);</span>
-<span class="source-line-no">481</span><span id="line-481">    candidateSupertype = unwrap(candidateSupertype);</span>
-<span class="source-line-no">482</span><span id="line-482">    try (var lock = lock()) {</span>
-<span class="source-line-no">483</span><span id="line-483">      return this.types().isSubtype(candidateSubtype, candidateSupertype);</span>
-<span class="source-line-no">484</span><span id="line-484">    }</span>
-<span class="source-line-no">485</span><span id="line-485">  }</span>
-<span class="source-line-no">486</span><span id="line-486"></span>
-<span class="source-line-no">487</span><span id="line-487">  @Override // Domain</span>
-<span class="source-line-no">488</span><span id="line-488">  public String toString(final CharSequence name) {</span>
-<span class="source-line-no">489</span><span id="line-489">    return switch (name) {</span>
-<span class="source-line-no">490</span><span id="line-490">    case null -&gt; null;</span>
-<span class="source-line-no">491</span><span id="line-491">    case String s -&gt; s;</span>
-<span class="source-line-no">492</span><span id="line-492">    case StringName sn -&gt; sn.value();</span>
-<span class="source-line-no">493</span><span id="line-493">    case Name n -&gt; {</span>
-<span class="source-line-no">494</span><span id="line-494">      try (var lock = lock()) {</span>
-<span class="source-line-no">495</span><span id="line-495">        yield n.toString();</span>
-<span class="source-line-no">496</span><span id="line-496">      }</span>
-<span class="source-line-no">497</span><span id="line-497">    }</span>
-<span class="source-line-no">498</span><span id="line-498">    default -&gt; name.toString();</span>
-<span class="source-line-no">499</span><span id="line-499">    };</span>
-<span class="source-line-no">500</span><span id="line-500">  }</span>
-<span class="source-line-no">501</span><span id="line-501"></span>
-<span class="source-line-no">502</span><span id="line-502">  // (Canonical.)</span>
-<span class="source-line-no">503</span><span id="line-503">  @Override // Domain</span>
-<span class="source-line-no">504</span><span id="line-504">  public UniversalElement typeElement(final CharSequence canonicalName) {</span>
-<span class="source-line-no">505</span><span id="line-505">    try (var lock = lock()) {</span>
-<span class="source-line-no">506</span><span id="line-506">      return UniversalElement.of(this.elements().getTypeElement(switch (canonicalName.toString()) {</span>
-<span class="source-line-no">507</span><span id="line-507">          case "boolean" -&gt; "java.lang.Boolean";</span>
-<span class="source-line-no">508</span><span id="line-508">          case "byte" -&gt; "java.lang.Byte";</span>
-<span class="source-line-no">509</span><span id="line-509">          case "char" -&gt; "java.lang.Character";</span>
-<span class="source-line-no">510</span><span id="line-510">          case "double" -&gt; "java.lang.Double";</span>
-<span class="source-line-no">511</span><span id="line-511">          case "float" -&gt; "java.lang.Float";</span>
-<span class="source-line-no">512</span><span id="line-512">          case "int" -&gt; "java.lang.Integer";</span>
-<span class="source-line-no">513</span><span id="line-513">          case "long" -&gt; "java.lang.Long";</span>
-<span class="source-line-no">514</span><span id="line-514">          case "short" -&gt; "java.lang.Short";</span>
-<span class="source-line-no">515</span><span id="line-515">          default -&gt; canonicalName;</span>
-<span class="source-line-no">516</span><span id="line-516">          }), this);</span>
-<span class="source-line-no">517</span><span id="line-517">    }</span>
-<span class="source-line-no">518</span><span id="line-518">  }</span>
-<span class="source-line-no">519</span><span id="line-519"></span>
-<span class="source-line-no">520</span><span id="line-520">  // (Canonical.)</span>
-<span class="source-line-no">521</span><span id="line-521">  @Override // Domain</span>
-<span class="source-line-no">522</span><span id="line-522">  public UniversalElement typeElement(ModuleElement asSeenFrom, final CharSequence canonicalName) {</span>
-<span class="source-line-no">523</span><span id="line-523">    asSeenFrom = unwrap(asSeenFrom);</span>
-<span class="source-line-no">524</span><span id="line-524">    try (var lock = lock()) {</span>
-<span class="source-line-no">525</span><span id="line-525">      return UniversalElement.of(this.elements().getTypeElement(asSeenFrom, switch (canonicalName.toString()) {</span>
-<span class="source-line-no">526</span><span id="line-526">          case "boolean" -&gt; "java.lang.Boolean";</span>
-<span class="source-line-no">527</span><span id="line-527">          case "byte" -&gt; "java.lang.Byte";</span>
-<span class="source-line-no">528</span><span id="line-528">          case "char" -&gt; "java.lang.Character";</span>
-<span class="source-line-no">529</span><span id="line-529">          case "double" -&gt; "java.lang.Double";</span>
-<span class="source-line-no">530</span><span id="line-530">          case "float" -&gt; "java.lang.Float";</span>
-<span class="source-line-no">531</span><span id="line-531">          case "int" -&gt; "java.lang.Integer";</span>
-<span class="source-line-no">532</span><span id="line-532">          case "long" -&gt; "java.lang.Long";</span>
-<span class="source-line-no">533</span><span id="line-533">          case "short" -&gt; "java.lang.Short";</span>
-<span class="source-line-no">534</span><span id="line-534">          default -&gt; canonicalName;</span>
-<span class="source-line-no">535</span><span id="line-535">          }), this);</span>
-<span class="source-line-no">536</span><span id="line-536">    }</span>
-<span class="source-line-no">537</span><span id="line-537">  }</span>
-<span class="source-line-no">538</span><span id="line-538"></span>
-<span class="source-line-no">539</span><span id="line-539">  // (Canonical.)</span>
-<span class="source-line-no">540</span><span id="line-540">  // (Boxing.)</span>
-<span class="source-line-no">541</span><span id="line-541">  @Override // Domain</span>
-<span class="source-line-no">542</span><span id="line-542">  public UniversalElement typeElement(PrimitiveType t) {</span>
-<span class="source-line-no">543</span><span id="line-543">    t = unwrap(t);</span>
-<span class="source-line-no">544</span><span id="line-544">    try (var lock = lock()) {</span>
-<span class="source-line-no">545</span><span id="line-545">      return UniversalElement.of(this.types().boxedClass(t), this);</span>
-<span class="source-line-no">546</span><span id="line-546">    }</span>
-<span class="source-line-no">547</span><span id="line-547">  }</span>
-<span class="source-line-no">548</span><span id="line-548"></span>
-<span class="source-line-no">549</span><span id="line-549">  // (Convenience.)</span>
-<span class="source-line-no">550</span><span id="line-550">  // (Boxing.)</span>
-<span class="source-line-no">551</span><span id="line-551">  @Override // Domain</span>
-<span class="source-line-no">552</span><span id="line-552">  public UniversalElement typeElement(final TypeKind primitiveTypeKind) {</span>
-<span class="source-line-no">553</span><span id="line-553">    return UniversalElement.of(Domain.super.typeElement(primitiveTypeKind), this);</span>
+<span class="source-line-no">432</span><span id="line-432">  public UniversalType primitiveType(final TypeElement e) {</span>
+<span class="source-line-no">433</span><span id="line-433">    return UniversalType.of(Domain.super.primitiveType(e), this);</span>
+<span class="source-line-no">434</span><span id="line-434">  }</span>
+<span class="source-line-no">435</span><span id="line-435"></span>
+<span class="source-line-no">436</span><span id="line-436">  // (Canonical.)</span>
+<span class="source-line-no">437</span><span id="line-437">  // (Unboxing.)</span>
+<span class="source-line-no">438</span><span id="line-438">  @Override // Domain</span>
+<span class="source-line-no">439</span><span id="line-439">  public UniversalType primitiveType(TypeMirror t) {</span>
+<span class="source-line-no">440</span><span id="line-440">    t = unwrap(t);</span>
+<span class="source-line-no">441</span><span id="line-441">    try (var lock = lock()) {</span>
+<span class="source-line-no">442</span><span id="line-442">      return UniversalType.of(this.types().unboxedType(t), this);</span>
+<span class="source-line-no">443</span><span id="line-443">    }</span>
+<span class="source-line-no">444</span><span id="line-444">  }</span>
+<span class="source-line-no">445</span><span id="line-445"></span>
+<span class="source-line-no">446</span><span id="line-446">  @Override // Domain</span>
+<span class="source-line-no">447</span><span id="line-447">  public UniversalType rawType(final TypeMirror t) {</span>
+<span class="source-line-no">448</span><span id="line-448">    return UniversalType.of(Domain.super.rawType(t), this);</span>
+<span class="source-line-no">449</span><span id="line-449">  }</span>
+<span class="source-line-no">450</span><span id="line-450"></span>
+<span class="source-line-no">451</span><span id="line-451">  // (Canonical.)</span>
+<span class="source-line-no">452</span><span id="line-452">  @Override // Domain</span>
+<span class="source-line-no">453</span><span id="line-453">  public UniversalElement recordComponentElement(ExecutableElement e) {</span>
+<span class="source-line-no">454</span><span id="line-454">    e = unwrap(e);</span>
+<span class="source-line-no">455</span><span id="line-455">    try (var lock = lock()) {</span>
+<span class="source-line-no">456</span><span id="line-456">      return UniversalElement.of(this.elements().recordComponentFor(e), this);</span>
+<span class="source-line-no">457</span><span id="line-457">    }</span>
+<span class="source-line-no">458</span><span id="line-458">  }</span>
+<span class="source-line-no">459</span><span id="line-459"></span>
+<span class="source-line-no">460</span><span id="line-460">  @Override // Domain</span>
+<span class="source-line-no">461</span><span id="line-461">  public boolean sameType(TypeMirror t0, TypeMirror t1) {</span>
+<span class="source-line-no">462</span><span id="line-462">    if (t0 == t1) {</span>
+<span class="source-line-no">463</span><span id="line-463">      // Critical; javax.lang.model.Types#isSameType(TypeMirror, TypeMirror) returns false here, on purpose, if the two</span>
+<span class="source-line-no">464</span><span id="line-464">      // identical references are wildcards. This is almost never what anyone wants.</span>
+<span class="source-line-no">465</span><span id="line-465">      return true;</span>
+<span class="source-line-no">466</span><span id="line-466">    } else if (t0 == null || t1 == null) {</span>
+<span class="source-line-no">467</span><span id="line-467">      return false;</span>
+<span class="source-line-no">468</span><span id="line-468">    }</span>
+<span class="source-line-no">469</span><span id="line-469">    t0 = unwrap(t0);</span>
+<span class="source-line-no">470</span><span id="line-470">    t1 = unwrap(t1);</span>
+<span class="source-line-no">471</span><span id="line-471">    try (var lock = lock()) {</span>
+<span class="source-line-no">472</span><span id="line-472">      return this.types().isSameType(t0, t1);</span>
+<span class="source-line-no">473</span><span id="line-473">    }</span>
+<span class="source-line-no">474</span><span id="line-474">  }</span>
+<span class="source-line-no">475</span><span id="line-475"></span>
+<span class="source-line-no">476</span><span id="line-476">  @Override // Domain</span>
+<span class="source-line-no">477</span><span id="line-477">  public boolean subsignature(ExecutableType t0, ExecutableType t1) {</span>
+<span class="source-line-no">478</span><span id="line-478">    t0 = unwrap(t0);</span>
+<span class="source-line-no">479</span><span id="line-479">    t1 = unwrap(t1);</span>
+<span class="source-line-no">480</span><span id="line-480">    try (var lock = lock()) {</span>
+<span class="source-line-no">481</span><span id="line-481">      return this.types().isSubsignature(t0, t1);</span>
+<span class="source-line-no">482</span><span id="line-482">    }</span>
+<span class="source-line-no">483</span><span id="line-483">  }</span>
+<span class="source-line-no">484</span><span id="line-484"></span>
+<span class="source-line-no">485</span><span id="line-485">  @Override // Domain</span>
+<span class="source-line-no">486</span><span id="line-486">  public boolean subtype(TypeMirror candidateSubtype, TypeMirror candidateSupertype) {</span>
+<span class="source-line-no">487</span><span id="line-487">    candidateSubtype = unwrap(candidateSubtype);</span>
+<span class="source-line-no">488</span><span id="line-488">    candidateSupertype = unwrap(candidateSupertype);</span>
+<span class="source-line-no">489</span><span id="line-489">    try (var lock = lock()) {</span>
+<span class="source-line-no">490</span><span id="line-490">      return this.types().isSubtype(candidateSubtype, candidateSupertype);</span>
+<span class="source-line-no">491</span><span id="line-491">    }</span>
+<span class="source-line-no">492</span><span id="line-492">  }</span>
+<span class="source-line-no">493</span><span id="line-493"></span>
+<span class="source-line-no">494</span><span id="line-494">  @Override // Domain</span>
+<span class="source-line-no">495</span><span id="line-495">  public String toString(final CharSequence name) {</span>
+<span class="source-line-no">496</span><span id="line-496">    return switch (name) {</span>
+<span class="source-line-no">497</span><span id="line-497">    case null -&gt; null;</span>
+<span class="source-line-no">498</span><span id="line-498">    case String s -&gt; s;</span>
+<span class="source-line-no">499</span><span id="line-499">    case StringName sn -&gt; sn.value();</span>
+<span class="source-line-no">500</span><span id="line-500">    case Name n -&gt; {</span>
+<span class="source-line-no">501</span><span id="line-501">      try (var lock = lock()) {</span>
+<span class="source-line-no">502</span><span id="line-502">        yield n.toString();</span>
+<span class="source-line-no">503</span><span id="line-503">      }</span>
+<span class="source-line-no">504</span><span id="line-504">    }</span>
+<span class="source-line-no">505</span><span id="line-505">    default -&gt; name.toString();</span>
+<span class="source-line-no">506</span><span id="line-506">    };</span>
+<span class="source-line-no">507</span><span id="line-507">  }</span>
+<span class="source-line-no">508</span><span id="line-508"></span>
+<span class="source-line-no">509</span><span id="line-509">  // (Canonical.)</span>
+<span class="source-line-no">510</span><span id="line-510">  @Override // Domain</span>
+<span class="source-line-no">511</span><span id="line-511">  public UniversalElement typeElement(final CharSequence canonicalName) {</span>
+<span class="source-line-no">512</span><span id="line-512">    try (var lock = lock()) {</span>
+<span class="source-line-no">513</span><span id="line-513">      return UniversalElement.of(this.elements().getTypeElement(switch (canonicalName.toString()) {</span>
+<span class="source-line-no">514</span><span id="line-514">          case "boolean" -&gt; "java.lang.Boolean";</span>
+<span class="source-line-no">515</span><span id="line-515">          case "byte" -&gt; "java.lang.Byte";</span>
+<span class="source-line-no">516</span><span id="line-516">          case "char" -&gt; "java.lang.Character";</span>
+<span class="source-line-no">517</span><span id="line-517">          case "double" -&gt; "java.lang.Double";</span>
+<span class="source-line-no">518</span><span id="line-518">          case "float" -&gt; "java.lang.Float";</span>
+<span class="source-line-no">519</span><span id="line-519">          case "int" -&gt; "java.lang.Integer";</span>
+<span class="source-line-no">520</span><span id="line-520">          case "long" -&gt; "java.lang.Long";</span>
+<span class="source-line-no">521</span><span id="line-521">          case "short" -&gt; "java.lang.Short";</span>
+<span class="source-line-no">522</span><span id="line-522">          default -&gt; canonicalName;</span>
+<span class="source-line-no">523</span><span id="line-523">          }), this);</span>
+<span class="source-line-no">524</span><span id="line-524">    }</span>
+<span class="source-line-no">525</span><span id="line-525">  }</span>
+<span class="source-line-no">526</span><span id="line-526"></span>
+<span class="source-line-no">527</span><span id="line-527">  // (Canonical.)</span>
+<span class="source-line-no">528</span><span id="line-528">  @Override // Domain</span>
+<span class="source-line-no">529</span><span id="line-529">  public UniversalElement typeElement(ModuleElement asSeenFrom, final CharSequence canonicalName) {</span>
+<span class="source-line-no">530</span><span id="line-530">    asSeenFrom = unwrap(asSeenFrom);</span>
+<span class="source-line-no">531</span><span id="line-531">    try (var lock = lock()) {</span>
+<span class="source-line-no">532</span><span id="line-532">      return UniversalElement.of(this.elements().getTypeElement(asSeenFrom, switch (canonicalName.toString()) {</span>
+<span class="source-line-no">533</span><span id="line-533">          case "boolean" -&gt; "java.lang.Boolean";</span>
+<span class="source-line-no">534</span><span id="line-534">          case "byte" -&gt; "java.lang.Byte";</span>
+<span class="source-line-no">535</span><span id="line-535">          case "char" -&gt; "java.lang.Character";</span>
+<span class="source-line-no">536</span><span id="line-536">          case "double" -&gt; "java.lang.Double";</span>
+<span class="source-line-no">537</span><span id="line-537">          case "float" -&gt; "java.lang.Float";</span>
+<span class="source-line-no">538</span><span id="line-538">          case "int" -&gt; "java.lang.Integer";</span>
+<span class="source-line-no">539</span><span id="line-539">          case "long" -&gt; "java.lang.Long";</span>
+<span class="source-line-no">540</span><span id="line-540">          case "short" -&gt; "java.lang.Short";</span>
+<span class="source-line-no">541</span><span id="line-541">          default -&gt; canonicalName;</span>
+<span class="source-line-no">542</span><span id="line-542">          }), this);</span>
+<span class="source-line-no">543</span><span id="line-543">    }</span>
+<span class="source-line-no">544</span><span id="line-544">  }</span>
+<span class="source-line-no">545</span><span id="line-545"></span>
+<span class="source-line-no">546</span><span id="line-546">  // (Canonical.)</span>
+<span class="source-line-no">547</span><span id="line-547">  // (Boxing.)</span>
+<span class="source-line-no">548</span><span id="line-548">  @Override // Domain</span>
+<span class="source-line-no">549</span><span id="line-549">  public UniversalElement typeElement(PrimitiveType t) {</span>
+<span class="source-line-no">550</span><span id="line-550">    t = unwrap(t);</span>
+<span class="source-line-no">551</span><span id="line-551">    try (var lock = lock()) {</span>
+<span class="source-line-no">552</span><span id="line-552">      return UniversalElement.of(this.types().boxedClass(t), this);</span>
+<span class="source-line-no">553</span><span id="line-553">    }</span>
 <span class="source-line-no">554</span><span id="line-554">  }</span>
 <span class="source-line-no">555</span><span id="line-555"></span>
 <span class="source-line-no">556</span><span id="line-556">  // (Convenience.)</span>
-<span class="source-line-no">557</span><span id="line-557">  @Override // Domain</span>
-<span class="source-line-no">558</span><span id="line-558">  public UniversalElement typeParameterElement(final Parameterizable p, final CharSequence name) {</span>
-<span class="source-line-no">559</span><span id="line-559">    return UniversalElement.of(Domain.super.typeParameterElement(p, name), this);</span>
-<span class="source-line-no">560</span><span id="line-560">  }</span>
-<span class="source-line-no">561</span><span id="line-561"></span>
-<span class="source-line-no">562</span><span id="line-562">  private final Types types() {</span>
-<span class="source-line-no">563</span><span id="line-563">    return this.pe().getTypeUtils();</span>
-<span class="source-line-no">564</span><span id="line-564">  }</span>
-<span class="source-line-no">565</span><span id="line-565"></span>
-<span class="source-line-no">566</span><span id="line-566">  // (Convenience.)</span>
-<span class="source-line-no">567</span><span id="line-567">  @Override // Domain</span>
-<span class="source-line-no">568</span><span id="line-568">  public UniversalType typeVariable(final Parameterizable p, final CharSequence name) {</span>
-<span class="source-line-no">569</span><span id="line-569">    return UniversalType.of(Domain.super.typeVariable(p, name), this);</span>
-<span class="source-line-no">570</span><span id="line-570">  }</span>
-<span class="source-line-no">571</span><span id="line-571"></span>
-<span class="source-line-no">572</span><span id="line-572">  // (Convenience.)</span>
-<span class="source-line-no">573</span><span id="line-573">  @Override // Domain</span>
-<span class="source-line-no">574</span><span id="line-574">  public UniversalElement variableElement(final Element e, final CharSequence name) {</span>
-<span class="source-line-no">575</span><span id="line-575">    return UniversalElement.of(Domain.super.variableElement(e, name), this);</span>
-<span class="source-line-no">576</span><span id="line-576">  }</span>
-<span class="source-line-no">577</span><span id="line-577"></span>
-<span class="source-line-no">578</span><span id="line-578">  @Override // Domain</span>
-<span class="source-line-no">579</span><span id="line-579">  public UniversalType wildcardType() {</span>
-<span class="source-line-no">580</span><span id="line-580">    return this.wildcardType(null, null);</span>
-<span class="source-line-no">581</span><span id="line-581">  }</span>
-<span class="source-line-no">582</span><span id="line-582"></span>
-<span class="source-line-no">583</span><span id="line-583">  @Override // Domain</span>
-<span class="source-line-no">584</span><span id="line-584">  public UniversalType wildcardType(TypeMirror extendsBound, TypeMirror superBound) {</span>
-<span class="source-line-no">585</span><span id="line-585">    extendsBound = unwrap(extendsBound);</span>
-<span class="source-line-no">586</span><span id="line-586">    superBound = unwrap(superBound);</span>
-<span class="source-line-no">587</span><span id="line-587">    try (var lock = lock()) {</span>
-<span class="source-line-no">588</span><span id="line-588">      return UniversalType.of(this.types().getWildcardType(extendsBound, superBound), this);</span>
-<span class="source-line-no">589</span><span id="line-589">    }</span>
-<span class="source-line-no">590</span><span id="line-590">  }</span>
-<span class="source-line-no">591</span><span id="line-591"></span>
-<span class="source-line-no">592</span><span id="line-592"></span>
-<span class="source-line-no">593</span><span id="line-593">  /*</span>
-<span class="source-line-no">594</span><span id="line-594">   * Static methods.</span>
-<span class="source-line-no">595</span><span id="line-595">   */</span>
-<span class="source-line-no">596</span><span id="line-596"></span>
-<span class="source-line-no">597</span><span id="line-597"></span>
-<span class="source-line-no">598</span><span id="line-598">  private static final void doNothing() {}</span>
+<span class="source-line-no">557</span><span id="line-557">  // (Boxing.)</span>
+<span class="source-line-no">558</span><span id="line-558">  @Override // Domain</span>
+<span class="source-line-no">559</span><span id="line-559">  public UniversalElement typeElement(final TypeKind primitiveTypeKind) {</span>
+<span class="source-line-no">560</span><span id="line-560">    return UniversalElement.of(Domain.super.typeElement(primitiveTypeKind), this);</span>
+<span class="source-line-no">561</span><span id="line-561">  }</span>
+<span class="source-line-no">562</span><span id="line-562"></span>
+<span class="source-line-no">563</span><span id="line-563">  // (Convenience.)</span>
+<span class="source-line-no">564</span><span id="line-564">  @Override // Domain</span>
+<span class="source-line-no">565</span><span id="line-565">  public UniversalElement typeParameterElement(final Parameterizable p, final CharSequence name) {</span>
+<span class="source-line-no">566</span><span id="line-566">    return UniversalElement.of(Domain.super.typeParameterElement(p, name), this);</span>
+<span class="source-line-no">567</span><span id="line-567">  }</span>
+<span class="source-line-no">568</span><span id="line-568"></span>
+<span class="source-line-no">569</span><span id="line-569">  // Non-private for testing only.</span>
+<span class="source-line-no">570</span><span id="line-570">  final Types types() {</span>
+<span class="source-line-no">571</span><span id="line-571">    return this.pe().getTypeUtils();</span>
+<span class="source-line-no">572</span><span id="line-572">  }</span>
+<span class="source-line-no">573</span><span id="line-573"></span>
+<span class="source-line-no">574</span><span id="line-574">  // (Convenience.)</span>
+<span class="source-line-no">575</span><span id="line-575">  @Override // Domain</span>
+<span class="source-line-no">576</span><span id="line-576">  public UniversalType typeVariable(final Parameterizable p, final CharSequence name) {</span>
+<span class="source-line-no">577</span><span id="line-577">    return UniversalType.of(Domain.super.typeVariable(p, name), this);</span>
+<span class="source-line-no">578</span><span id="line-578">  }</span>
+<span class="source-line-no">579</span><span id="line-579"></span>
+<span class="source-line-no">580</span><span id="line-580">  // (Convenience.)</span>
+<span class="source-line-no">581</span><span id="line-581">  @Override // Domain</span>
+<span class="source-line-no">582</span><span id="line-582">  public UniversalElement variableElement(final Element e, final CharSequence name) {</span>
+<span class="source-line-no">583</span><span id="line-583">    return UniversalElement.of(Domain.super.variableElement(e, name), this);</span>
+<span class="source-line-no">584</span><span id="line-584">  }</span>
+<span class="source-line-no">585</span><span id="line-585"></span>
+<span class="source-line-no">586</span><span id="line-586">  @Override // Domain</span>
+<span class="source-line-no">587</span><span id="line-587">  public UniversalType wildcardType() {</span>
+<span class="source-line-no">588</span><span id="line-588">    return this.wildcardType(null, null);</span>
+<span class="source-line-no">589</span><span id="line-589">  }</span>
+<span class="source-line-no">590</span><span id="line-590"></span>
+<span class="source-line-no">591</span><span id="line-591">  @Override // Domain</span>
+<span class="source-line-no">592</span><span id="line-592">  public UniversalType wildcardType(TypeMirror extendsBound, TypeMirror superBound) {</span>
+<span class="source-line-no">593</span><span id="line-593">    extendsBound = unwrap(extendsBound);</span>
+<span class="source-line-no">594</span><span id="line-594">    superBound = unwrap(superBound);</span>
+<span class="source-line-no">595</span><span id="line-595">    try (var lock = lock()) {</span>
+<span class="source-line-no">596</span><span id="line-596">      return UniversalType.of(this.types().getWildcardType(extendsBound, superBound), this);</span>
+<span class="source-line-no">597</span><span id="line-597">    }</span>
+<span class="source-line-no">598</span><span id="line-598">  }</span>
 <span class="source-line-no">599</span><span id="line-599"></span>
-<span class="source-line-no">600</span><span id="line-600">  private static final Unlockable noopLock() {</span>
-<span class="source-line-no">601</span><span id="line-601">    return DefaultDomain::doNothing;</span>
-<span class="source-line-no">602</span><span id="line-602">  }</span>
-<span class="source-line-no">603</span><span id="line-603"></span>
-<span class="source-line-no">604</span><span id="line-604">  private static final &lt;T extends TypeMirror&gt; T unwrap(final T t) {</span>
-<span class="source-line-no">605</span><span id="line-605">    return UniversalType.unwrap(t);</span>
-<span class="source-line-no">606</span><span id="line-606">  }</span>
+<span class="source-line-no">600</span><span id="line-600"></span>
+<span class="source-line-no">601</span><span id="line-601">  /*</span>
+<span class="source-line-no">602</span><span id="line-602">   * Static methods.</span>
+<span class="source-line-no">603</span><span id="line-603">   */</span>
+<span class="source-line-no">604</span><span id="line-604"></span>
+<span class="source-line-no">605</span><span id="line-605"></span>
+<span class="source-line-no">606</span><span id="line-606">  private static final void doNothing() {}</span>
 <span class="source-line-no">607</span><span id="line-607"></span>
-<span class="source-line-no">608</span><span id="line-608">  private static final &lt;E extends Element&gt; E unwrap(final E e) {</span>
-<span class="source-line-no">609</span><span id="line-609">    return UniversalElement.unwrap(e);</span>
+<span class="source-line-no">608</span><span id="line-608">  private static final Unlockable noopLock() {</span>
+<span class="source-line-no">609</span><span id="line-609">    return DefaultDomain::doNothing;</span>
 <span class="source-line-no">610</span><span id="line-610">  }</span>
 <span class="source-line-no">611</span><span id="line-611"></span>
-<span class="source-line-no">612</span><span id="line-612">  private static final TypeMirror[] unwrap(final TypeMirror[] ts) {</span>
-<span class="source-line-no">613</span><span id="line-613">    if (ts == null || ts.length &lt;= 0) {</span>
-<span class="source-line-no">614</span><span id="line-614">      return ts;</span>
-<span class="source-line-no">615</span><span id="line-615">    }</span>
-<span class="source-line-no">616</span><span id="line-616">    final TypeMirror[] rv = new TypeMirror[ts.length];</span>
-<span class="source-line-no">617</span><span id="line-617">    for (int i = 0; i &lt; ts.length; i++) {</span>
-<span class="source-line-no">618</span><span id="line-618">      rv[i] = unwrap(ts[i]);</span>
-<span class="source-line-no">619</span><span id="line-619">    }</span>
-<span class="source-line-no">620</span><span id="line-620">    return rv;</span>
-<span class="source-line-no">621</span><span id="line-621">  }</span>
-<span class="source-line-no">622</span><span id="line-622"></span>
-<span class="source-line-no">623</span><span id="line-623">}</span>
+<span class="source-line-no">612</span><span id="line-612">  private static final &lt;T extends TypeMirror&gt; T unwrap(final T t) {</span>
+<span class="source-line-no">613</span><span id="line-613">    return UniversalType.unwrap(t);</span>
+<span class="source-line-no">614</span><span id="line-614">  }</span>
+<span class="source-line-no">615</span><span id="line-615"></span>
+<span class="source-line-no">616</span><span id="line-616">  private static final &lt;E extends Element&gt; E unwrap(final E e) {</span>
+<span class="source-line-no">617</span><span id="line-617">    return UniversalElement.unwrap(e);</span>
+<span class="source-line-no">618</span><span id="line-618">  }</span>
+<span class="source-line-no">619</span><span id="line-619"></span>
+<span class="source-line-no">620</span><span id="line-620">  private static final TypeMirror[] unwrap(final TypeMirror[] ts) {</span>
+<span class="source-line-no">621</span><span id="line-621">    if (ts == null || ts.length &lt;= 0) {</span>
+<span class="source-line-no">622</span><span id="line-622">      return ts;</span>
+<span class="source-line-no">623</span><span id="line-623">    }</span>
+<span class="source-line-no">624</span><span id="line-624">    final TypeMirror[] rv = new TypeMirror[ts.length];</span>
+<span class="source-line-no">625</span><span id="line-625">    for (int i = 0; i &lt; ts.length; i++) {</span>
+<span class="source-line-no">626</span><span id="line-626">      rv[i] = unwrap(ts[i]);</span>
+<span class="source-line-no">627</span><span id="line-627">    }</span>
+<span class="source-line-no">628</span><span id="line-628">    return rv;</span>
+<span class="source-line-no">629</span><span id="line-629">  }</span>
+<span class="source-line-no">630</span><span id="line-630"></span>
+<span class="source-line-no">631</span><span id="line-631">}</span>
 
 
 

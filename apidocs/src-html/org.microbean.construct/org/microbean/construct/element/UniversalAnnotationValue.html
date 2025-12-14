@@ -41,7 +41,7 @@
 <span class="source-line-no">028</span><span id="line-28"></span>
 <span class="source-line-no">029</span><span id="line-29">import javax.lang.model.type.TypeMirror;</span>
 <span class="source-line-no">030</span><span id="line-30"></span>
-<span class="source-line-no">031</span><span id="line-31">import org.microbean.construct.Domain;</span>
+<span class="source-line-no">031</span><span id="line-31">import org.microbean.construct.PrimordialDomain;</span>
 <span class="source-line-no">032</span><span id="line-32"></span>
 <span class="source-line-no">033</span><span id="line-33">import org.microbean.construct.type.UniversalType;</span>
 <span class="source-line-no">034</span><span id="line-34"></span>
@@ -61,7 +61,7 @@
 <span class="source-line-no">048</span><span id="line-48">  // volatile not needed</span>
 <span class="source-line-no">049</span><span id="line-49">  private Supplier&lt;? extends AnnotationValue&gt; delegateSupplier;</span>
 <span class="source-line-no">050</span><span id="line-50"></span>
-<span class="source-line-no">051</span><span id="line-51">  private final Domain domain;</span>
+<span class="source-line-no">051</span><span id="line-51">  private final PrimordialDomain domain;</span>
 <span class="source-line-no">052</span><span id="line-52"></span>
 <span class="source-line-no">053</span><span id="line-53">  private String s;</span>
 <span class="source-line-no">054</span><span id="line-54"></span>
@@ -78,12 +78,12 @@
 <span class="source-line-no">065</span><span id="line-65">   *</span>
 <span class="source-line-no">066</span><span id="line-66">   * @param delegate an {@link AnnotationValue} to which operations will be delegated; must not be {@code null}</span>
 <span class="source-line-no">067</span><span id="line-67">   *</span>
-<span class="source-line-no">068</span><span id="line-68">   * @param domain a {@link Domain}; must not be {@code null}</span>
+<span class="source-line-no">068</span><span id="line-68">   * @param domain a {@link PrimordialDomain}; must not be {@code null}</span>
 <span class="source-line-no">069</span><span id="line-69">   *</span>
 <span class="source-line-no">070</span><span id="line-70">   * @exception NullPointerException if either argument is {@code null}</span>
 <span class="source-line-no">071</span><span id="line-71">   */</span>
 <span class="source-line-no">072</span><span id="line-72">  @SuppressWarnings("try")</span>
-<span class="source-line-no">073</span><span id="line-73">  public UniversalAnnotationValue(final AnnotationValue delegate, final Domain domain) {</span>
+<span class="source-line-no">073</span><span id="line-73">  public UniversalAnnotationValue(final AnnotationValue delegate, final PrimordialDomain domain) {</span>
 <span class="source-line-no">074</span><span id="line-74">    super();</span>
 <span class="source-line-no">075</span><span id="line-75">    this.domain = requireNonNull(domain, "domain");</span>
 <span class="source-line-no">076</span><span id="line-76">    final AnnotationValue unwrappedDelegate = unwrap(requireNonNull(delegate, "delegate"));</span>
@@ -155,11 +155,11 @@
 <span class="source-line-no">142</span><span id="line-142">  }</span>
 <span class="source-line-no">143</span><span id="line-143"></span>
 <span class="source-line-no">144</span><span id="line-144">  /**</span>
-<span class="source-line-no">145</span><span id="line-145">   * Returns the {@link Domain} supplied at construction time.</span>
+<span class="source-line-no">145</span><span id="line-145">   * Returns the {@link PrimordialDomain} supplied at construction time.</span>
 <span class="source-line-no">146</span><span id="line-146">   *</span>
-<span class="source-line-no">147</span><span id="line-147">   * @return the non-{@code null} {@link Domain} supplied at construction time</span>
+<span class="source-line-no">147</span><span id="line-147">   * @return the non-{@code null} {@link PrimordialDomain} supplied at construction time</span>
 <span class="source-line-no">148</span><span id="line-148">   */</span>
-<span class="source-line-no">149</span><span id="line-149">  public final Domain domain() {</span>
+<span class="source-line-no">149</span><span id="line-149">  public final PrimordialDomain domain() {</span>
 <span class="source-line-no">150</span><span id="line-150">    return this.domain;</span>
 <span class="source-line-no">151</span><span id="line-151">  }</span>
 <span class="source-line-no">152</span><span id="line-152"></span>
@@ -178,7 +178,7 @@
 <span class="source-line-no">165</span><span id="line-165">  @Override // AnnotationValue</span>
 <span class="source-line-no">166</span><span id="line-166">  @SuppressWarnings("unchecked")</span>
 <span class="source-line-no">167</span><span id="line-167">  public final Object getValue() {</span>
-<span class="source-line-no">168</span><span id="line-168">    final Domain domain = this.domain();</span>
+<span class="source-line-no">168</span><span id="line-168">    final PrimordialDomain domain = this.domain();</span>
 <span class="source-line-no">169</span><span id="line-169">    final Object value = this.v;</span>
 <span class="source-line-no">170</span><span id="line-170">    return switch (value) {</span>
 <span class="source-line-no">171</span><span id="line-171">    case null -&gt; throw new AssertionError();</span>
@@ -216,15 +216,15 @@
 <span class="source-line-no">203</span><span id="line-203">   *</span>
 <span class="source-line-no">204</span><span id="line-204">   * @param av an {@link AnnotationValue}; may be {@code null}</span>
 <span class="source-line-no">205</span><span id="line-205">   *</span>
-<span class="source-line-no">206</span><span id="line-206">   * @param domain a {@link Domain}; must not be {@code null}</span>
+<span class="source-line-no">206</span><span id="line-206">   * @param domain a {@link PrimordialDomain}; must not be {@code null}</span>
 <span class="source-line-no">207</span><span id="line-207">   *</span>
 <span class="source-line-no">208</span><span id="line-208">   * @return an {@link UniversalAnnotationValue}, or {@code null} (if {@code av} is {@code null})</span>
 <span class="source-line-no">209</span><span id="line-209">   *</span>
 <span class="source-line-no">210</span><span id="line-210">   * @exception NullPointerException if {@code domain} is {@code null}</span>
 <span class="source-line-no">211</span><span id="line-211">   *</span>
-<span class="source-line-no">212</span><span id="line-212">   * @see #UniversalAnnotationValue(AnnotationValue, Domain)</span>
+<span class="source-line-no">212</span><span id="line-212">   * @see #UniversalAnnotationValue(AnnotationValue, PrimordialDomain)</span>
 <span class="source-line-no">213</span><span id="line-213">   */</span>
-<span class="source-line-no">214</span><span id="line-214">  public static final UniversalAnnotationValue of(final AnnotationValue av, final Domain domain) {</span>
+<span class="source-line-no">214</span><span id="line-214">  public static final UniversalAnnotationValue of(final AnnotationValue av, final PrimordialDomain domain) {</span>
 <span class="source-line-no">215</span><span id="line-215">    return switch (av) {</span>
 <span class="source-line-no">216</span><span id="line-216">    case null -&gt; null;</span>
 <span class="source-line-no">217</span><span id="line-217">    case UniversalAnnotationValue uav -&gt; uav;</span>
@@ -238,14 +238,14 @@
 <span class="source-line-no">225</span><span id="line-225">   *</span>
 <span class="source-line-no">226</span><span id="line-226">   * @param avs a {@link Collection} of {@link AnnotationValue}s; must not be {@code null}</span>
 <span class="source-line-no">227</span><span id="line-227">   *</span>
-<span class="source-line-no">228</span><span id="line-228">   * @param domain a {@link Domain}; must not be {@code null}</span>
+<span class="source-line-no">228</span><span id="line-228">   * @param domain a {@link PrimordialDomain}; must not be {@code null}</span>
 <span class="source-line-no">229</span><span id="line-229">   *</span>
 <span class="source-line-no">230</span><span id="line-230">   * @return a non-{@code null}, immutable {@link List} of {@link UniversalAnnotationValue}s</span>
 <span class="source-line-no">231</span><span id="line-231">   *</span>
 <span class="source-line-no">232</span><span id="line-232">   * @exception NullPointerException if either argument is {@code null}</span>
 <span class="source-line-no">233</span><span id="line-233">   */</span>
 <span class="source-line-no">234</span><span id="line-234">  public static final List&lt;? extends UniversalAnnotationValue&gt; of(final Collection&lt;? extends AnnotationValue&gt; avs,</span>
-<span class="source-line-no">235</span><span id="line-235">                                                                  final Domain domain) {</span>
+<span class="source-line-no">235</span><span id="line-235">                                                                  final PrimordialDomain domain) {</span>
 <span class="source-line-no">236</span><span id="line-236">    if (avs.isEmpty()) {</span>
 <span class="source-line-no">237</span><span id="line-237">      return List.of();</span>
 <span class="source-line-no">238</span><span id="line-238">    }</span>
