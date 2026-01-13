@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024–2025 microBean™.
+ * Copyright © 2024–2026 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import javax.lang.model.element.AnnotationMirror;
 
@@ -39,7 +38,6 @@ import javax.lang.model.type.WildcardType;
 import org.microbean.construct.UniversalConstruct;
 import org.microbean.construct.PrimordialDomain;
 
-import org.microbean.construct.element.UniversalAnnotation;
 import org.microbean.construct.element.UniversalElement;
 
 import static javax.lang.model.type.TypeKind.DECLARED;
@@ -141,7 +139,7 @@ public final class UniversalType
   protected UniversalType annotate(final List<? extends AnnotationMirror> replacementAnnotations) {
     return new UniversalType(this.delegate(), replacementAnnotations, this.domain());
   }
-  
+
   @Override // Various
   public final UniversalElement asElement() {
     return switch (this.getKind()) {
@@ -225,7 +223,7 @@ public final class UniversalType
   public final UniversalType getExtendsBound() {
     return switch (this.getKind()) {
     case WILDCARD -> this.wrap(((WildcardType)this.delegate()).getExtendsBound());
-    default -> null;
+    default -> null; // TODO: ...or simply this, strictly speaking
     };
   }
 
@@ -246,7 +244,7 @@ public final class UniversalType
   public final UniversalType getUpperBound() {
     return switch (this.getKind()) {
     case TYPEVAR -> this.wrap(((TypeVariable)this.delegate()).getUpperBound());
-    default -> this.wrap(this.domain().javaLangObjectType());
+    default -> this.wrap(this.domain().noType(NONE)); // experimental
     };
   }
 
@@ -270,7 +268,7 @@ public final class UniversalType
   public final UniversalType getReturnType() {
     return switch (this.getKind()) {
     case EXECUTABLE -> this.wrap(((ExecutableType)this.delegate()).getReturnType());
-    default -> this.wrap(this.domain().noType(VOID));
+    default -> this.wrap(this.domain().noType(VOID)); // Of note: this is also appropriate when this is not a method
     };
   }
 

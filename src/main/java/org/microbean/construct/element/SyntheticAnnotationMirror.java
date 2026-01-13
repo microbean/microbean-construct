@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2025 microBean™.
+ * Copyright © 2025–2026 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,65 +13,89 @@
  */
 package org.microbean.construct.element;
 
-import java.lang.annotation.Annotation;
-
 import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
-import java.lang.constant.MethodTypeDesc;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
-
-import java.util.function.Function;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
-import javax.lang.model.element.AnnotationValueVisitor;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeMirror;
 
 import org.microbean.construct.constant.Constables;
 
 import static java.lang.constant.ConstantDescs.BSM_INVOKE;
 import static java.lang.constant.ConstantDescs.CD_Map;
-import static java.lang.constant.ConstantDescs.CD_Object;
-import static java.lang.constant.ConstantDescs.NULL;
-
-import static java.lang.constant.DirectMethodHandleDesc.Kind.INTERFACE_STATIC;
 
 import static java.lang.constant.MethodHandleDesc.ofConstructor;
-
-import static java.util.Arrays.fill;
 
 import static java.util.Collections.unmodifiableMap;
 
 import static java.util.LinkedHashMap.newLinkedHashMap;
 
-import static java.util.Objects.requireNonNull;
-
 import static javax.lang.model.element.ElementKind.ANNOTATION_TYPE;
-import static javax.lang.model.element.ElementKind.METHOD;
+
+import static javax.lang.model.util.ElementFilter.methodsIn;
 
 /**
  * An <strong>experimental</strong> {@link AnnotationMirror} implementation that is partially or wholly synthetic.
  *
+ * <p>It is possible to create {@link SyntheticAnnotationMirror} instances representing annotations that a Java compiler
+ * will not produce. For example, <a
+ * href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1">annotations cannot refer to each
+ * other, directly or indirectly</a>, but two {@link SyntheticAnnotationMirror}s may do so.</p>
+ *
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
+ *
+ * @spec https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1 Java Language Specification, section
+ * 9.6.1
  */
 public final class SyntheticAnnotationMirror implements AnnotationMirror, Constable {
+
+
+  /*
+   * Instance fields.
+   */
+
 
   private final TypeElement annotationTypeElement;
 
   private final Map<ExecutableElement, AnnotationValue> elementValues;
+
+
+  /*
+   * Constructors.
+   */
+
+
+  /**
+   * Creates a new {@link SyntheticAnnotationMirror}.
+   *
+   * @param annotationTypeElement a {@link TypeElement} representing an annotation type; must not be {@code null}; must
+   * return {@link javax.lang.model.element.ElementKind#ANNOTATION_TYPE ANNOTATION_TYPE} from its {@link
+   * Element#getKind() getKind()} method; {@link SyntheticAnnotationTypeElement} implementations are strongly preferred
+   *
+   * @exception NullPointerException if {@code annotationTypeElement} is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code annotationTypeElement} does not return {@link
+   * javax.lang.model.element.ElementKind#ANNOTATION_TYPE ANNOTATION_TYPE} from an invocation of its {@link
+   * Element#getKind() getKind()} method, or if {@code values} has more entries in it than {@code annotationTypeElement}
+   * has {@linkplain Element#getEnclosedElements() anotation elements}
+   *
+   * @see #SyntheticAnnotationMirror(TypeElement, Map)
+   */
+  public SyntheticAnnotationMirror(final TypeElement annotationTypeElement) {
+    this(annotationTypeElement, Map.of());
+  }
 
   /**
    * Creates a new {@link SyntheticAnnotationMirror}.
@@ -98,24 +122,31 @@ public final class SyntheticAnnotationMirror implements AnnotationMirror, Consta
     }
     this.annotationTypeElement = annotationTypeElement;
     final LinkedHashMap<ExecutableElement, AnnotationValue> m = newLinkedHashMap(values.size());
-    for (final Element e : annotationTypeElement.getEnclosedElements()) {
-      if (e.getKind() == METHOD) {
-        final Object value = values.get(e.getSimpleName().toString());
-        if (value != null) {
-          m.put((ExecutableElement)e, value instanceof AnnotationValue av ? av : new SyntheticAnnotationValue(value));
+    final List<? extends ExecutableElement> methods = methodsIn(annotationTypeElement.getEnclosedElements());
+    for (final ExecutableElement e : methods) {
+      final Object value = values.get(e.getSimpleName().toString()); // default value deliberately not included
+      if (value == null) {
+        if (e.getDefaultValue() == null) {
+          // There has to be a value somewhere, or annotationTypeElement or values is illegal
+          throw new IllegalArgumentException("annotationTypeElement: " + annotationTypeElement + "; values: " + values);
         }
+        // Default values are excluded from the map on purpose, following the contract of
+        // AnnotationValue#getElementValues().
+      } else {
+        m.put(e, value instanceof AnnotationValue av ? av : new SyntheticAnnotationValue(value));
       }
     }
     if (values.size() > m.size()) {
       throw new IllegalArgumentException("values: " + values);
     }
-    this.elementValues = unmodifiableMap(m);
+    this.elementValues = m.isEmpty() ? Map.of() : unmodifiableMap(m);
   }
 
 
   /*
    * Instance methods.
    */
+
 
   @Override // Constable
   public final Optional<? extends ConstantDesc> describeConstable() {
@@ -130,7 +161,6 @@ public final class SyntheticAnnotationMirror implements AnnotationMirror, Consta
                                                          elementDesc,
                                                          valuesDesc)));
   }
-  
 
   @Override // AnnotationMirror
   public final DeclaredType getAnnotationType() {
@@ -142,133 +172,11 @@ public final class SyntheticAnnotationMirror implements AnnotationMirror, Consta
     return this.elementValues;
   }
 
-  /**
-   * An <strong>experimental</strong> {@link AnnotationValue} implementation that is partially or wholly synthetic.
-   *
-   * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
+
+  /*
+   * Static methods.
    */
-  public static final class SyntheticAnnotationValue implements AnnotationValue, Constable {
 
-    // Will be one of:
-    //
-    // * AnnotationMirror
-    // * List<SyntheticAnnotationValue>
-    // * TypeMirror
-    // * VariableElement (ENUM_CONSTANT)
-    // * Boolean
-    // * Byte
-    // * Character
-    // * Double
-    // * Float
-    // * Integer
-    // * Long
-    // * Short
-    // * String
-    private final Object value;
-
-    /**
-     * Creates a new {@link SyntheticAnnotationValue}.
-     *
-     * @param value the value; must not be {@code null}; must be a legal {@link AnnotationValue} type
-     *
-     * @exception NullPointerException if {@code value} is {@code null}
-     *
-     * @exception IllegalArgumentException if {@code value} is not a legal {@link AnnotationValue} type
-     *
-     * @see AnnotationValue
-     */
-    public SyntheticAnnotationValue(final Object value) {
-      super();
-      this.value = value(value);
-    }
-
-    @Override // AnnotationValue
-    @SuppressWarnings("unchecked")
-    public final <R, P> R accept(final AnnotationValueVisitor<R, P> v, final P p) {
-      return switch (this.getValue()) {
-      case null               -> v.visitUnknown(this, p); // ...or AssertionError?
-      case AnnotationMirror a -> v.visitAnnotation(a, p);
-      case List<?> l          -> v.visitArray((List<? extends AnnotationValue>)l, p);
-      case TypeMirror t       -> v.visitType(t, p);
-      case VariableElement e  -> v.visitEnumConstant(e, p);
-      case Boolean b          -> v.visitBoolean(b, p);
-      case Byte b             -> v.visitByte(b, p);
-      case Character c        -> v.visitChar(c, p);
-      case Double d           -> v.visitDouble(d, p);
-      case Float f            -> v.visitFloat(f, p);
-      case Integer i          -> v.visitInt(i, p);
-      case Long l             -> v.visitLong(l, p);
-      case Short s            -> v.visitShort(s, p);
-      case String s           -> v.visitString(s, p);
-      default                 -> v.visitUnknown(this, p);
-      };
-    }
-
-    @Override // Constable
-    public final Optional<? extends ConstantDesc> describeConstable() {
-      return this.value instanceof Constable c ? c.describeConstable() : Optional.<ConstantDesc>empty()
-        .map(valueDesc -> DynamicConstantDesc.of(BSM_INVOKE,
-                                                 ofConstructor(ClassDesc.of(this.getClass().getName()),
-                                                               CD_Object),
-                                                 valueDesc));
-    }
-
-    @Override // Object
-    public final boolean equals(final Object other) {
-      return this == other || switch (other) {
-      case null -> false;
-      case SyntheticAnnotationValue sav when this.getClass() == sav.getClass() -> this.value.equals(sav.value);
-      default -> false;
-      };
-    }
-
-    @Override // AnnotationValue
-    public final Object getValue() {
-      return this.value;
-    }
-
-    @Override // Object
-    public final int hashCode() {
-      return this.value.hashCode();
-    }
-
-    @Override // Object
-    public final String toString() {
-      return this.value.toString();
-    }
-
-    private static final Object value(final Object value) {
-      return switch (value) {
-      case null               -> throw new NullPointerException("value");
-
-      case AnnotationValue av -> av.getValue(); // not part of the spec; just good hygiene
-      case List<?> l          -> l.stream().map(SyntheticAnnotationValue::new).toList();
-
-      case TypeMirror t       -> switch (t.getKind()) {
-      case BOOLEAN, BYTE, CHAR, DECLARED, DOUBLE, FLOAT, INT, LONG, SHORT, VOID /* I think? */ -> t;
-      default -> throw new IllegalArgumentException("value: " + value);
-      };
-
-      case VariableElement e  -> switch (e.getKind()) {
-      case ENUM_CONSTANT -> e;
-      default -> throw new IllegalArgumentException("value: " + value);
-      };
-
-      case AnnotationMirror a -> a;
-      case Boolean b          -> b;
-      case Byte b             -> b;
-      case Character c        -> c;
-      case Double d           -> d;
-      case Float f            -> f;
-      case Integer i          -> i;
-      case Long l             -> l;
-      case Short s            -> s;
-      case String s           -> s;
-      default                 -> throw new IllegalArgumentException("value: " + value);
-      };
-    }
-
-  }
 
   private static final Optional<? extends ConstantDesc> describeAnnotationValue(final Object v) {
     return switch (v) {

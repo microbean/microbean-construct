@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024–2025 microBean™.
+ * Copyright © 2024–2026 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,9 +15,7 @@ package org.microbean.construct.element;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import java.util.function.Supplier;
@@ -39,12 +37,13 @@ import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 
 import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
 
 import org.microbean.construct.UniversalConstruct;
 import org.microbean.construct.PrimordialDomain;
 
 import org.microbean.construct.type.UniversalType;
+
+import static java.util.Collections.unmodifiableList;
 
 /**
  * An {@link Element} and {@link UniversalConstruct} implementation.
@@ -55,7 +54,7 @@ import org.microbean.construct.type.UniversalType;
  *
  * @see UniversalConstruct
  */
-@SuppressWarnings("preview")
+@SuppressWarnings("preview") // isUnnamed() usage
 public final class UniversalElement
   extends UniversalConstruct<Element, UniversalElement>
   implements ExecutableElement,
@@ -88,9 +87,9 @@ public final class UniversalElement
    *
    * @param delegate an {@link Element} to which operations will be delegated; must not be {@code null}
    *
-   * @param annotations a {@link List} of {@link AnnotationMirror} instances representing annotations, often synthetic,
-   * that this {@link UniversalElement} should bear; may be {@code null} in which case only the annotations from the
-   * supplied {@code delegate} will be used
+   * @param annotations a {@link List} of {@link AnnotationMirror} instances representing annotations, often {@linkplain
+   * SyntheticAnnotationMirror synthetic}, that this {@link UniversalElement} should bear; may be {@code null} in which
+   * case only the annotations from the supplied {@code delegate} will be used
    *
    * @param domain a {@link PrimordialDomain} from which the supplied {@code delegate} is presumed to have originated;
    * must not be {@code null}
@@ -435,7 +434,7 @@ public final class UniversalElement
     for (final Element e : es) {
       newEs.add(of(e, domain));
     }
-    return Collections.unmodifiableList(newEs);
+    return unmodifiableList(newEs);
   }
 
   /**
