@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024–2025 microBean™.
+ * Copyright © 2024–2026 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,6 +29,8 @@ import javax.lang.model.element.Name;
 import org.microbean.construct.PrimordialDomain;
 
 import static java.lang.constant.ConstantDescs.BSM_INVOKE;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A {@link Name} implementation based on {@link String}s.
@@ -64,7 +66,7 @@ public final record StringName(String value, PrimordialDomain domain) implements
     // We deliberately route even String-typed values through PrimordialDomain#toString(CharSequence) in case the PrimordialDomain wishes to
     // cache the intermediate Name.
     this(switch (value) {
-      case StringName sn -> sn.value();
+      case StringName sn -> sn.value;
       default -> domain.toString(value);
       }, domain);
   }
@@ -79,23 +81,23 @@ public final record StringName(String value, PrimordialDomain domain) implements
    * @exception NullPointerException if either argument is {@code null}
    */
   public StringName {
-    Objects.requireNonNull(value, "value");
-    Objects.requireNonNull(domain, "domain");
+    requireNonNull(value, "value");
+    requireNonNull(domain, "domain");
   }
 
   @Override // Name (CharSequence)
   public final char charAt(final int index) {
-    return this.value().charAt(index);
+    return this.value.charAt(index);
   }
 
   @Override // Name (CharSequence)
   public final IntStream chars() {
-    return this.value().chars();
+    return this.value.chars();
   }
 
   @Override // Name (CharSequence)
   public final IntStream codePoints() {
-    return this.value().codePoints();
+    return this.value.codePoints();
   }
 
   @Override // Name
@@ -103,10 +105,10 @@ public final record StringName(String value, PrimordialDomain domain) implements
   public final boolean contentEquals(final CharSequence cs) {
     return this == cs || switch (cs) {
     case null -> false;
-    case String s -> this.value().contentEquals(s);
-    case StringName sn -> this.value().contentEquals(sn.value());
-    case Name n -> this.value().contentEquals(this.domain().toString(n));
-    default -> this.value().contentEquals(cs.toString());
+    case String s -> this.value.contentEquals(s);
+    case StringName sn -> this.value.contentEquals(sn.value);
+    case Name n -> this.value.contentEquals(this.domain().toString(n));
+    default -> this.value.contentEquals(cs.toString());
     };
   }
 
@@ -117,7 +119,7 @@ public final record StringName(String value, PrimordialDomain domain) implements
                                                 MethodHandleDesc.ofConstructor(ClassDesc.of(this.getClass().getName()),
                                                                                ClassDesc.of(CharSequence.class.getName()),
                                                                                ClassDesc.of(PrimordialDomain.class.getName())),
-                                                this.value(),
+                                                this.value,
                                                 domainDesc));
   }
 
@@ -125,34 +127,34 @@ public final record StringName(String value, PrimordialDomain domain) implements
   public final boolean equals(final Object other) {
     return this == other || switch (other) {
     case null -> false;
-    case StringName sn when this.getClass() == sn.getClass() -> Objects.equals(this.value(), sn.value());
+    case StringName sn when this.getClass() == sn.getClass() -> Objects.equals(this.value, sn.value);
     default -> false;
     };
   }
 
   @Override // Record
   public final int hashCode() {
-    return this.value().hashCode();
+    return this.value.hashCode();
   }
 
   @Override // Name (CharSequence)
   public final boolean isEmpty() {
-    return this.value().isEmpty();
+    return this.value.isEmpty();
   }
 
   @Override // Name (CharSequence)
   public final int length() {
-    return this.value().length();
+    return this.value.length();
   }
 
   @Override // Name (CharSequence)
   public final CharSequence subSequence(final int start, final int end) {
-    return this.value().subSequence(start, end);
+    return this.value.subSequence(start, end);
   }
 
   @Override // Name (CharSequence)
   public final String toString() {
-    return this.value();
+    return this.value;
   }
 
 
@@ -163,9 +165,9 @@ public final record StringName(String value, PrimordialDomain domain) implements
 
   /**
    * Returns a {@link StringName} whose {@link #value()} method will return a {@link String} {@linkplain
-   * String#equals(Object) equal to} the {@linkplain PrimordialDomain#toString(CharSequence) <code>String</code> conversion of}
-   * the supplied {@link CharSequence}, and whose {@link #domain()} method will return a {@link PrimordialDomain} {@linkplain
-   * #equals(Object) equal to} the supplied {@link PrimordialDomain}.
+   * String#equals(Object) equal to} the {@linkplain PrimordialDomain#toString(CharSequence) <code>String</code>
+   * conversion of} the supplied {@link CharSequence}, and whose {@link #domain()} method will return a {@link
+   * PrimordialDomain} {@linkplain #equals(Object) equal to} the supplied {@link PrimordialDomain}.
    *
    * @param cs a {@link CharSequence}; must not be {@code null}
    *

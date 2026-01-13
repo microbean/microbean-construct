@@ -130,6 +130,20 @@ final class BlockingCompilationTask extends CompletableFuture<ProcessingEnvironm
     }
   }
 
+  /**
+   * Overrides {@link CompletableFuture#completeExceptionally(Throwable)} to additionally {@linkplain #close() close}
+   * this {@link BlockingCompilationTask}.
+   *
+   * @param t a {@link Throwable}; see {@link CompletableFuture#completeExceptionally(Throwable)} for additional
+   * contractual obligations
+   *
+   * @return the result of invoking {@link CompletableFuture#completeExceptionally(Throwable)} with the supplied {@link
+   * Throwable}
+   *
+   * @see #close()
+   *
+   * @see CompletableFuture#completeExceptionally(Throwbale)
+   */
   @Override // CompletableFuture<ProcessingEnvironment>
   public final boolean completeExceptionally(final Throwable t) {
     final boolean result = super.completeExceptionally(t);
@@ -185,8 +199,7 @@ final class BlockingCompilationTask extends CompletableFuture<ProcessingEnvironm
     task.addModules(additionalRootModuleNames);
 
     // Set the task's annotation processor whose only function will be to return the ProcessingEnvironment supplied to
-    // it in its #init(ProcessingEnvironment) method. The supplied latch is used to make this task block forever (unless
-    // an error occurs) to keep the ProcessingEnvironment "in scope".
+    // it in its #init(ProcessingEnvironment) method.
     task.setProcessors(List.of(this.p));
 
     if (LOGGER.isLoggable(DEBUG)) {
@@ -196,8 +209,8 @@ final class BlockingCompilationTask extends CompletableFuture<ProcessingEnvironm
     }
 
     try {
-      final Boolean result = task.call(); // blocks forever deliberately unless an error occurs; see Processor2
-      if (!TRUE.equals(result)) {
+      final Boolean result = task.call(); // blocks forever deliberately unless an error occurs; see Processor
+      if (!TRUE.equals(result)) { // (result could be null, technically speaking)
         if (LOGGER.isLoggable(ERROR)) {
           LOGGER.log(ERROR, "Calling CompilationTask failed");
         }

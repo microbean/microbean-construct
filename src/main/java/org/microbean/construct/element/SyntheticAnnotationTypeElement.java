@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2025 microBean™.
+ * Copyright © 2025–2026 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -36,6 +36,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
@@ -48,7 +49,6 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.Objects.requireNonNull;
 
 import static javax.lang.model.element.ElementKind.ANNOTATION_TYPE;
-import static javax.lang.model.element.ElementKind.CLASS;
 import static javax.lang.model.element.ElementKind.ENUM;
 
 import static javax.lang.model.element.Modifier.ABSTRACT;
@@ -66,18 +66,100 @@ import static javax.lang.model.type.TypeKind.DECLARED;
  */
 public final class SyntheticAnnotationTypeElement implements TypeElement {
 
-  private static final Set<Modifier> modifiers = Set.of(ABSTRACT);
+
+  /*
+   * Static fields.
+   */
+
+
+  private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
+
+  private static final Set<Modifier> ABSTRACT_ONLY_MODIFIERS = Set.of(ABSTRACT);
+
+
+  /*
+   * Instance fields.
+   */
+
 
   private final List<? extends AnnotationMirror> annotationMirrors;
 
   private final SyntheticName fqn;
 
+  private final SyntheticName sn;
+
   private final Type type;
 
   private final List<? extends InternalAnnotationElement> elements;
 
+
+  /*
+   * Constructors.
+   */
+
+
   /**
-   * Creates a new {@link SyntheticAnnotationTypeElement}.
+   * Creates a new {@link SyntheticAnnotationTypeElement}, mostly, if not exclusively, for use by {@link
+   * SyntheticAnnotationMirror} instances.
+   *
+   * @param fullyQualifiedName the fully qualified name of the synthetic element; must conform to Java classname
+   * restrictions; must not be {@code null}
+   *
+   * @exception NullPointerException if {@code fullyQualifiedName} is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code fullyQualifiedName} does not conform to Java classname restrictions
+   *
+   * @see #SyntheticAnnotationTypeElement(List, SyntheticName, List)
+   */
+  public SyntheticAnnotationTypeElement(final SyntheticName fullyQualifiedName) {
+    this(List.of(), fullyQualifiedName, List.of());
+  }
+
+  /**
+   * Creates a new {@link SyntheticAnnotationTypeElement}, mostly, if not exclusively, for use by {@link
+   * SyntheticAnnotationMirror} instances.
+   *
+   * @param fullyQualifiedName the fully qualified name of the synthetic element; must conform to Java classname
+   * restrictions; must not be {@code null}
+   *
+   * @param elements a {@link List} of {@link SyntheticAnnotationElement}s modeling the annotation elements; must not be
+   * {@code null}
+   *
+   * @exception NullPointerException if any argument is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code fullyQualifiedName} does not conform to Java classname restrictions
+   *
+   * @see #SyntheticAnnotationTypeElement(List, SyntheticName, List)
+   */
+  public SyntheticAnnotationTypeElement(final SyntheticName fullyQualifiedName,
+                                        final List<? extends SyntheticAnnotationElement> elements) {
+    this(List.of(), fullyQualifiedName, elements);
+  }
+
+  /**
+   * Creates a new {@link SyntheticAnnotationTypeElement}, mostly, if not exclusively, for use by {@link
+   * SyntheticAnnotationMirror} instances.
+   *
+   * @param annotationMirrors a {@link List} of {@link AnnotationMirror}s modeling the annotations this element has;
+   * must not be {@code null}
+   *
+   * @param fullyQualifiedName the fully qualified name of the synthetic element; must conform to Java classname
+   * restrictions; must not be {@code null}
+   *
+   * @exception NullPointerException if any argument is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code fullyQualifiedName} does not conform to Java classname restrictions
+   *
+   * @see #SyntheticAnnotationTypeElement(List, SyntheticName, List)
+   */
+  public SyntheticAnnotationTypeElement(final List<? extends AnnotationMirror> annotationMirrors,
+                                        final SyntheticName fullyQualifiedName) {
+    this(annotationMirrors, fullyQualifiedName, List.of());
+  }
+
+  /**
+   * Creates a new {@link SyntheticAnnotationTypeElement}, mostly, if not exclusively, for use by {@link
+   * SyntheticAnnotationMirror} instances.
    *
    * @param annotationMirrors a {@link List} of {@link AnnotationMirror}s modeling the annotations this element has;
    * must not be {@code null}
@@ -97,114 +179,225 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
    * @see SyntheticAnnotationMirror
    */
   public SyntheticAnnotationTypeElement(final List<? extends AnnotationMirror> annotationMirrors,
-                                        final String fullyQualifiedName,
+                                        final SyntheticName fullyQualifiedName,
                                         final List<? extends SyntheticAnnotationElement> elements) {
     super();
     this.annotationMirrors = List.copyOf(annotationMirrors);
-    this.fqn = SyntheticName.of(fullyQualifiedName);
+    final String fqn = fullyQualifiedName.toString();
+    final int i = fqn.lastIndexOf('.');
+    this.sn = i >= 0 ? new SyntheticName(fqn.substring(i + 1)) : fullyQualifiedName;
+    this.fqn = fullyQualifiedName;
     this.type = new Type();
-    final List<InternalAnnotationElement> elements0 = new ArrayList<>(elements.size());
-    for (final SyntheticAnnotationElement e : elements) {
-      elements0.add(new InternalAnnotationElement(e.annotationMirrors(), e.type(), e.name()));
+    if (elements.isEmpty()) {
+      this.elements = List.of();
+    } else {
+      final List<InternalAnnotationElement> elements0 = new ArrayList<>(elements.size());
+      for (final SyntheticAnnotationElement e : elements) {
+        elements0.add(new InternalAnnotationElement(e.annotationMirrors(), e.type(), e.name(), e.defaultValue()));
+      }
+      this.elements = unmodifiableList(elements0);
     }
-    this.elements = unmodifiableList(elements0);
   }
 
-  @Override // Element
+
+  /*
+   * Instance methods.
+   */
+
+
+  @Override // TypeElement (Element)
   public final <R, P> R accept(final ElementVisitor<R, P> v, final P p) {
     return v.visitType(this, p);
   }
 
-  @Override // Element
+  @Override // TypeElement (Element)
   public final TypeMirror asType() {
     return this.type;
   }
 
-  @Override // AnnotatedConstruct
+  @Override // TypeElement (AnnotatedConstruct)
   public final List<? extends AnnotationMirror> getAnnotationMirrors() {
     return this.annotationMirrors;
   }
 
-  @Override // AnnotatedConstruct
+  @Override // TypeElement (AnnotatedConstruct)
   public final <A extends Annotation> A getAnnotation(final Class<A> annotationType) {
-    throw new UnsupportedOperationException(); // deliberate
+    return null; // deliberate
   }
 
-  @Override // AnnotatedConstruct
+  @Override // TypeElement (AnnotatedConstruct)
+  @SuppressWarnings("unchecked")
   public final <A extends Annotation> A[] getAnnotationsByType(final Class<A> annotationType) {
-    throw new UnsupportedOperationException(); // deliberate
+    return (A[])EMPTY_ANNOTATION_ARRAY; // deliberate
   }
 
-  @Override
+  @Override // TypeElement (Element)
   public final List<? extends Element> getEnclosedElements() {
     return this.elements;
   }
 
-  @Override
+  @Override // TypeElement (Element)
   public final Element getEnclosingElement() {
     return null; // really should be a package but we're synthetic
   }
 
-  @Override
+  @Override // TypeElement
   public final List<? extends TypeMirror> getInterfaces() {
     return List.of();
   }
 
-  @Override
+  @Override // TypeElement (Element)
   public final Set<Modifier> getModifiers() {
-    return modifiers;
+    return ABSTRACT_ONLY_MODIFIERS;
   }
 
-  @Override
+  @Override // TypeElement (Element)
   public final ElementKind getKind() {
     return ElementKind.ANNOTATION_TYPE;
   }
 
-  @Override
+  @Override // TypeElement
   public final NestingKind getNestingKind() {
     return NestingKind.TOP_LEVEL;
   }
 
-  @Override
-  public final Name getQualifiedName() {
+  @Override // TypeElement (QualifiedNameable)
+  public final SyntheticName getQualifiedName() {
     return this.fqn;
   }
 
-  @Override
-  public final Name getSimpleName() {
-    final String fqn = this.getQualifiedName().toString();
-    final int i = fqn.lastIndexOf('.');
-    return i >= 0 ? SyntheticName.of(fqn.substring(i + 1)) : this.getQualifiedName();
+  @Override // TypeElement (Element)
+  public final SyntheticName getSimpleName() {
+    return this.sn;
   }
 
-  @Override
+  @Override // TypeElement
   public final TypeMirror getSuperclass() {
     return NoneType.of();
   }
 
-  @Override
+  @Override // TypeElement
   public final List<? extends TypeParameterElement> getTypeParameters() {
     return List.of();
   }
 
-  @Override
+  @Override // TypeElement (Element)
   public final String toString() {
-    return "@" + this.getQualifiedName().toString(); // TODO: robustify
+    return this.getQualifiedName().toString(); // TODO: robustify
   }
+
+
+  /*
+   * Static methods.
+   */
+
+
+  // See https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1
+  private static final TypeMirror validateScalarType(final TypeMirror type) {
+    return switch (type) {
+    case null -> throw new NullPointerException("t");
+    case PrimitiveType t when t.getKind().isPrimitive() -> t;
+    case DeclaredType t when t.getKind() == DECLARED -> {
+      final TypeElement te = (TypeElement)t.asElement();
+      yield switch (te.getKind()) {
+      case ANNOTATION_TYPE, ENUM -> t;
+      default -> {
+        final Name fqn = te.getQualifiedName();
+        if (fqn.contentEquals("java.lang.Class") || fqn.contentEquals("java.lang.String")) {
+          yield t;
+        }
+        throw new IllegalArgumentException("type: " + type);
+      }
+      };
+    }
+    default -> throw new IllegalArgumentException("type: " + type);
+    };
+  }
+
+
+  /*
+   * Inner and nested classes.
+   */
+
 
   /**
    * An <strong>experimental</strong> collection of information out of which a synthetic annotation element may be
    * fashioned.
    *
    * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
+   *
+   * @see SyntheticAnnotationTypeElement#SyntheticAnnotationTypeElement(List, SyntheticName, List)
    */
   public static final class SyntheticAnnotationElement {
+
+
+    /*
+     * Instance fields.
+     */
+
 
     private final List<? extends AnnotationMirror> annotationMirrors;
 
     private final TypeMirror type;
 
-    private final String name;
+    private final SyntheticName name;
+
+    private final SyntheticAnnotationValue defaultValue;
+
+
+    /*
+     * Constructors.
+     */
+
+
+    /**
+     * Creates a new {@link SyntheticAnnotationElement}.
+     *
+     * @param type the type of the annotation element; must conform to Java annotation element type restrictions; must
+     * not be {@code null}
+     *
+     * @param name the name of the annotation element; must conform to Java method naming requirements; must not be
+     * {@code null}
+     *
+     * @exception NullPointerException if any argument is {@code null}
+     *
+     * @exception IllegalArgumentException if any argument does not conform to its requirements
+     *
+     * @see #SyntheticAnnotationElement(List, TypeMirror, SyntheticName, SyntheticAnnotationValue)
+     *
+     * @spec https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1 Java Language Specification,
+     * section 9.6.1
+     */
+    public SyntheticAnnotationElement(final TypeMirror type, // the "return type"
+                                      final SyntheticName name) {
+      this(List.of(), type, name, null);
+    }
+
+    /**
+     * Creates a new {@link SyntheticAnnotationElement}.
+     *
+     * @param type the type of the annotation element; must conform to Java annotation element type restrictions; must
+     * not be {@code null}
+     *
+     * @param name the name of the annotation element; must conform to Java method naming requirements; must not be
+     * {@code null}
+     *
+     * @param defaultValue a {@link SyntheticAnnotationValue} representing the default value; may be {@code null}
+     *
+     * @exception NullPointerException if any argument is {@code null}
+     *
+     * @exception IllegalArgumentException if any argument does not conform to its requirements
+     *
+     * @see #SyntheticAnnotationElement(List, TypeMirror, SyntheticName, SyntheticAnnotationValue)
+     *
+     * @spec https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1 Java Language Specification,
+     * section 9.6.1
+     */
+    public SyntheticAnnotationElement(final TypeMirror type, // the "return type"
+                                      final SyntheticName name,
+                                      final SyntheticAnnotationValue defaultValue) {
+      this(List.of(), type, name, defaultValue);
+    }
 
     /**
      * Creates a new {@link SyntheticAnnotationElement}.
@@ -221,15 +414,63 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
      * @exception NullPointerException if any argument is {@code null}
      *
      * @exception IllegalArgumentException if any argument does not conform to its requirements
+     *
+     * @see #SyntheticAnnotationElement(List, TypeMirror, SyntheticName, SyntheticAnnotationValue)
+     *
+     * @spec https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1 Java Language Specification,
+     * section 9.6.1
      */
     public SyntheticAnnotationElement(final List<? extends AnnotationMirror> annotationMirrors,
                                       final TypeMirror type, // the "return type"
-                                      final String name) {
+                                      final SyntheticName name) {
+      this(annotationMirrors, type, name, null);
+    }
+
+    /**
+     * Creates a new {@link SyntheticAnnotationElement}.
+     *
+     * @param annotationMirrors a {@link List} of {@link AnnotationMirror}s modeling the annotations this element has;
+     * must not be {@code null}
+     *
+     * @param type the type of the annotation element; must conform to Java annotation element type restrictions; must
+     * not be {@code null}
+     *
+     * @param name the name of the annotation element; must conform to Java method naming requirements; must not be
+     * {@code null}
+     *
+     * @param defaultValue a {@link SyntheticAnnotationValue} representing the default value; may be {@code null}
+     *
+     * @exception NullPointerException if any argument is {@code null}
+     *
+     * @exception IllegalArgumentException if any argument does not conform to its requirements
+     *
+     * @spec https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1 Java Language Specification,
+     * section 9.6.1
+     */
+    public SyntheticAnnotationElement(final List<? extends AnnotationMirror> annotationMirrors,
+                                      final TypeMirror type, // the "return type"
+                                      final SyntheticName name,
+                                      final SyntheticAnnotationValue defaultValue) {
       super();
       this.annotationMirrors = List.copyOf(annotationMirrors);
-      this.type = requireNonNull(type, "type");
-      this.name = requireNonNull(name, "name");
+      this.type = switch (type) {
+      case null -> throw new NullPointerException("type");
+      case ArrayType t when t.getKind() == ARRAY -> validateScalarType(t.getComponentType());
+      default -> validateScalarType(type);
+      };
+      if (name.equals("getClass") || name.equals("hashCode") || name.equals("toString")) {
+        // java.lang.Object-declared methods that might otherwise meet annotation element requirements
+        throw new IllegalArgumentException("name: " + name);
+      }
+      this.name = name;
+      this.defaultValue = defaultValue;
     }
+
+
+    /*
+     * Instance fields.
+     */
+
 
     final List<? extends AnnotationMirror> annotationMirrors() {
       return this.annotationMirrors;
@@ -242,7 +483,7 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
       case SyntheticAnnotationElement sae when this.getClass() == sae.getClass() ->
       Objects.equals(this.name, sae.name) &&
       Objects.equals(this.type, sae.type) &&
-      Objects.equals(this.annotationMirrors, sae.annotationMirrors);
+      Objects.equals(this.annotationMirrors, sae.annotationMirrors); // TODO: hmm
       default -> false;
       };
     }
@@ -254,17 +495,21 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
       hashCode = 17 * hashCode + c;
       c = this.type.hashCode();
       hashCode = 17 * hashCode + c;
-      c = this.annotationMirrors.hashCode();
+      c = this.annotationMirrors.hashCode(); // TODO: hmm
       hashCode = 17 * hashCode + c;
       return hashCode;
     }
 
-    final String name() {
+    final SyntheticName name() {
       return this.name;
     }
 
     final TypeMirror type() {
       return this.type;
+    }
+
+    final SyntheticAnnotationValue defaultValue() {
+      return this.defaultValue;
     }
 
   }
@@ -277,30 +522,41 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
    *
    * @see SyntheticAnnotationTypeElement
    */
+  // Note: inner class; see asElement()
   private class Type implements DeclaredType {
 
-    private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
+
+    /*
+     * Constructors.
+     */
+
 
     private Type() {
       super();
     }
 
-    @Override // TypeMirror
+
+    /*
+     * Instance fields.
+     */
+
+
+    @Override // DeclaredType (TypeMirror)
     public final <R, P> R accept(final TypeVisitor<R, P> v, final P p) {
       return v.visitDeclared(this, p);
     }
 
-    @Override // ExecutableType (AnnotatedConstruct)
+    @Override // DeclaredType (AnnotatedConstruct)
     public final <A extends Annotation> A getAnnotation(final Class<A> annotationType) {
       return null; // deliberate
     }
 
-    @Override // ExecutableType (AnnotatedConstruct)
+    @Override // DeclaredType (AnnotatedConstruct)
     public final List<? extends AnnotationMirror> getAnnotationMirrors() {
       return List.of(); // deliberate
     }
 
-    @Override // ExecutableType (AnnotatedConstruct)
+    @Override // DeclaredType (AnnotatedConstruct)
     @SuppressWarnings("unchecked")
     public final <A extends Annotation> A[] getAnnotationsByType(final Class<A> annotationType) {
       return (A[])EMPTY_ANNOTATION_ARRAY; // deliberate
@@ -311,12 +567,12 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
       return TypeKind.DECLARED;
     }
 
-    @Override
-    public final TypeMirror getEnclosingType() {
+    @Override // DeclaredType
+    public final NoneType getEnclosingType() {
       return NoneType.of();
     }
 
-    @Override // DeclaredType (TypeMirror)
+    @Override // DeclaredType
     public final List<? extends TypeMirror> getTypeArguments() {
       return List.of();
     }
@@ -326,14 +582,21 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
       return SyntheticAnnotationTypeElement.this;
     }
 
-    @Override
+    @Override // DeclaredType (TypeMirror)
     public final String toString() {
       return this.asElement().toString();
     }
 
   }
 
+  // Note: inner class, built out of SyntheticAnnotationElement instances; see getEnclosingElement()
   private final class InternalAnnotationElement implements ExecutableElement {
+
+
+    /*
+     * Instance fields.
+     */
+
 
     private final List<? extends AnnotationMirror> annotationMirrors;
 
@@ -341,142 +604,158 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
 
     private final SyntheticName name;
 
+    private final SyntheticAnnotationValue defaultValue;
+
+
+    /*
+     * Constructors.
+     */
+
+
     private InternalAnnotationElement(final List<? extends AnnotationMirror> annotationMirrors,
                                       final TypeMirror type,
-                                      final String name) {
+                                      final SyntheticName name,
+                                      final SyntheticAnnotationValue defaultValue) {
       super();
       this.annotationMirrors = List.copyOf(annotationMirrors);
       this.t = new Type(type);
-      this.name = SyntheticName.of(name);
+      this.name = requireNonNull(name, "name");
+      this.defaultValue = defaultValue;
     }
 
-    @Override // Element
+
+    /*
+     * Instance fields.
+     */
+
+
+    @Override // ExecutableElement
     public final <R, P> R accept(final ElementVisitor<R, P> v, final P p) {
       return v.visitExecutable(this, p);
     }
 
-    @Override // Element
+    @Override // ExecutableElement
     public final Type asType() {
       return this.t;
     }
 
-    @Override // AnnotatedConstruct
+    @Override // ExecutableElement (AnnotatedConstruct)
     public final List<? extends AnnotationMirror> getAnnotationMirrors() {
       return this.annotationMirrors;
     }
 
-    @Override // AnnotatedConstruct
+    @Override // ExecutableElement (AnnotatedConstruct)
     public final <A extends Annotation> A getAnnotation(final Class<A> annotationType) {
-      throw new UnsupportedOperationException(); // deliberate
-    }
-
-    @Override // AnnotatedConstruct
-    public final <A extends Annotation> A[] getAnnotationsByType(final Class<A> annotationType) {
-      throw new UnsupportedOperationException(); // deliberate
-    }
-
-    @Override
-    public AnnotationValue getDefaultValue() {
       return null; // deliberate
     }
 
-    @Override
+    @Override // ExecutableElement (AnnotatedConstruct)
+    @SuppressWarnings("unchecked")
+    public final <A extends Annotation> A[] getAnnotationsByType(final Class<A> annotationType) {
+      return (A[])EMPTY_ANNOTATION_ARRAY; // deliberate
+    }
+
+    @Override // ExecutableElement
+    public AnnotationValue getDefaultValue() {
+      return this.defaultValue;
+    }
+
+    @Override // ExecutableElement (Element)
     public final List<? extends Element> getEnclosedElements() {
       return List.of();
     }
 
-    @Override
+    @Override // ExecutableElement (Element)
     public final SyntheticAnnotationTypeElement getEnclosingElement() {
       return SyntheticAnnotationTypeElement.this;
     }
 
-    @Override
+    @Override // ExecutableElement (Element)
     public final Set<Modifier> getModifiers() {
-      throw new UnsupportedOperationException();
+      return ABSTRACT_ONLY_MODIFIERS;
     }
 
-    @Override
+    @Override // ExecutableElement (Element)
     public final ElementKind getKind() {
       return ElementKind.METHOD;
     }
 
-    @Override
+    @Override // ExecutableElement
     public final List<? extends VariableElement> getParameters() {
       return List.of();
     }
 
-    @Override
+    @Override // ExecutableElement
     public final TypeMirror getReceiverType() {
-      return asType().getReceiverType();
+      return this.asType().getReceiverType();
     }
 
-    @Override
+    @Override // ExecutableElement
     public final TypeMirror getReturnType() {
-      return asType().getReturnType();
+      return this.asType().getReturnType();
     }
 
-    @Override
-    public final Name getSimpleName() {
+    @Override // ExecutableElement (Element)
+    public final SyntheticName getSimpleName() {
       return this.name;
     }
 
-    @Override
+    @Override // ExecutableElement
     public final List<? extends TypeMirror> getThrownTypes() {
-      return asType().getThrownTypes();
+      return this.asType().getThrownTypes(); // (should be zero)
     }
 
-    @Override
+    @Override // ExecutableElement
     public final List<? extends TypeParameterElement> getTypeParameters() {
       return List.of();
     }
 
-    @Override
+    @Override // ExecutableElement
     public final boolean isDefault() {
-      return false;
+      return false; // technically this could be true if java.lang.annotation.Annotation ever gets a default method
     }
 
-    @Override
+    @Override // ExecutableElement
     public final boolean isVarArgs() {
       return false;
     }
 
+
+    /*
+     * Inner and nested classes.
+     */
+
+
     private static final class Type implements ExecutableType {
+
+
+      /*
+       * Instance fields.
+       */
+
 
       private final TypeMirror type;
 
-      private Type(final TypeMirror type) {
+
+      /*
+       * Constructors.
+       */
+
+
+      private Type(final TypeMirror type) { // the "return type"
         super();
-        this.type = validate(type);
+        this.type = switch (type) {
+        case null -> throw new NullPointerException("type");
+        case ArrayType t when t.getKind() == ARRAY -> validateScalarType(t.getComponentType());
+        default -> validateScalarType(type);
+        };
       }
 
-      private static TypeMirror validate(final TypeMirror type) {
-        TypeMirror t = type;
-        TypeKind k = t.getKind();
-        if (k == ARRAY && t instanceof ArrayType a) {
-          t = a.getComponentType();
-          k = t.getKind();
-        }
-        if (k.isPrimitive()) {
-          return type;
-        }
-        if (k == DECLARED) {
-          final TypeElement e = (TypeElement)((DeclaredType)t).asElement();
-          switch (e.getKind()) {
-          case ANNOTATION_TYPE:
-          case ENUM:
-            return type;
-          case CLASS:
-            final Name fqn = e.getQualifiedName();
-            if (fqn.contentEquals("java.lang.String") || fqn.contentEquals("java.lang.Class")) {
-              return type;
-            }
-            break;
-          default:
-            break;
-          }
-        }
-        throw new IllegalArgumentException("type: " + type);
-      }
+
+      /*
+       * Instance methods.
+       */
+
 
       @Override // TypeMirror
       public final <R, P> R accept(final TypeVisitor<R, P> v, final P p) {
@@ -485,7 +764,7 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
 
       @Override // ExecutableType (AnnotatedConstruct)
       public final <A extends Annotation> A getAnnotation(final Class<A> annotationType) {
-        throw new UnsupportedOperationException(); // deliberate
+        return null; // deliberate
       }
 
       @Override // ExecutableType (AnnotatedConstruct)
@@ -494,8 +773,9 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
       }
 
       @Override // ExecutableType (AnnotatedConstruct)
+      @SuppressWarnings("unchecked")
       public final <A extends Annotation> A[] getAnnotationsByType(final Class<A> annotationType) {
-        throw new UnsupportedOperationException(); // deliberate
+      return (A[])EMPTY_ANNOTATION_ARRAY; // deliberate
       }
 
       @Override // ExecutableType (TypeMirror)
@@ -509,7 +789,7 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
       }
 
       @Override // ExecutableType
-      public final TypeMirror getReceiverType() {
+      public final NoneType getReceiverType() {
         return NoneType.of();
       }
 

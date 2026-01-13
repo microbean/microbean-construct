@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2025 microBean™.
+ * Copyright © 2025–2026 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,7 +23,6 @@ import java.util.function.Supplier;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.AnnotationValueVisitor;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
 
 import javax.lang.model.type.TypeMirror;
@@ -44,15 +43,18 @@ import static java.util.Objects.requireNonNull;
 public final class UniversalAnnotationValue implements AnnotationValue {
 
 
-  // Eventually this should become a lazy constant/stable value
-  // volatile not needed
-  private Supplier<? extends AnnotationValue> delegateSupplier;
+  /*
+   * Instance fields.
+   */
+
 
   private final PrimordialDomain domain;
 
-  private String s;
-
-  private Object v;
+  // Eventually this should become a lazy constant/stable value
+  // volatile not needed
+  // Treat as final
+  // Use delegate() to read; do not reference directly
+  private Supplier<? extends AnnotationValue> delegateSupplier;
 
 
   /*
@@ -81,21 +83,14 @@ public final class UniversalAnnotationValue implements AnnotationValue {
           // Should trigger symbol completion; see
           // https://github.com/openjdk/jdk/blob/jdk-25%2B3/src/jdk.compiler/share/classes/com/sun/tools/javac/util/Constants.java#L49;
           // any invocation of getTag() will do it.
-          //
-          // We bother to eagerly cache the value and the string representation because honestly you're going to call
-          // those methods anyway, probably repeatedly.
-          this.v = unwrappedDelegate.getValue();
-          this.s = unwrappedDelegate.toString(); // names will do it too
-          this.delegateSupplier = () -> unwrappedDelegate;
+          unwrappedDelegate.toString(); // names will do it too
+          this.delegateSupplier = () -> unwrappedDelegate; // replace ourselves safely under lock
         }
         return unwrappedDelegate;
       };
     } else {
       assert delegate instanceof UniversalAnnotationValue;
       // Symbol completion already happened; no lock needed
-      final UniversalAnnotationValue uav = (UniversalAnnotationValue)delegate;
-      this.v = uav.getValue(); // already cached/computed
-      this.s = uav.toString(); // already cached/computed
       this.delegateSupplier = () -> unwrappedDelegate;
     }
   }
@@ -165,30 +160,25 @@ public final class UniversalAnnotationValue implements AnnotationValue {
   @Override // AnnotationValue
   @SuppressWarnings("unchecked")
   public final Object getValue() {
-    final PrimordialDomain domain = this.domain();
-    final Object value = this.v;
+    final Object value = this.delegate().getValue();
     return switch (value) {
     case null -> throw new AssertionError();
-    case AnnotationMirror a -> UniversalAnnotation.of(a, domain);
-    case List<?> l -> of((List<? extends AnnotationValue>)l, domain);
-    case TypeMirror t -> UniversalType.of(t, domain);
-    case VariableElement e -> UniversalElement.of(e, domain);
+    case AnnotationMirror a -> UniversalAnnotation.of(a, this.domain());
+    case List<?> l -> of((List<? extends AnnotationValue>)l, this.domain());
+    case TypeMirror t -> UniversalType.of(t, this.domain());
+    case VariableElement e -> UniversalElement.of(e, this.domain());
     default -> value;
     };
   }
 
   @Override // Object
-  @SuppressWarnings({ "try", "unchecked" })
   public final int hashCode() {
-    // No lock needed; see
-    // https://github.com/openjdk/jdk/blob/jdk-26%2B25/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Attribute.java#L45
     return this.delegate().hashCode();
   }
 
   @Override // AnnotationValue
-  @SuppressWarnings("try")
   public final String toString() {
-    return this.s;
+    return this.delegate().toString();
   }
 
 
@@ -259,6 +249,5 @@ public final class UniversalAnnotationValue implements AnnotationValue {
     }
     return a;
   }
-
 
 }

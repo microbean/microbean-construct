@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2025 microBean™.
+ * Copyright © 2025–2026 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,9 +21,6 @@ import java.lang.constant.MethodTypeDesc;
 
 import java.util.Objects;
 import java.util.Optional;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import java.util.stream.IntStream;
 
@@ -50,9 +47,19 @@ import static java.util.Objects.requireNonNull;
  */
 public final class SyntheticName implements Constable, Name {
 
-  private static final ConcurrentMap<String, SyntheticName> names = new ConcurrentHashMap<>();
+
+  /*
+   * Instance fields.
+   */
+
 
   private final String value;
+
+
+  /*
+   * Constructors.
+   */
+
 
   /**
    * Creates a new {@link SyntheticName}.
@@ -61,10 +68,16 @@ public final class SyntheticName implements Constable, Name {
    *
    * @exception NullPointerException if {@code value} is {@code null}
    */
-  private SyntheticName(final String value) {
+  public SyntheticName(final String value) {
     super();
     this.value = requireNonNull(value, "value");
   }
+
+
+  /*
+   * Instance methods.
+   */
+
 
   @Override // Name (CharSequence)
   public final char charAt(final int index) {
@@ -129,19 +142,6 @@ public final class SyntheticName implements Constable, Name {
   @Override // Name (CharSequence)
   public final String toString() {
     return this.value;
-  }
-
-  /**
-   * Returns a (non-{@code null}) {@link SyntheticName} representing the supplied {@code name}.
-   *
-   * @param name a {@link String}; must not be {@code null}
-   *
-   * @return a {@link SyntheticName}; never {@code null}
-   *
-   * @exception NullPointerException if {@code name} is {@code null}
-   */
-  public static final SyntheticName of(final String name) {
-    return names.computeIfAbsent(name, SyntheticName::new);
   }
 
 }

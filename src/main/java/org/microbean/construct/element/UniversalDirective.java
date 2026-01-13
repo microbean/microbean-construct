@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024–2025 microBean™.
+ * Copyright © 2024–2026 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -15,9 +15,7 @@ package org.microbean.construct.element;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import java.util.function.Supplier;
 
@@ -31,6 +29,10 @@ import javax.lang.model.element.ModuleElement.RequiresDirective;
 import javax.lang.model.element.ModuleElement.UsesDirective;
 
 import org.microbean.construct.PrimordialDomain;
+
+import static java.util.Collections.unmodifiableList;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * A {@link Directive} implementation.
@@ -60,12 +62,11 @@ public final class UniversalDirective
   @SuppressWarnings("try")
   public UniversalDirective(final Directive delegate, final PrimordialDomain domain) {
     super();
-    this.domain = Objects.requireNonNull(domain, "domain");
-    final Directive unwrappedDelegate = unwrap(Objects.requireNonNull(delegate, "delegate"));
-    final Runnable symbolCompleter = unwrappedDelegate::getKind;
+    this.domain = requireNonNull(domain, "domain");
+    final Directive unwrappedDelegate = unwrap(requireNonNull(delegate, "delegate"));
     this.delegateSupplier = () -> {
       try (var lock = domain.lock()) {
-        symbolCompleter.run();
+        unwrappedDelegate.toString(); // symbol completion
         this.delegateSupplier = () -> unwrappedDelegate;
       }
       return unwrappedDelegate;
@@ -228,7 +229,7 @@ public final class UniversalDirective
     for (final Directive e : es) {
       newEs.add(of(e, domain));
     }
-    return Collections.unmodifiableList(newEs);
+    return unmodifiableList(newEs);
   }
 
   /**
