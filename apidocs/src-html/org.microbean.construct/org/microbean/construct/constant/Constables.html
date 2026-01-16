@@ -775,128 +775,145 @@
 <span class="source-line-no">762</span><span id="line-762">   * @param list a {@link List} to be described; may be {@code null}; if non-{@code null} &lt;strong&gt;must be immutable and</span>
 <span class="source-line-no">763</span><span id="line-763">   * must not contain {@code null} elements&lt;/strong&gt; or undefined behavior will result</span>
 <span class="source-line-no">764</span><span id="line-764">   *</span>
-<span class="source-line-no">765</span><span id="line-765">   * @param f a {@link Function} that accepts an element from the supplied {@code list} and returns a non-{@code null}</span>
-<span class="source-line-no">766</span><span id="line-766">   * {@link Optional} housing a nominal descriptor for it, or a non-{@code null} {@linkplain Optional#empty() empty}</span>
-<span class="source-line-no">767</span><span id="line-767">   * {@link Optional} if the element cannot be described; must not be {@code null}</span>
-<span class="source-line-no">768</span><span id="line-768">   *</span>
-<span class="source-line-no">769</span><span id="line-769">   * @return a non-{@code null} {@link Optional}</span>
-<span class="source-line-no">770</span><span id="line-770">   *</span>
-<span class="source-line-no">771</span><span id="line-771">   * @exception NullPointerException if {@code f} is {@code null} and needs to be used</span>
-<span class="source-line-no">772</span><span id="line-772">   *</span>
-<span class="source-line-no">773</span><span id="line-773">   * @see List#of(Object...)</span>
-<span class="source-line-no">774</span><span id="line-774">   */</span>
-<span class="source-line-no">775</span><span id="line-775">  public static final &lt;E&gt; Optional&lt;? extends ConstantDesc&gt; describe(final List&lt;? extends E&gt; list,</span>
-<span class="source-line-no">776</span><span id="line-776">                                                                    final Function&lt;? super E, ? extends Optional&lt;? extends ConstantDesc&gt;&gt; f) {</span>
-<span class="source-line-no">777</span><span id="line-777">    return switch (list) {</span>
-<span class="source-line-no">778</span><span id="line-778">    case null -&gt; Optional.of(NULL);</span>
-<span class="source-line-no">779</span><span id="line-779">    case Constable c -&gt; c.describeConstable();</span>
-<span class="source-line-no">780</span><span id="line-780">    case ConstantDesc cd -&gt; Optional.of(cd); // future proofing?</span>
-<span class="source-line-no">781</span><span id="line-781">    case List&lt;?&gt; el when el.isEmpty() -&gt;</span>
-<span class="source-line-no">782</span><span id="line-782">      Optional.of(DynamicConstantDesc.of(BSM_INVOKE,</span>
-<span class="source-line-no">783</span><span id="line-783">                                         ofMethod(INTERFACE_STATIC,</span>
-<span class="source-line-no">784</span><span id="line-784">                                                  CD_List,</span>
-<span class="source-line-no">785</span><span id="line-785">                                                  "of",</span>
-<span class="source-line-no">786</span><span id="line-786">                                                  MethodTypeDesc.of(CD_List))));</span>
-<span class="source-line-no">787</span><span id="line-787">    default -&gt; {</span>
-<span class="source-line-no">788</span><span id="line-788">      int size = list.size();</span>
-<span class="source-line-no">789</span><span id="line-789">      assert size &gt; 0;</span>
-<span class="source-line-no">790</span><span id="line-790">      final MethodTypeDesc ofMethodTypeDesc;</span>
-<span class="source-line-no">791</span><span id="line-791">      if (size &lt;= 10) {</span>
-<span class="source-line-no">792</span><span id="line-792">        // List.of() has explicit polymorphic overrides for parameter counts of up to 10, inclusive.</span>
-<span class="source-line-no">793</span><span id="line-793">        final ClassDesc[] parameterArray = new ClassDesc[size];</span>
-<span class="source-line-no">794</span><span id="line-794">        fill(parameterArray, CD_Object);</span>
-<span class="source-line-no">795</span><span id="line-795">        ofMethodTypeDesc = MethodTypeDesc.of(CD_List, parameterArray);</span>
-<span class="source-line-no">796</span><span id="line-796">      } else {</span>
-<span class="source-line-no">797</span><span id="line-797">        // After 10 parameters, List.of() falls back to varargs.</span>
-<span class="source-line-no">798</span><span id="line-798">        ofMethodTypeDesc = MethodTypeDesc.of(CD_List, CD_Object.arrayType());</span>
-<span class="source-line-no">799</span><span id="line-799">      }</span>
-<span class="source-line-no">800</span><span id="line-800">      final ConstantDesc[] args = new ConstantDesc[++size];</span>
-<span class="source-line-no">801</span><span id="line-801">      args[0] = ofMethod(INTERFACE_STATIC, CD_List, "of", ofMethodTypeDesc);</span>
-<span class="source-line-no">802</span><span id="line-802">      for (int i = 1; i &lt; size; i++) {</span>
-<span class="source-line-no">803</span><span id="line-803">        final ConstantDesc eDesc = f.apply(list.get(i)).orElse(null);</span>
-<span class="source-line-no">804</span><span id="line-804">        if (eDesc == null) {</span>
-<span class="source-line-no">805</span><span id="line-805">          yield Optional.empty();</span>
-<span class="source-line-no">806</span><span id="line-806">        }</span>
-<span class="source-line-no">807</span><span id="line-807">        args[i] = eDesc;</span>
-<span class="source-line-no">808</span><span id="line-808">      }</span>
-<span class="source-line-no">809</span><span id="line-809">      yield Optional.of(DynamicConstantDesc.of(BSM_INVOKE, args));</span>
-<span class="source-line-no">810</span><span id="line-810">    }</span>
-<span class="source-line-no">811</span><span id="line-811">    };</span>
-<span class="source-line-no">812</span><span id="line-812">  }</span>
-<span class="source-line-no">813</span><span id="line-813"></span>
-<span class="source-line-no">814</span><span id="line-814">  /**</span>
-<span class="source-line-no">815</span><span id="line-815">   * Returns a nominal descriptor for the supplied {@link Map}, or an {@linkplain Optional#empty() empty} {@link</span>
-<span class="source-line-no">816</span><span id="line-816">   * Optional} if the supplied {@link Map} cannot be described.</span>
-<span class="source-line-no">817</span><span id="line-817">   *</span>
-<span class="source-line-no">818</span><span id="line-818">   * @param &lt;K&gt; the supplied {@code map}'s key type</span>
-<span class="source-line-no">819</span><span id="line-819">   *</span>
-<span class="source-line-no">820</span><span id="line-820">   * @param &lt;V&gt; the supplied {@code map}'s value type</span>
-<span class="source-line-no">821</span><span id="line-821">   *</span>
-<span class="source-line-no">822</span><span id="line-822">   * @param map a {@link Map} to be described; may be {@code null}; if non-{@code null} &lt;strong&gt;must be immutable and</span>
-<span class="source-line-no">823</span><span id="line-823">   * must not contain {@code null} keys or values&lt;/strong&gt; or undefined behavior will result</span>
-<span class="source-line-no">824</span><span id="line-824">   *</span>
-<span class="source-line-no">825</span><span id="line-825">   * @param kf a {@link Function} that accepts a key from the supplied {@code map} and returns a non-{@code null} {@link</span>
-<span class="source-line-no">826</span><span id="line-826">   * Optional} housing a nominal descriptor for it, or a non-{@code null} {@linkplain Optional#empty() empty} {@link</span>
-<span class="source-line-no">827</span><span id="line-827">   * Optional} if the key cannot be described; must not be {@code null}</span>
-<span class="source-line-no">828</span><span id="line-828">   *</span>
-<span class="source-line-no">829</span><span id="line-829">   * @param vf a {@link Function} that accepts a value from the supplied {@code map} and returns a non-{@code null}</span>
-<span class="source-line-no">830</span><span id="line-830">   * {@link Optional} housing a nominal descriptor for it, or a non-{@code null} {@linkplain Optional#empty() empty}</span>
-<span class="source-line-no">831</span><span id="line-831">   * {@link Optional} if the value cannot be described; must not be {@code null}</span>
-<span class="source-line-no">832</span><span id="line-832">   *</span>
-<span class="source-line-no">833</span><span id="line-833">   * @return a non-{@code null} {@link Optional}</span>
+<span class="source-line-no">765</span><span id="line-765">   * @return a non-{@code null} {@link Optional}</span>
+<span class="source-line-no">766</span><span id="line-766">   *</span>
+<span class="source-line-no">767</span><span id="line-767">   * @see #describe(List, Function)</span>
+<span class="source-line-no">768</span><span id="line-768">   */</span>
+<span class="source-line-no">769</span><span id="line-769">  public static final &lt;E&gt; Optional&lt;? extends ConstantDesc&gt; describe(final List&lt;? extends E&gt; list) {</span>
+<span class="source-line-no">770</span><span id="line-770">    return describe(list, e -&gt; e instanceof Constable c ? c.describeConstable() : Optional.empty());</span>
+<span class="source-line-no">771</span><span id="line-771">  }</span>
+<span class="source-line-no">772</span><span id="line-772">  </span>
+<span class="source-line-no">773</span><span id="line-773">  /**</span>
+<span class="source-line-no">774</span><span id="line-774">   * Returns a nominal descriptor for the supplied {@link List}, or an {@linkplain Optional#empty() empty} {@link</span>
+<span class="source-line-no">775</span><span id="line-775">   * Optional} if the supplied {@link List} cannot be described.</span>
+<span class="source-line-no">776</span><span id="line-776">   *</span>
+<span class="source-line-no">777</span><span id="line-777">   * @param &lt;E&gt; the supplied {@code list}'s element type</span>
+<span class="source-line-no">778</span><span id="line-778">   *</span>
+<span class="source-line-no">779</span><span id="line-779">   * @param list a {@link List} to be described; may be {@code null}; if non-{@code null} &lt;strong&gt;must be immutable and</span>
+<span class="source-line-no">780</span><span id="line-780">   * must not contain {@code null} elements&lt;/strong&gt; or undefined behavior will result</span>
+<span class="source-line-no">781</span><span id="line-781">   *</span>
+<span class="source-line-no">782</span><span id="line-782">   * @param f a {@link Function} that accepts an element from the supplied {@code list} and returns a non-{@code null}</span>
+<span class="source-line-no">783</span><span id="line-783">   * {@link Optional} housing a nominal descriptor for it, or a non-{@code null} {@linkplain Optional#empty() empty}</span>
+<span class="source-line-no">784</span><span id="line-784">   * {@link Optional} if the element cannot be described; must not be {@code null}</span>
+<span class="source-line-no">785</span><span id="line-785">   *</span>
+<span class="source-line-no">786</span><span id="line-786">   * @return a non-{@code null} {@link Optional}</span>
+<span class="source-line-no">787</span><span id="line-787">   *</span>
+<span class="source-line-no">788</span><span id="line-788">   * @exception NullPointerException if {@code f} is {@code null} and needs to be used</span>
+<span class="source-line-no">789</span><span id="line-789">   *</span>
+<span class="source-line-no">790</span><span id="line-790">   * @see List#of(Object...)</span>
+<span class="source-line-no">791</span><span id="line-791">   */</span>
+<span class="source-line-no">792</span><span id="line-792">  public static final &lt;E&gt; Optional&lt;? extends ConstantDesc&gt; describe(final List&lt;? extends E&gt; list,</span>
+<span class="source-line-no">793</span><span id="line-793">                                                                    final Function&lt;? super E, ? extends Optional&lt;? extends ConstantDesc&gt;&gt; f) {</span>
+<span class="source-line-no">794</span><span id="line-794">    return switch (list) {</span>
+<span class="source-line-no">795</span><span id="line-795">    case null -&gt; Optional.of(NULL);</span>
+<span class="source-line-no">796</span><span id="line-796">    case Constable c -&gt; c.describeConstable();</span>
+<span class="source-line-no">797</span><span id="line-797">    case ConstantDesc cd -&gt; Optional.of(cd); // future proofing?</span>
+<span class="source-line-no">798</span><span id="line-798">    case List&lt;?&gt; el when el.isEmpty() -&gt;</span>
+<span class="source-line-no">799</span><span id="line-799">      Optional.of(DynamicConstantDesc.of(BSM_INVOKE,</span>
+<span class="source-line-no">800</span><span id="line-800">                                         ofMethod(INTERFACE_STATIC,</span>
+<span class="source-line-no">801</span><span id="line-801">                                                  CD_List,</span>
+<span class="source-line-no">802</span><span id="line-802">                                                  "of",</span>
+<span class="source-line-no">803</span><span id="line-803">                                                  MethodTypeDesc.of(CD_List))));</span>
+<span class="source-line-no">804</span><span id="line-804">    default -&gt; {</span>
+<span class="source-line-no">805</span><span id="line-805">      int size = list.size();</span>
+<span class="source-line-no">806</span><span id="line-806">      assert size &gt; 0;</span>
+<span class="source-line-no">807</span><span id="line-807">      final MethodTypeDesc ofMethodTypeDesc;</span>
+<span class="source-line-no">808</span><span id="line-808">      if (size &lt;= 10) {</span>
+<span class="source-line-no">809</span><span id="line-809">        // List.of() has explicit polymorphic overrides for parameter counts of up to 10, inclusive.</span>
+<span class="source-line-no">810</span><span id="line-810">        final ClassDesc[] parameterArray = new ClassDesc[size];</span>
+<span class="source-line-no">811</span><span id="line-811">        fill(parameterArray, CD_Object);</span>
+<span class="source-line-no">812</span><span id="line-812">        ofMethodTypeDesc = MethodTypeDesc.of(CD_List, parameterArray);</span>
+<span class="source-line-no">813</span><span id="line-813">      } else {</span>
+<span class="source-line-no">814</span><span id="line-814">        // After 10 parameters, List.of() falls back to varargs.</span>
+<span class="source-line-no">815</span><span id="line-815">        ofMethodTypeDesc = MethodTypeDesc.of(CD_List, CD_Object.arrayType());</span>
+<span class="source-line-no">816</span><span id="line-816">      }</span>
+<span class="source-line-no">817</span><span id="line-817">      final ConstantDesc[] args = new ConstantDesc[++size];</span>
+<span class="source-line-no">818</span><span id="line-818">      args[0] = ofMethod(INTERFACE_STATIC, CD_List, "of", ofMethodTypeDesc);</span>
+<span class="source-line-no">819</span><span id="line-819">      for (int i = 1; i &lt; size; i++) {</span>
+<span class="source-line-no">820</span><span id="line-820">        final ConstantDesc eDesc = f.apply(list.get(i)).orElse(null);</span>
+<span class="source-line-no">821</span><span id="line-821">        if (eDesc == null) {</span>
+<span class="source-line-no">822</span><span id="line-822">          yield Optional.empty();</span>
+<span class="source-line-no">823</span><span id="line-823">        }</span>
+<span class="source-line-no">824</span><span id="line-824">        args[i] = eDesc;</span>
+<span class="source-line-no">825</span><span id="line-825">      }</span>
+<span class="source-line-no">826</span><span id="line-826">      yield Optional.of(DynamicConstantDesc.of(BSM_INVOKE, args));</span>
+<span class="source-line-no">827</span><span id="line-827">    }</span>
+<span class="source-line-no">828</span><span id="line-828">    };</span>
+<span class="source-line-no">829</span><span id="line-829">  }</span>
+<span class="source-line-no">830</span><span id="line-830"></span>
+<span class="source-line-no">831</span><span id="line-831">  /**</span>
+<span class="source-line-no">832</span><span id="line-832">   * Returns a nominal descriptor for the supplied {@link Map}, or an {@linkplain Optional#empty() empty} {@link</span>
+<span class="source-line-no">833</span><span id="line-833">   * Optional} if the supplied {@link Map} cannot be described.</span>
 <span class="source-line-no">834</span><span id="line-834">   *</span>
-<span class="source-line-no">835</span><span id="line-835">   * @exception NullPointerException if {@code kf} or {@code vf} is {@code null} and needs to be used</span>
+<span class="source-line-no">835</span><span id="line-835">   * @param &lt;K&gt; the supplied {@code map}'s key type</span>
 <span class="source-line-no">836</span><span id="line-836">   *</span>
-<span class="source-line-no">837</span><span id="line-837">   * @see Map#of(Object, Object)</span>
-<span class="source-line-no">838</span><span id="line-838">   */</span>
-<span class="source-line-no">839</span><span id="line-839">  public static &lt;K, V&gt; Optional&lt;? extends ConstantDesc&gt; describe(final Map&lt;? extends K, ? extends V&gt; map,</span>
-<span class="source-line-no">840</span><span id="line-840">                                                                 final Function&lt;? super K, ? extends Optional&lt;? extends ConstantDesc&gt;&gt; kf,</span>
-<span class="source-line-no">841</span><span id="line-841">                                                                 final Function&lt;? super V, ? extends Optional&lt;? extends ConstantDesc&gt;&gt; vf) {</span>
-<span class="source-line-no">842</span><span id="line-842">    return switch (map) {</span>
-<span class="source-line-no">843</span><span id="line-843">    case null -&gt; Optional.of(NULL);</span>
-<span class="source-line-no">844</span><span id="line-844">    case Constable c -&gt; c.describeConstable();</span>
-<span class="source-line-no">845</span><span id="line-845">    case ConstantDesc c -&gt; Optional.of(c); // future proofing?</span>
-<span class="source-line-no">846</span><span id="line-846">    case Map&lt;?, ?&gt; em when em.isEmpty() -&gt;</span>
-<span class="source-line-no">847</span><span id="line-847">      Optional.of(DynamicConstantDesc.of(BSM_INVOKE,</span>
-<span class="source-line-no">848</span><span id="line-848">                                         ofMethod(INTERFACE_STATIC,</span>
-<span class="source-line-no">849</span><span id="line-849">                                                  CD_Map,</span>
-<span class="source-line-no">850</span><span id="line-850">                                                  "of",</span>
-<span class="source-line-no">851</span><span id="line-851">                                                  MethodTypeDesc.of(CD_Map))));</span>
-<span class="source-line-no">852</span><span id="line-852">    default -&gt; {</span>
-<span class="source-line-no">853</span><span id="line-853">      int size = 2 * map.size(); // 2 * entry size to account for key and value</span>
-<span class="source-line-no">854</span><span id="line-854">      assert size &gt; 0;</span>
-<span class="source-line-no">855</span><span id="line-855">      final MethodTypeDesc ofMethodTypeDesc;</span>
-<span class="source-line-no">856</span><span id="line-856">      if (size &lt;= 20) {</span>
-<span class="source-line-no">857</span><span id="line-857">        // Map.of() has explicit polymorphic overrides for (even) parameter counts of up to 20, inclusive.</span>
-<span class="source-line-no">858</span><span id="line-858">        final ClassDesc[] parameterArray = new ClassDesc[size];</span>
-<span class="source-line-no">859</span><span id="line-859">        fill(parameterArray, CD_Object);</span>
-<span class="source-line-no">860</span><span id="line-860">        ofMethodTypeDesc = MethodTypeDesc.of(CD_Map, parameterArray);</span>
-<span class="source-line-no">861</span><span id="line-861">      } else {</span>
-<span class="source-line-no">862</span><span id="line-862">        // After 20 parameters, Map.of() falls back to varargs.</span>
-<span class="source-line-no">863</span><span id="line-863">        ofMethodTypeDesc = MethodTypeDesc.of(CD_Map, CD_Object.arrayType());</span>
-<span class="source-line-no">864</span><span id="line-864">      }</span>
-<span class="source-line-no">865</span><span id="line-865">      final ConstantDesc[] args = new ConstantDesc[++size];</span>
-<span class="source-line-no">866</span><span id="line-866">      args[0] = ofMethod(INTERFACE_STATIC, CD_Map, "of", ofMethodTypeDesc);</span>
-<span class="source-line-no">867</span><span id="line-867">      int i = 1;</span>
-<span class="source-line-no">868</span><span id="line-868">      for (final Entry&lt;? extends K, ? extends V&gt; e : map.entrySet()) {</span>
-<span class="source-line-no">869</span><span id="line-869">        final ConstantDesc kDesc = kf.apply(e.getKey()).orElse(null);</span>
-<span class="source-line-no">870</span><span id="line-870">        if (kDesc == null) {</span>
-<span class="source-line-no">871</span><span id="line-871">          yield Optional.empty();</span>
-<span class="source-line-no">872</span><span id="line-872">        }</span>
-<span class="source-line-no">873</span><span id="line-873">        final ConstantDesc vDesc = vf.apply(e.getValue()).orElse(null);</span>
-<span class="source-line-no">874</span><span id="line-874">        if (vDesc == null) {</span>
-<span class="source-line-no">875</span><span id="line-875">          yield Optional.empty();</span>
-<span class="source-line-no">876</span><span id="line-876">        }</span>
-<span class="source-line-no">877</span><span id="line-877">        args[i] = kDesc;</span>
-<span class="source-line-no">878</span><span id="line-878">        args[++i] = vDesc;</span>
-<span class="source-line-no">879</span><span id="line-879">        ++i;</span>
-<span class="source-line-no">880</span><span id="line-880">      }</span>
-<span class="source-line-no">881</span><span id="line-881">      yield Optional.of(DynamicConstantDesc.of(BSM_INVOKE, args));</span>
-<span class="source-line-no">882</span><span id="line-882">    }</span>
-<span class="source-line-no">883</span><span id="line-883">    };</span>
-<span class="source-line-no">884</span><span id="line-884">  }</span>
-<span class="source-line-no">885</span><span id="line-885"></span>
-<span class="source-line-no">886</span><span id="line-886">}</span>
+<span class="source-line-no">837</span><span id="line-837">   * @param &lt;V&gt; the supplied {@code map}'s value type</span>
+<span class="source-line-no">838</span><span id="line-838">   *</span>
+<span class="source-line-no">839</span><span id="line-839">   * @param map a {@link Map} to be described; may be {@code null}; if non-{@code null} &lt;strong&gt;must be immutable and</span>
+<span class="source-line-no">840</span><span id="line-840">   * must not contain {@code null} keys or values&lt;/strong&gt; or undefined behavior will result</span>
+<span class="source-line-no">841</span><span id="line-841">   *</span>
+<span class="source-line-no">842</span><span id="line-842">   * @param kf a {@link Function} that accepts a key from the supplied {@code map} and returns a non-{@code null} {@link</span>
+<span class="source-line-no">843</span><span id="line-843">   * Optional} housing a nominal descriptor for it, or a non-{@code null} {@linkplain Optional#empty() empty} {@link</span>
+<span class="source-line-no">844</span><span id="line-844">   * Optional} if the key cannot be described; must not be {@code null}</span>
+<span class="source-line-no">845</span><span id="line-845">   *</span>
+<span class="source-line-no">846</span><span id="line-846">   * @param vf a {@link Function} that accepts a value from the supplied {@code map} and returns a non-{@code null}</span>
+<span class="source-line-no">847</span><span id="line-847">   * {@link Optional} housing a nominal descriptor for it, or a non-{@code null} {@linkplain Optional#empty() empty}</span>
+<span class="source-line-no">848</span><span id="line-848">   * {@link Optional} if the value cannot be described; must not be {@code null}</span>
+<span class="source-line-no">849</span><span id="line-849">   *</span>
+<span class="source-line-no">850</span><span id="line-850">   * @return a non-{@code null} {@link Optional}</span>
+<span class="source-line-no">851</span><span id="line-851">   *</span>
+<span class="source-line-no">852</span><span id="line-852">   * @exception NullPointerException if {@code kf} or {@code vf} is {@code null} and needs to be used</span>
+<span class="source-line-no">853</span><span id="line-853">   *</span>
+<span class="source-line-no">854</span><span id="line-854">   * @see Map#of(Object, Object)</span>
+<span class="source-line-no">855</span><span id="line-855">   */</span>
+<span class="source-line-no">856</span><span id="line-856">  public static &lt;K, V&gt; Optional&lt;? extends ConstantDesc&gt; describe(final Map&lt;? extends K, ? extends V&gt; map,</span>
+<span class="source-line-no">857</span><span id="line-857">                                                                 final Function&lt;? super K, ? extends Optional&lt;? extends ConstantDesc&gt;&gt; kf,</span>
+<span class="source-line-no">858</span><span id="line-858">                                                                 final Function&lt;? super V, ? extends Optional&lt;? extends ConstantDesc&gt;&gt; vf) {</span>
+<span class="source-line-no">859</span><span id="line-859">    return switch (map) {</span>
+<span class="source-line-no">860</span><span id="line-860">    case null -&gt; Optional.of(NULL);</span>
+<span class="source-line-no">861</span><span id="line-861">    case Constable c -&gt; c.describeConstable();</span>
+<span class="source-line-no">862</span><span id="line-862">    case ConstantDesc c -&gt; Optional.of(c); // future proofing?</span>
+<span class="source-line-no">863</span><span id="line-863">    case Map&lt;?, ?&gt; em when em.isEmpty() -&gt;</span>
+<span class="source-line-no">864</span><span id="line-864">      Optional.of(DynamicConstantDesc.of(BSM_INVOKE,</span>
+<span class="source-line-no">865</span><span id="line-865">                                         ofMethod(INTERFACE_STATIC,</span>
+<span class="source-line-no">866</span><span id="line-866">                                                  CD_Map,</span>
+<span class="source-line-no">867</span><span id="line-867">                                                  "of",</span>
+<span class="source-line-no">868</span><span id="line-868">                                                  MethodTypeDesc.of(CD_Map))));</span>
+<span class="source-line-no">869</span><span id="line-869">    default -&gt; {</span>
+<span class="source-line-no">870</span><span id="line-870">      int size = 2 * map.size(); // 2 * entry size to account for key and value</span>
+<span class="source-line-no">871</span><span id="line-871">      assert size &gt; 0;</span>
+<span class="source-line-no">872</span><span id="line-872">      final MethodTypeDesc ofMethodTypeDesc;</span>
+<span class="source-line-no">873</span><span id="line-873">      if (size &lt;= 20) {</span>
+<span class="source-line-no">874</span><span id="line-874">        // Map.of() has explicit polymorphic overrides for (even) parameter counts of up to 20, inclusive.</span>
+<span class="source-line-no">875</span><span id="line-875">        final ClassDesc[] parameterArray = new ClassDesc[size];</span>
+<span class="source-line-no">876</span><span id="line-876">        fill(parameterArray, CD_Object);</span>
+<span class="source-line-no">877</span><span id="line-877">        ofMethodTypeDesc = MethodTypeDesc.of(CD_Map, parameterArray);</span>
+<span class="source-line-no">878</span><span id="line-878">      } else {</span>
+<span class="source-line-no">879</span><span id="line-879">        // After 20 parameters, Map.of() falls back to varargs.</span>
+<span class="source-line-no">880</span><span id="line-880">        ofMethodTypeDesc = MethodTypeDesc.of(CD_Map, CD_Object.arrayType());</span>
+<span class="source-line-no">881</span><span id="line-881">      }</span>
+<span class="source-line-no">882</span><span id="line-882">      final ConstantDesc[] args = new ConstantDesc[++size];</span>
+<span class="source-line-no">883</span><span id="line-883">      args[0] = ofMethod(INTERFACE_STATIC, CD_Map, "of", ofMethodTypeDesc);</span>
+<span class="source-line-no">884</span><span id="line-884">      int i = 1;</span>
+<span class="source-line-no">885</span><span id="line-885">      for (final Entry&lt;? extends K, ? extends V&gt; e : map.entrySet()) {</span>
+<span class="source-line-no">886</span><span id="line-886">        final ConstantDesc kDesc = kf.apply(e.getKey()).orElse(null);</span>
+<span class="source-line-no">887</span><span id="line-887">        if (kDesc == null) {</span>
+<span class="source-line-no">888</span><span id="line-888">          yield Optional.empty();</span>
+<span class="source-line-no">889</span><span id="line-889">        }</span>
+<span class="source-line-no">890</span><span id="line-890">        final ConstantDesc vDesc = vf.apply(e.getValue()).orElse(null);</span>
+<span class="source-line-no">891</span><span id="line-891">        if (vDesc == null) {</span>
+<span class="source-line-no">892</span><span id="line-892">          yield Optional.empty();</span>
+<span class="source-line-no">893</span><span id="line-893">        }</span>
+<span class="source-line-no">894</span><span id="line-894">        args[i] = kDesc;</span>
+<span class="source-line-no">895</span><span id="line-895">        args[++i] = vDesc;</span>
+<span class="source-line-no">896</span><span id="line-896">        ++i;</span>
+<span class="source-line-no">897</span><span id="line-897">      }</span>
+<span class="source-line-no">898</span><span id="line-898">      yield Optional.of(DynamicConstantDesc.of(BSM_INVOKE, args));</span>
+<span class="source-line-no">899</span><span id="line-899">    }</span>
+<span class="source-line-no">900</span><span id="line-900">    };</span>
+<span class="source-line-no">901</span><span id="line-901">  }</span>
+<span class="source-line-no">902</span><span id="line-902"></span>
+<span class="source-line-no">903</span><span id="line-903">}</span>
 
 
 

@@ -1524,10 +1524,10 @@
 <span class="source-line-no">1511</span><span id="line-1511">  }</span>
 <span class="source-line-no">1512</span><span id="line-1512"></span>
 <span class="source-line-no">1513</span><span id="line-1513">  /**</span>
-<span class="source-line-no">1514</span><span id="line-1514">   * A convenience method that returns the first {@link VariableElement} with a {@linkplain ElementKind#isVariable()</span>
-<span class="source-line-no">1515</span><span id="line-1515">   * variable &lt;code&gt;ElementKind&lt;/code&gt;} and {@linkplain Element#getSimpleName() bearing} the supplied {@code simpleName}</span>
-<span class="source-line-no">1516</span><span id="line-1516">   * that the supplied {@code enclosingElement} {@linkplain Element#getEnclosedElements() encloses}, &lt;strong&gt;or {@code</span>
-<span class="source-line-no">1517</span><span id="line-1517">   * null} if there is no such {@link VariableElement}&lt;/strong&gt;.</span>
+<span class="source-line-no">1514</span><span id="line-1514">   * A convenience method that returns the first {@link VariableElement} {@linkplain Element#getSimpleName() bearing}</span>
+<span class="source-line-no">1515</span><span id="line-1515">   * the supplied {@code simpleName} that the supplied {@code enclosingElement} {@linkplain</span>
+<span class="source-line-no">1516</span><span id="line-1516">   * Element#getEnclosedElements() encloses}, &lt;strong&gt;or {@code null} if there is no such {@link</span>
+<span class="source-line-no">1517</span><span id="line-1517">   * VariableElement}&lt;/strong&gt;.</span>
 <span class="source-line-no">1518</span><span id="line-1518">   *</span>
 <span class="source-line-no">1519</span><span id="line-1519">   * @param enclosingElement an {@link Element}; must not be {@code null}</span>
 <span class="source-line-no">1520</span><span id="line-1520">   *</span>
@@ -1539,82 +1539,80 @@
 <span class="source-line-no">1526</span><span id="line-1526">   *</span>
 <span class="source-line-no">1527</span><span id="line-1527">   * @see Element#getEnclosedElements()</span>
 <span class="source-line-no">1528</span><span id="line-1528">   *</span>
-<span class="source-line-no">1529</span><span id="line-1529">   * @see ElementKind#isVariable()</span>
+<span class="source-line-no">1529</span><span id="line-1529">   * @see Element#getSimpleName()</span>
 <span class="source-line-no">1530</span><span id="line-1530">   *</span>
-<span class="source-line-no">1531</span><span id="line-1531">   * @see Element#getSimpleName()</span>
-<span class="source-line-no">1532</span><span id="line-1532">   *</span>
-<span class="source-line-no">1533</span><span id="line-1533">   * @see VariableElement</span>
-<span class="source-line-no">1534</span><span id="line-1534">   */</span>
-<span class="source-line-no">1535</span><span id="line-1535">  // (Convenience.)</span>
-<span class="source-line-no">1536</span><span id="line-1536">  public default VariableElement variableElement(final Element enclosingElement, final CharSequence simpleName) {</span>
-<span class="source-line-no">1537</span><span id="line-1537">    Objects.requireNonNull(simpleName, "simpleName");</span>
-<span class="source-line-no">1538</span><span id="line-1538">    return switch (enclosingElement) {</span>
-<span class="source-line-no">1539</span><span id="line-1539">    case null -&gt; throw new NullPointerException("enclosingElement");</span>
-<span class="source-line-no">1540</span><span id="line-1540">    case UniversalElement ue -&gt; {</span>
-<span class="source-line-no">1541</span><span id="line-1541">      for (final UniversalElement ee : ue.getEnclosedElements()) {</span>
-<span class="source-line-no">1542</span><span id="line-1542">        if (ee.getKind().isVariable() &amp;&amp; ee.getSimpleName().contentEquals(simpleName)) {</span>
-<span class="source-line-no">1543</span><span id="line-1543">          yield ee;</span>
-<span class="source-line-no">1544</span><span id="line-1544">        }</span>
-<span class="source-line-no">1545</span><span id="line-1545">      }</span>
-<span class="source-line-no">1546</span><span id="line-1546">      yield null;</span>
-<span class="source-line-no">1547</span><span id="line-1547">    }</span>
-<span class="source-line-no">1548</span><span id="line-1548">    default -&gt; {</span>
-<span class="source-line-no">1549</span><span id="line-1549">      try (var lock = lock()) {</span>
-<span class="source-line-no">1550</span><span id="line-1550">        for (final Element ee : enclosingElement.getEnclosedElements()) {</span>
-<span class="source-line-no">1551</span><span id="line-1551">          if (ee.getKind().isVariable() &amp;&amp; ee.getSimpleName().contentEquals(simpleName)) {</span>
-<span class="source-line-no">1552</span><span id="line-1552">            yield (VariableElement)ee;</span>
-<span class="source-line-no">1553</span><span id="line-1553">          }</span>
-<span class="source-line-no">1554</span><span id="line-1554">        }</span>
-<span class="source-line-no">1555</span><span id="line-1555">      }</span>
-<span class="source-line-no">1556</span><span id="line-1556">      yield null;</span>
-<span class="source-line-no">1557</span><span id="line-1557">    }</span>
-<span class="source-line-no">1558</span><span id="line-1558">    };</span>
-<span class="source-line-no">1559</span><span id="line-1559">  }</span>
-<span class="source-line-no">1560</span><span id="line-1560"></span>
-<span class="source-line-no">1561</span><span id="line-1561">  /**</span>
-<span class="source-line-no">1562</span><span id="line-1562">   * A convenience method that returns a new {@link WildcardType} {@linkplain TypeMirror#getKind() with a</span>
-<span class="source-line-no">1563</span><span id="line-1563">   * &lt;code&gt;TypeKind&lt;/code&gt;} of {@link TypeKind#WILDCARD}, an {@linkplain WildcardType#getExtendsBound() extends bound}</span>
-<span class="source-line-no">1564</span><span id="line-1564">   * of {@code null}, and a {@linkplain WildcardType#getSuperBound() super bound} of {@code null}.</span>
+<span class="source-line-no">1531</span><span id="line-1531">   * @see VariableElement</span>
+<span class="source-line-no">1532</span><span id="line-1532">   */</span>
+<span class="source-line-no">1533</span><span id="line-1533">  // (Convenience.)</span>
+<span class="source-line-no">1534</span><span id="line-1534">  public default VariableElement variableElement(final Element enclosingElement, final CharSequence simpleName) {</span>
+<span class="source-line-no">1535</span><span id="line-1535">    Objects.requireNonNull(simpleName, "simpleName");</span>
+<span class="source-line-no">1536</span><span id="line-1536">    return switch (enclosingElement) {</span>
+<span class="source-line-no">1537</span><span id="line-1537">    case null -&gt; throw new NullPointerException("enclosingElement");</span>
+<span class="source-line-no">1538</span><span id="line-1538">    case UniversalElement ue -&gt; {</span>
+<span class="source-line-no">1539</span><span id="line-1539">      for (final UniversalElement ee : ue.getEnclosedElements()) {</span>
+<span class="source-line-no">1540</span><span id="line-1540">        if (ee.getSimpleName().contentEquals(simpleName)) {</span>
+<span class="source-line-no">1541</span><span id="line-1541">          yield ee;</span>
+<span class="source-line-no">1542</span><span id="line-1542">        }</span>
+<span class="source-line-no">1543</span><span id="line-1543">      }</span>
+<span class="source-line-no">1544</span><span id="line-1544">      yield null;</span>
+<span class="source-line-no">1545</span><span id="line-1545">    }</span>
+<span class="source-line-no">1546</span><span id="line-1546">    default -&gt; {</span>
+<span class="source-line-no">1547</span><span id="line-1547">      try (var lock = lock()) {</span>
+<span class="source-line-no">1548</span><span id="line-1548">        for (final Element ee : enclosingElement.getEnclosedElements()) {</span>
+<span class="source-line-no">1549</span><span id="line-1549">          if (ee.getSimpleName().contentEquals(simpleName)) {</span>
+<span class="source-line-no">1550</span><span id="line-1550">            yield (VariableElement)ee;</span>
+<span class="source-line-no">1551</span><span id="line-1551">          }</span>
+<span class="source-line-no">1552</span><span id="line-1552">        }</span>
+<span class="source-line-no">1553</span><span id="line-1553">      }</span>
+<span class="source-line-no">1554</span><span id="line-1554">      yield null;</span>
+<span class="source-line-no">1555</span><span id="line-1555">    }</span>
+<span class="source-line-no">1556</span><span id="line-1556">    };</span>
+<span class="source-line-no">1557</span><span id="line-1557">  }</span>
+<span class="source-line-no">1558</span><span id="line-1558"></span>
+<span class="source-line-no">1559</span><span id="line-1559">  /**</span>
+<span class="source-line-no">1560</span><span id="line-1560">   * A convenience method that returns a new {@link WildcardType} {@linkplain TypeMirror#getKind() with a</span>
+<span class="source-line-no">1561</span><span id="line-1561">   * &lt;code&gt;TypeKind&lt;/code&gt;} of {@link TypeKind#WILDCARD}, an {@linkplain WildcardType#getExtendsBound() extends bound}</span>
+<span class="source-line-no">1562</span><span id="line-1562">   * of {@code null}, and a {@linkplain WildcardType#getSuperBound() super bound} of {@code null}.</span>
+<span class="source-line-no">1563</span><span id="line-1563">   *</span>
+<span class="source-line-no">1564</span><span id="line-1564">   * @return a new, non-{@code null} {@link WildcardType}</span>
 <span class="source-line-no">1565</span><span id="line-1565">   *</span>
-<span class="source-line-no">1566</span><span id="line-1566">   * @return a new, non-{@code null} {@link WildcardType}</span>
+<span class="source-line-no">1566</span><span id="line-1566">   * @see #wildcardType(TypeMirror, TypeMirror)</span>
 <span class="source-line-no">1567</span><span id="line-1567">   *</span>
-<span class="source-line-no">1568</span><span id="line-1568">   * @see #wildcardType(TypeMirror, TypeMirror)</span>
+<span class="source-line-no">1568</span><span id="line-1568">   * @see javax.lang.model.util.Types#getWildcardType(TypeMirror, TypeMirror)</span>
 <span class="source-line-no">1569</span><span id="line-1569">   *</span>
-<span class="source-line-no">1570</span><span id="line-1570">   * @see javax.lang.model.util.Types#getWildcardType(TypeMirror, TypeMirror)</span>
-<span class="source-line-no">1571</span><span id="line-1571">   *</span>
-<span class="source-line-no">1572</span><span id="line-1572">   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.5.1 Java Language Specification, section</span>
-<span class="source-line-no">1573</span><span id="line-1573">   * 4.5.1</span>
-<span class="source-line-no">1574</span><span id="line-1574">   */</span>
-<span class="source-line-no">1575</span><span id="line-1575">  // (Convenience.)</span>
-<span class="source-line-no">1576</span><span id="line-1576">  public default WildcardType wildcardType() {</span>
-<span class="source-line-no">1577</span><span id="line-1577">    return this.wildcardType(null, null);</span>
-<span class="source-line-no">1578</span><span id="line-1578">  }</span>
-<span class="source-line-no">1579</span><span id="line-1579"></span>
-<span class="source-line-no">1580</span><span id="line-1580">  /**</span>
-<span class="source-line-no">1581</span><span id="line-1581">   * Returns a new {@link WildcardType} {@linkplain TypeMirror#getKind() with a &lt;code&gt;TypeKind&lt;/code&gt;} of {@link</span>
-<span class="source-line-no">1582</span><span id="line-1582">   * TypeKind#WILDCARD}, an {@linkplain WildcardType#getExtendsBound() extends bound} of the supplied {@code</span>
-<span class="source-line-no">1583</span><span id="line-1583">   * extendsBound}, and a {@linkplain WildcardType#getSuperBound() super bound} of the supplied {@code superBound}.</span>
+<span class="source-line-no">1570</span><span id="line-1570">   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.5.1 Java Language Specification, section</span>
+<span class="source-line-no">1571</span><span id="line-1571">   * 4.5.1</span>
+<span class="source-line-no">1572</span><span id="line-1572">   */</span>
+<span class="source-line-no">1573</span><span id="line-1573">  // (Convenience.)</span>
+<span class="source-line-no">1574</span><span id="line-1574">  public default WildcardType wildcardType() {</span>
+<span class="source-line-no">1575</span><span id="line-1575">    return this.wildcardType(null, null);</span>
+<span class="source-line-no">1576</span><span id="line-1576">  }</span>
+<span class="source-line-no">1577</span><span id="line-1577"></span>
+<span class="source-line-no">1578</span><span id="line-1578">  /**</span>
+<span class="source-line-no">1579</span><span id="line-1579">   * Returns a new {@link WildcardType} {@linkplain TypeMirror#getKind() with a &lt;code&gt;TypeKind&lt;/code&gt;} of {@link</span>
+<span class="source-line-no">1580</span><span id="line-1580">   * TypeKind#WILDCARD}, an {@linkplain WildcardType#getExtendsBound() extends bound} of the supplied {@code</span>
+<span class="source-line-no">1581</span><span id="line-1581">   * extendsBound}, and a {@linkplain WildcardType#getSuperBound() super bound} of the supplied {@code superBound}.</span>
+<span class="source-line-no">1582</span><span id="line-1582">   *</span>
+<span class="source-line-no">1583</span><span id="line-1583">   * &lt;p&gt;Any argument may be {@code null}. Both arguments may not be non-{@code null}.&lt;/p&gt;</span>
 <span class="source-line-no">1584</span><span id="line-1584">   *</span>
-<span class="source-line-no">1585</span><span id="line-1585">   * &lt;p&gt;Any argument may be {@code null}. Both arguments may not be non-{@code null}.&lt;/p&gt;</span>
+<span class="source-line-no">1585</span><span id="line-1585">   * @param extendsBound the upper bound of the new {@link WildcardType}; may be {@code null}</span>
 <span class="source-line-no">1586</span><span id="line-1586">   *</span>
-<span class="source-line-no">1587</span><span id="line-1587">   * @param extendsBound the upper bound of the new {@link WildcardType}; may be {@code null}</span>
+<span class="source-line-no">1587</span><span id="line-1587">   * @param superBound the lower bound of the new {@link WildcardType}; may be {@code null}</span>
 <span class="source-line-no">1588</span><span id="line-1588">   *</span>
-<span class="source-line-no">1589</span><span id="line-1589">   * @param superBound the lower bound of the new {@link WildcardType}; may be {@code null}</span>
+<span class="source-line-no">1589</span><span id="line-1589">   * @return a new, non-{@code null} {@link WildcardType}</span>
 <span class="source-line-no">1590</span><span id="line-1590">   *</span>
-<span class="source-line-no">1591</span><span id="line-1591">   * @return a new, non-{@code null} {@link WildcardType}</span>
-<span class="source-line-no">1592</span><span id="line-1592">   *</span>
-<span class="source-line-no">1593</span><span id="line-1593">   * @exception IllegalArgumentException if both arguments are non-{@code null} or otherwise unsuitable for being the</span>
-<span class="source-line-no">1594</span><span id="line-1594">   * bounds of a {@link WildcardType}</span>
+<span class="source-line-no">1591</span><span id="line-1591">   * @exception IllegalArgumentException if both arguments are non-{@code null} or otherwise unsuitable for being the</span>
+<span class="source-line-no">1592</span><span id="line-1592">   * bounds of a {@link WildcardType}</span>
+<span class="source-line-no">1593</span><span id="line-1593">   *</span>
+<span class="source-line-no">1594</span><span id="line-1594">   * @see javax.lang.model.util.Types#getWildcardType(TypeMirror, TypeMirror)</span>
 <span class="source-line-no">1595</span><span id="line-1595">   *</span>
-<span class="source-line-no">1596</span><span id="line-1596">   * @see javax.lang.model.util.Types#getWildcardType(TypeMirror, TypeMirror)</span>
-<span class="source-line-no">1597</span><span id="line-1597">   *</span>
-<span class="source-line-no">1598</span><span id="line-1598">   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.5.1 Java Language Specification, section</span>
-<span class="source-line-no">1599</span><span id="line-1599">   * 4.5.1</span>
-<span class="source-line-no">1600</span><span id="line-1600">   */</span>
-<span class="source-line-no">1601</span><span id="line-1601">  // Type factory method.</span>
-<span class="source-line-no">1602</span><span id="line-1602">  public WildcardType wildcardType(TypeMirror extendsBound, TypeMirror superBound);</span>
-<span class="source-line-no">1603</span><span id="line-1603"></span>
-<span class="source-line-no">1604</span><span id="line-1604">}</span>
+<span class="source-line-no">1596</span><span id="line-1596">   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-4.html#jls-4.5.1 Java Language Specification, section</span>
+<span class="source-line-no">1597</span><span id="line-1597">   * 4.5.1</span>
+<span class="source-line-no">1598</span><span id="line-1598">   */</span>
+<span class="source-line-no">1599</span><span id="line-1599">  // Type factory method.</span>
+<span class="source-line-no">1600</span><span id="line-1600">  public WildcardType wildcardType(TypeMirror extendsBound, TypeMirror superBound);</span>
+<span class="source-line-no">1601</span><span id="line-1601"></span>
+<span class="source-line-no">1602</span><span id="line-1602">}</span>
 
 
 

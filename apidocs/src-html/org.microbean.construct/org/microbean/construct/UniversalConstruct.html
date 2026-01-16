@@ -13,7 +13,7 @@
 <div class="source-container">
 <pre><span class="source-line-no">001</span><span id="line-1">/* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-</span>
 <span class="source-line-no">002</span><span id="line-2"> *</span>
-<span class="source-line-no">003</span><span id="line-3"> * Copyright © 2024–2025 microBean™.</span>
+<span class="source-line-no">003</span><span id="line-3"> * Copyright © 2024–2026 microBean™.</span>
 <span class="source-line-no">004</span><span id="line-4"> *</span>
 <span class="source-line-no">005</span><span id="line-5"> * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with</span>
 <span class="source-line-no">006</span><span id="line-6"> * the License. You may obtain a copy of the License at</span>
@@ -33,338 +33,391 @@
 <span class="source-line-no">020</span><span id="line-20">import java.lang.constant.ConstantDesc;</span>
 <span class="source-line-no">021</span><span id="line-21">import java.lang.constant.DynamicConstantDesc;</span>
 <span class="source-line-no">022</span><span id="line-22"></span>
-<span class="source-line-no">023</span><span id="line-23">import java.util.ArrayList;</span>
-<span class="source-line-no">024</span><span id="line-24">import java.util.List;</span>
-<span class="source-line-no">025</span><span id="line-25">import java.util.Optional;</span>
-<span class="source-line-no">026</span><span id="line-26"></span>
-<span class="source-line-no">027</span><span id="line-27">import java.util.function.Supplier;</span>
-<span class="source-line-no">028</span><span id="line-28"></span>
-<span class="source-line-no">029</span><span id="line-29">import javax.lang.model.AnnotatedConstruct;</span>
-<span class="source-line-no">030</span><span id="line-30"></span>
-<span class="source-line-no">031</span><span id="line-31">import javax.lang.model.element.AnnotationMirror;</span>
-<span class="source-line-no">032</span><span id="line-32">import javax.lang.model.element.Element;</span>
-<span class="source-line-no">033</span><span id="line-33"></span>
-<span class="source-line-no">034</span><span id="line-34">import javax.lang.model.type.TypeMirror;</span>
+<span class="source-line-no">023</span><span id="line-23">import java.util.List;</span>
+<span class="source-line-no">024</span><span id="line-24">import java.util.Optional;</span>
+<span class="source-line-no">025</span><span id="line-25"></span>
+<span class="source-line-no">026</span><span id="line-26">import java.util.concurrent.CopyOnWriteArrayList;</span>
+<span class="source-line-no">027</span><span id="line-27"></span>
+<span class="source-line-no">028</span><span id="line-28">import java.util.function.Supplier;</span>
+<span class="source-line-no">029</span><span id="line-29"></span>
+<span class="source-line-no">030</span><span id="line-30">import javax.lang.model.AnnotatedConstruct;</span>
+<span class="source-line-no">031</span><span id="line-31"></span>
+<span class="source-line-no">032</span><span id="line-32">import javax.lang.model.element.AnnotationMirror;</span>
+<span class="source-line-no">033</span><span id="line-33">import javax.lang.model.element.Element;</span>
+<span class="source-line-no">034</span><span id="line-34">import javax.lang.model.element.QualifiedNameable;</span>
 <span class="source-line-no">035</span><span id="line-35"></span>
-<span class="source-line-no">036</span><span id="line-36">import org.microbean.construct.constant.Constables;</span>
+<span class="source-line-no">036</span><span id="line-36">import javax.lang.model.type.TypeMirror;</span>
 <span class="source-line-no">037</span><span id="line-37"></span>
-<span class="source-line-no">038</span><span id="line-38">import org.microbean.construct.element.SyntheticAnnotationMirror;</span>
-<span class="source-line-no">039</span><span id="line-39">import org.microbean.construct.element.UniversalAnnotation;</span>
-<span class="source-line-no">040</span><span id="line-40">import org.microbean.construct.element.UniversalElement;</span>
-<span class="source-line-no">041</span><span id="line-41"></span>
-<span class="source-line-no">042</span><span id="line-42">import org.microbean.construct.type.UniversalType;</span>
-<span class="source-line-no">043</span><span id="line-43"></span>
-<span class="source-line-no">044</span><span id="line-44">import static java.lang.constant.ConstantDescs.BSM_INVOKE;</span>
-<span class="source-line-no">045</span><span id="line-45">import static java.lang.constant.ConstantDescs.CD_List;</span>
-<span class="source-line-no">046</span><span id="line-46"></span>
-<span class="source-line-no">047</span><span id="line-47">import static java.lang.constant.MethodHandleDesc.ofConstructor;</span>
-<span class="source-line-no">048</span><span id="line-48"></span>
-<span class="source-line-no">049</span><span id="line-49">import static java.util.Collections.unmodifiableList;</span>
-<span class="source-line-no">050</span><span id="line-50"></span>
-<span class="source-line-no">051</span><span id="line-51">import static java.util.Objects.requireNonNull;</span>
-<span class="source-line-no">052</span><span id="line-52"></span>
-<span class="source-line-no">053</span><span id="line-53">/**</span>
-<span class="source-line-no">054</span><span id="line-54"> * An abstract implementation of {@link AnnotatedConstruct} from which only {@link UniversalElement} and {@link</span>
-<span class="source-line-no">055</span><span id="line-55"> * UniversalType} descend.</span>
-<span class="source-line-no">056</span><span id="line-56"> *</span>
-<span class="source-line-no">057</span><span id="line-57"> * @param &lt;T&gt; a type of {@link AnnotatedConstruct}, which may be only either {@link Element} or {@link TypeMirror}</span>
-<span class="source-line-no">058</span><span id="line-58"> *</span>
-<span class="source-line-no">059</span><span id="line-59"> * @param &lt;U&gt; a type representing one of the permitted subclasses</span>
-<span class="source-line-no">060</span><span id="line-60"> *</span>
-<span class="source-line-no">061</span><span id="line-61"> * @author &lt;a href="https://about.me/lairdnelson" target="_top"&gt;Laird Nelson&lt;/a&gt;</span>
-<span class="source-line-no">062</span><span id="line-62"> *</span>
-<span class="source-line-no">063</span><span id="line-63"> * @see AnnotatedConstruct</span>
-<span class="source-line-no">064</span><span id="line-64"> *</span>
-<span class="source-line-no">065</span><span id="line-65"> * @see UniversalElement</span>
-<span class="source-line-no">066</span><span id="line-66"> *</span>
-<span class="source-line-no">067</span><span id="line-67"> * @see UniversalType</span>
-<span class="source-line-no">068</span><span id="line-68"> */</span>
-<span class="source-line-no">069</span><span id="line-69">public abstract sealed class UniversalConstruct&lt;T extends AnnotatedConstruct, U extends UniversalConstruct&lt;T, U&gt;&gt;</span>
-<span class="source-line-no">070</span><span id="line-70">  implements AnnotatedConstruct, Constable</span>
-<span class="source-line-no">071</span><span id="line-71">  permits UniversalElement, UniversalType {</span>
-<span class="source-line-no">072</span><span id="line-72"></span>
-<span class="source-line-no">073</span><span id="line-73"></span>
-<span class="source-line-no">074</span><span id="line-74">  /*</span>
-<span class="source-line-no">075</span><span id="line-75">   * Instance fields.</span>
-<span class="source-line-no">076</span><span id="line-76">   */</span>
+<span class="source-line-no">038</span><span id="line-38">import org.microbean.construct.constant.Constables;</span>
+<span class="source-line-no">039</span><span id="line-39"></span>
+<span class="source-line-no">040</span><span id="line-40">import org.microbean.construct.element.UniversalAnnotation;</span>
+<span class="source-line-no">041</span><span id="line-41">import org.microbean.construct.element.UniversalElement;</span>
+<span class="source-line-no">042</span><span id="line-42"></span>
+<span class="source-line-no">043</span><span id="line-43">import org.microbean.construct.type.UniversalType;</span>
+<span class="source-line-no">044</span><span id="line-44"></span>
+<span class="source-line-no">045</span><span id="line-45">import static java.lang.constant.ConstantDescs.BSM_INVOKE;</span>
+<span class="source-line-no">046</span><span id="line-46">import static java.lang.constant.ConstantDescs.CD_List;</span>
+<span class="source-line-no">047</span><span id="line-47"></span>
+<span class="source-line-no">048</span><span id="line-48">import static java.lang.constant.MethodHandleDesc.ofConstructor;</span>
+<span class="source-line-no">049</span><span id="line-49"></span>
+<span class="source-line-no">050</span><span id="line-50">import static java.util.Objects.requireNonNull;</span>
+<span class="source-line-no">051</span><span id="line-51"></span>
+<span class="source-line-no">052</span><span id="line-52">/**</span>
+<span class="source-line-no">053</span><span id="line-53"> * An abstract implementation of {@link AnnotatedConstruct} from which only {@link UniversalElement} and {@link</span>
+<span class="source-line-no">054</span><span id="line-54"> * UniversalType} descend.</span>
+<span class="source-line-no">055</span><span id="line-55"> *</span>
+<span class="source-line-no">056</span><span id="line-56"> * @param &lt;T&gt; a type of {@link AnnotatedConstruct}, which may be only either {@link Element} or {@link TypeMirror}</span>
+<span class="source-line-no">057</span><span id="line-57"> *</span>
+<span class="source-line-no">058</span><span id="line-58"> * @author &lt;a href="https://about.me/lairdnelson" target="_top"&gt;Laird Nelson&lt;/a&gt;</span>
+<span class="source-line-no">059</span><span id="line-59"> *</span>
+<span class="source-line-no">060</span><span id="line-60"> * @see AnnotatedConstruct</span>
+<span class="source-line-no">061</span><span id="line-61"> *</span>
+<span class="source-line-no">062</span><span id="line-62"> * @see UniversalElement</span>
+<span class="source-line-no">063</span><span id="line-63"> *</span>
+<span class="source-line-no">064</span><span id="line-64"> * @see UniversalType</span>
+<span class="source-line-no">065</span><span id="line-65"> */</span>
+<span class="source-line-no">066</span><span id="line-66">public abstract sealed class UniversalConstruct&lt;T extends AnnotatedConstruct&gt;</span>
+<span class="source-line-no">067</span><span id="line-67">  implements AnnotatedConstruct, Constable</span>
+<span class="source-line-no">068</span><span id="line-68">  permits UniversalElement, UniversalType {</span>
+<span class="source-line-no">069</span><span id="line-69"></span>
+<span class="source-line-no">070</span><span id="line-70"></span>
+<span class="source-line-no">071</span><span id="line-71">  /*</span>
+<span class="source-line-no">072</span><span id="line-72">   * Static fields.</span>
+<span class="source-line-no">073</span><span id="line-73">   */</span>
+<span class="source-line-no">074</span><span id="line-74"></span>
+<span class="source-line-no">075</span><span id="line-75"></span>
+<span class="source-line-no">076</span><span id="line-76">  private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];</span>
 <span class="source-line-no">077</span><span id="line-77"></span>
 <span class="source-line-no">078</span><span id="line-78"></span>
-<span class="source-line-no">079</span><span id="line-79">  // Retained only for Constable implementation</span>
-<span class="source-line-no">080</span><span id="line-80">  private final PrimordialDomain domain;</span>
-<span class="source-line-no">081</span><span id="line-81"></span>
-<span class="source-line-no">082</span><span id="line-82">  // Eventually this should become a lazy constant/stable value</span>
-<span class="source-line-no">083</span><span id="line-83">  // volatile not needed</span>
-<span class="source-line-no">084</span><span id="line-84">  private Supplier&lt;? extends T&gt; delegateSupplier;</span>
+<span class="source-line-no">079</span><span id="line-79">  /*</span>
+<span class="source-line-no">080</span><span id="line-80">   * Instance fields.</span>
+<span class="source-line-no">081</span><span id="line-81">   */</span>
+<span class="source-line-no">082</span><span id="line-82"></span>
+<span class="source-line-no">083</span><span id="line-83"></span>
+<span class="source-line-no">084</span><span id="line-84">  private final PrimordialDomain domain;</span>
 <span class="source-line-no">085</span><span id="line-85"></span>
 <span class="source-line-no">086</span><span id="line-86">  // Eventually this should become a lazy constant/stable value</span>
-<span class="source-line-no">087</span><span id="line-87">  private volatile String s;</span>
-<span class="source-line-no">088</span><span id="line-88"></span>
-<span class="source-line-no">089</span><span id="line-89">  // Eventually this should become a lazy constant/stable value</span>
-<span class="source-line-no">090</span><span id="line-90">  private volatile List&lt;? extends UniversalAnnotation&gt; annotations;</span>
-<span class="source-line-no">091</span><span id="line-91"></span>
-<span class="source-line-no">092</span><span id="line-92">  private final List&lt;? extends UniversalAnnotation&gt; syntheticAnnotations;</span>
-<span class="source-line-no">093</span><span id="line-93"></span>
-<span class="source-line-no">094</span><span id="line-94"></span>
-<span class="source-line-no">095</span><span id="line-95">  /*</span>
-<span class="source-line-no">096</span><span id="line-96">   * Constructors.</span>
-<span class="source-line-no">097</span><span id="line-97">   */</span>
-<span class="source-line-no">098</span><span id="line-98"></span>
-<span class="source-line-no">099</span><span id="line-99"></span>
-<span class="source-line-no">100</span><span id="line-100">  /**</span>
-<span class="source-line-no">101</span><span id="line-101">   * Creates a new {@link AnnotatedConstruct}.</span>
-<span class="source-line-no">102</span><span id="line-102">   *</span>
-<span class="source-line-no">103</span><span id="line-103">   * @param delegate a delegate to which operations are delegated; must not be {@code null}</span>
+<span class="source-line-no">087</span><span id="line-87">  // volatile not needed</span>
+<span class="source-line-no">088</span><span id="line-88">  private Supplier&lt;? extends T&gt; delegateSupplier;</span>
+<span class="source-line-no">089</span><span id="line-89"></span>
+<span class="source-line-no">090</span><span id="line-90">  // Eventually this should become a lazy constant/stable value</span>
+<span class="source-line-no">091</span><span id="line-91">  private volatile String s;</span>
+<span class="source-line-no">092</span><span id="line-92"></span>
+<span class="source-line-no">093</span><span id="line-93">  // Eventually this should become a lazy constant/stable value</span>
+<span class="source-line-no">094</span><span id="line-94">  private volatile CopyOnWriteArrayList&lt;AnnotationMirror&gt; annotations;</span>
+<span class="source-line-no">095</span><span id="line-95"></span>
+<span class="source-line-no">096</span><span id="line-96"></span>
+<span class="source-line-no">097</span><span id="line-97">  /*</span>
+<span class="source-line-no">098</span><span id="line-98">   * Constructors.</span>
+<span class="source-line-no">099</span><span id="line-99">   */</span>
+<span class="source-line-no">100</span><span id="line-100"></span>
+<span class="source-line-no">101</span><span id="line-101"></span>
+<span class="source-line-no">102</span><span id="line-102">  /**</span>
+<span class="source-line-no">103</span><span id="line-103">   * Creates a new {@link AnnotatedConstruct}.</span>
 <span class="source-line-no">104</span><span id="line-104">   *</span>
-<span class="source-line-no">105</span><span id="line-105">   * @param domain a {@link PrimordialDomain} representing the construct domain from which the supplied {@code</span>
-<span class="source-line-no">106</span><span id="line-106">   * delegate} is presumed to have originated; must not be {@code null}</span>
-<span class="source-line-no">107</span><span id="line-107">   *</span>
-<span class="source-line-no">108</span><span id="line-108">   * @exception NullPointerException if either argument is {@code null}</span>
+<span class="source-line-no">105</span><span id="line-105">   * @param delegate a delegate to which operations are delegated; must not be {@code null}</span>
+<span class="source-line-no">106</span><span id="line-106">   *</span>
+<span class="source-line-no">107</span><span id="line-107">   * @param domain a {@link PrimordialDomain} representing the construct domain from which the supplied {@code</span>
+<span class="source-line-no">108</span><span id="line-108">   * delegate} is presumed to have originated; must not be {@code null}</span>
 <span class="source-line-no">109</span><span id="line-109">   *</span>
-<span class="source-line-no">110</span><span id="line-110">   * @see #UniversalConstruct(AnnotatedConstruct, List, PrimordialDomain)</span>
-<span class="source-line-no">111</span><span id="line-111">   */</span>
-<span class="source-line-no">112</span><span id="line-112">  protected UniversalConstruct(final T delegate, final PrimordialDomain domain) {</span>
-<span class="source-line-no">113</span><span id="line-113">    this(delegate, null, domain);</span>
-<span class="source-line-no">114</span><span id="line-114">  }</span>
-<span class="source-line-no">115</span><span id="line-115"></span>
-<span class="source-line-no">116</span><span id="line-116">  /**</span>
-<span class="source-line-no">117</span><span id="line-117">   * Creates a new {@link AnnotatedConstruct}.</span>
-<span class="source-line-no">118</span><span id="line-118">   *</span>
-<span class="source-line-no">119</span><span id="line-119">   * @param delegate a delegate to which operations are delegated; must not be {@code null}</span>
+<span class="source-line-no">110</span><span id="line-110">   * @exception NullPointerException if either argument is {@code null}</span>
+<span class="source-line-no">111</span><span id="line-111">   *</span>
+<span class="source-line-no">112</span><span id="line-112">   * @see #UniversalConstruct(List, AnnotatedConstruct, PrimordialDomain)</span>
+<span class="source-line-no">113</span><span id="line-113">   */</span>
+<span class="source-line-no">114</span><span id="line-114">  protected UniversalConstruct(final T delegate, final PrimordialDomain domain) {</span>
+<span class="source-line-no">115</span><span id="line-115">    this(null, delegate, domain);</span>
+<span class="source-line-no">116</span><span id="line-116">  }</span>
+<span class="source-line-no">117</span><span id="line-117"></span>
+<span class="source-line-no">118</span><span id="line-118">  /**</span>
+<span class="source-line-no">119</span><span id="line-119">   * Creates a new {@link AnnotatedConstruct}.</span>
 <span class="source-line-no">120</span><span id="line-120">   *</span>
 <span class="source-line-no">121</span><span id="line-121">   * @param annotations a {@link List} of {@link AnnotationMirror} instances representing annotations, often</span>
 <span class="source-line-no">122</span><span id="line-122">   * synthetic, that this {@link UniversalConstruct} should bear; may be {@code null} in which case only the annotations</span>
 <span class="source-line-no">123</span><span id="line-123">   * from the supplied {@code delegate} will be used</span>
-<span class="source-line-no">124</span><span id="line-124">   *</span>
-<span class="source-line-no">125</span><span id="line-125">   * @param domain a {@link PrimordialDomain} representing the construct domain from which the supplied {@code</span>
-<span class="source-line-no">126</span><span id="line-126">   * delegate} is presumed to have originated; must not be {@code null}</span>
-<span class="source-line-no">127</span><span id="line-127">   *</span>
-<span class="source-line-no">128</span><span id="line-128">   * @exception NullPointerException if any argument is {@code null}</span>
-<span class="source-line-no">129</span><span id="line-129">   *</span>
-<span class="source-line-no">130</span><span id="line-130">   * @see #annotate(List)</span>
-<span class="source-line-no">131</span><span id="line-131">   */</span>
-<span class="source-line-no">132</span><span id="line-132">  @SuppressWarnings("try")</span>
-<span class="source-line-no">133</span><span id="line-133">  protected UniversalConstruct(final T delegate,</span>
-<span class="source-line-no">134</span><span id="line-134">                               final List&lt;? extends AnnotationMirror&gt; annotations,</span>
-<span class="source-line-no">135</span><span id="line-135">                               final PrimordialDomain domain) {</span>
-<span class="source-line-no">136</span><span id="line-136">    super();</span>
-<span class="source-line-no">137</span><span id="line-137">    this.domain = requireNonNull(domain, "domain");</span>
-<span class="source-line-no">138</span><span id="line-138">    if (annotations == null) {</span>
-<span class="source-line-no">139</span><span id="line-139">      this.syntheticAnnotations = List.of();</span>
-<span class="source-line-no">140</span><span id="line-140">    } else if (annotations.isEmpty()) {</span>
-<span class="source-line-no">141</span><span id="line-141">      this.syntheticAnnotations = List.of();</span>
-<span class="source-line-no">142</span><span id="line-142">      this.annotations = List.of(); // volatile write</span>
-<span class="source-line-no">143</span><span id="line-143">    } else {</span>
-<span class="source-line-no">144</span><span id="line-144">      final List&lt;UniversalAnnotation&gt; delegateAnnotations = new ArrayList&lt;&gt;(annotations.size());</span>
-<span class="source-line-no">145</span><span id="line-145">      final List&lt;UniversalAnnotation&gt; syntheticAnnotations = new ArrayList&lt;&gt;(annotations.size());</span>
-<span class="source-line-no">146</span><span id="line-146">      for (final AnnotationMirror annotation : annotations) {</span>
-<span class="source-line-no">147</span><span id="line-147">        switch (annotation) {</span>
-<span class="source-line-no">148</span><span id="line-148">        case null -&gt; throw new IllegalArgumentException("annotations: " + annotations);</span>
-<span class="source-line-no">149</span><span id="line-149">        case SyntheticAnnotationMirror sam -&gt; syntheticAnnotations.add(UniversalAnnotation.of(sam, domain));</span>
-<span class="source-line-no">150</span><span id="line-150">        case UniversalAnnotation ua -&gt; {</span>
-<span class="source-line-no">151</span><span id="line-151">          switch (ua.delegate()) {</span>
-<span class="source-line-no">152</span><span id="line-152">          case SyntheticAnnotationMirror sam -&gt; syntheticAnnotations.add(ua);</span>
-<span class="source-line-no">153</span><span id="line-153">          case UniversalAnnotation x -&gt; throw new AssertionError();</span>
-<span class="source-line-no">154</span><span id="line-154">          default -&gt; delegateAnnotations.add(UniversalAnnotation.of(annotation, domain));</span>
-<span class="source-line-no">155</span><span id="line-155">          }</span>
-<span class="source-line-no">156</span><span id="line-156">        }</span>
-<span class="source-line-no">157</span><span id="line-157">        default -&gt; delegateAnnotations.add(UniversalAnnotation.of(annotation, domain));</span>
-<span class="source-line-no">158</span><span id="line-158">        }</span>
-<span class="source-line-no">159</span><span id="line-159">      }</span>
-<span class="source-line-no">160</span><span id="line-160">      this.annotations = delegateAnnotations.isEmpty() ? List.of() : unmodifiableList(delegateAnnotations); // volatile write</span>
-<span class="source-line-no">161</span><span id="line-161">      this.syntheticAnnotations = syntheticAnnotations.isEmpty() ? List.of() : unmodifiableList(syntheticAnnotations);</span>
-<span class="source-line-no">162</span><span id="line-162">    }</span>
-<span class="source-line-no">163</span><span id="line-163">    final T unwrappedDelegate = unwrap(requireNonNull(delegate, "delegate"));</span>
-<span class="source-line-no">164</span><span id="line-164">    if (unwrappedDelegate == delegate) {</span>
-<span class="source-line-no">165</span><span id="line-165">      this.delegateSupplier = () -&gt; {</span>
-<span class="source-line-no">166</span><span id="line-166">        try (var lock = domain.lock()) {</span>
-<span class="source-line-no">167</span><span id="line-167">          // No unwrapping happened so do symbol completion early; most common case.</span>
-<span class="source-line-no">168</span><span id="line-168">          if (unwrappedDelegate instanceof Element) {</span>
-<span class="source-line-no">169</span><span id="line-169">            ((Element)unwrappedDelegate).getModifiers();</span>
-<span class="source-line-no">170</span><span id="line-170">          } else {</span>
-<span class="source-line-no">171</span><span id="line-171">            ((TypeMirror)unwrappedDelegate).getKind();</span>
-<span class="source-line-no">172</span><span id="line-172">          }</span>
-<span class="source-line-no">173</span><span id="line-173">          this.delegateSupplier = () -&gt; unwrappedDelegate;</span>
-<span class="source-line-no">174</span><span id="line-174">        }</span>
-<span class="source-line-no">175</span><span id="line-175">        return unwrappedDelegate;</span>
-<span class="source-line-no">176</span><span id="line-176">      };</span>
-<span class="source-line-no">177</span><span id="line-177">    } else {</span>
-<span class="source-line-no">178</span><span id="line-178">      assert delegate instanceof UniversalConstruct&lt;?, ?&gt;;</span>
-<span class="source-line-no">179</span><span id="line-179">      // Symbol completion already happened because unwrapping actually happened</span>
-<span class="source-line-no">180</span><span id="line-180">      this.delegateSupplier = () -&gt; unwrappedDelegate;</span>
-<span class="source-line-no">181</span><span id="line-181">    }</span>
+<span class="source-line-no">124</span><span id="line-124">   * @param delegate a delegate to which operations are delegated; must not be {@code null}</span>
+<span class="source-line-no">125</span><span id="line-125">   *</span>
+<span class="source-line-no">126</span><span id="line-126">   * @param domain a {@link PrimordialDomain} representing the construct domain from which the supplied {@code</span>
+<span class="source-line-no">127</span><span id="line-127">   * delegate} is presumed to have originated; must not be {@code null}</span>
+<span class="source-line-no">128</span><span id="line-128">   *</span>
+<span class="source-line-no">129</span><span id="line-129">   * @exception NullPointerException if any argument is {@code null}</span>
+<span class="source-line-no">130</span><span id="line-130">   */</span>
+<span class="source-line-no">131</span><span id="line-131">  @SuppressWarnings("try")</span>
+<span class="source-line-no">132</span><span id="line-132">  protected UniversalConstruct(final List&lt;? extends AnnotationMirror&gt; annotations,</span>
+<span class="source-line-no">133</span><span id="line-133">                               final T delegate,</span>
+<span class="source-line-no">134</span><span id="line-134">                               final PrimordialDomain domain) {</span>
+<span class="source-line-no">135</span><span id="line-135">    super();</span>
+<span class="source-line-no">136</span><span id="line-136">    this.domain = requireNonNull(domain, "domain");</span>
+<span class="source-line-no">137</span><span id="line-137">    if (annotations != null) {</span>
+<span class="source-line-no">138</span><span id="line-138">      this.annotations = new CopyOnWriteArrayList&lt;&gt;(annotations);</span>
+<span class="source-line-no">139</span><span id="line-139">    }</span>
+<span class="source-line-no">140</span><span id="line-140">    final T unwrappedDelegate = unwrap(requireNonNull(delegate, "delegate"));</span>
+<span class="source-line-no">141</span><span id="line-141">    if (unwrappedDelegate == delegate) {</span>
+<span class="source-line-no">142</span><span id="line-142">      this.delegateSupplier = () -&gt; {</span>
+<span class="source-line-no">143</span><span id="line-143">        try (var lock = domain.lock()) {</span>
+<span class="source-line-no">144</span><span id="line-144">          // No unwrapping happened so do symbol completion early; most common case.</span>
+<span class="source-line-no">145</span><span id="line-145">          if (unwrappedDelegate instanceof Element) {</span>
+<span class="source-line-no">146</span><span id="line-146">            ((Element)unwrappedDelegate).getModifiers();</span>
+<span class="source-line-no">147</span><span id="line-147">          } else {</span>
+<span class="source-line-no">148</span><span id="line-148">            ((TypeMirror)unwrappedDelegate).getKind();</span>
+<span class="source-line-no">149</span><span id="line-149">          }</span>
+<span class="source-line-no">150</span><span id="line-150">          this.delegateSupplier = () -&gt; unwrappedDelegate;</span>
+<span class="source-line-no">151</span><span id="line-151">        }</span>
+<span class="source-line-no">152</span><span id="line-152">        return unwrappedDelegate;</span>
+<span class="source-line-no">153</span><span id="line-153">      };</span>
+<span class="source-line-no">154</span><span id="line-154">    } else {</span>
+<span class="source-line-no">155</span><span id="line-155">      assert delegate instanceof UniversalConstruct;</span>
+<span class="source-line-no">156</span><span id="line-156">      // Symbol completion already happened because unwrapping actually happened</span>
+<span class="source-line-no">157</span><span id="line-157">      this.delegateSupplier = () -&gt; unwrappedDelegate;</span>
+<span class="source-line-no">158</span><span id="line-158">    }</span>
+<span class="source-line-no">159</span><span id="line-159">  }</span>
+<span class="source-line-no">160</span><span id="line-160"></span>
+<span class="source-line-no">161</span><span id="line-161"></span>
+<span class="source-line-no">162</span><span id="line-162">  /*</span>
+<span class="source-line-no">163</span><span id="line-163">   * Instance methods.</span>
+<span class="source-line-no">164</span><span id="line-164">   */</span>
+<span class="source-line-no">165</span><span id="line-165"></span>
+<span class="source-line-no">166</span><span id="line-166"></span>
+<span class="source-line-no">167</span><span id="line-167">  /**</span>
+<span class="source-line-no">168</span><span id="line-168">   * Returns the delegate to which operations are delegated.</span>
+<span class="source-line-no">169</span><span id="line-169">   *</span>
+<span class="source-line-no">170</span><span id="line-170">   * &lt;p&gt;The delegate is guaranteed not to be an instance of {@link UniversalConstruct}.&lt;/p&gt;</span>
+<span class="source-line-no">171</span><span id="line-171">   *</span>
+<span class="source-line-no">172</span><span id="line-172">   * @return a non-{@code null} delegate</span>
+<span class="source-line-no">173</span><span id="line-173">   *</span>
+<span class="source-line-no">174</span><span id="line-174">   * @see Element</span>
+<span class="source-line-no">175</span><span id="line-175">   *</span>
+<span class="source-line-no">176</span><span id="line-176">   * @see TypeMirror</span>
+<span class="source-line-no">177</span><span id="line-177">   */</span>
+<span class="source-line-no">178</span><span id="line-178">  public final T delegate() {</span>
+<span class="source-line-no">179</span><span id="line-179">    final T delegate = this.delegateSupplier.get();</span>
+<span class="source-line-no">180</span><span id="line-180">    assert !(delegate instanceof UniversalConstruct);</span>
+<span class="source-line-no">181</span><span id="line-181">    return delegate;</span>
 <span class="source-line-no">182</span><span id="line-182">  }</span>
 <span class="source-line-no">183</span><span id="line-183"></span>
-<span class="source-line-no">184</span><span id="line-184"></span>
-<span class="source-line-no">185</span><span id="line-185">  /*</span>
-<span class="source-line-no">186</span><span id="line-186">   * Instance methods.</span>
-<span class="source-line-no">187</span><span id="line-187">   */</span>
-<span class="source-line-no">188</span><span id="line-188"></span>
-<span class="source-line-no">189</span><span id="line-189"></span>
-<span class="source-line-no">190</span><span id="line-190">  /**</span>
-<span class="source-line-no">191</span><span id="line-191">   * &lt;strong&gt;Experimental&lt;/strong&gt;; returns a new {@link UniversalConstruct} instance annotated with only the supplied</span>
-<span class="source-line-no">192</span><span id="line-192">   * annotations, which are often synthetic.</span>
-<span class="source-line-no">193</span><span id="line-193">   *</span>
-<span class="source-line-no">194</span><span id="line-194">   * @param replacementAnnotations a {@link List} of {@link AnnotationMirror}s; must not be {@code null}</span>
-<span class="source-line-no">195</span><span id="line-195">   *</span>
-<span class="source-line-no">196</span><span id="line-196">   * @return a new {@link UniversalConstruct} instance; never {@code null}</span>
-<span class="source-line-no">197</span><span id="line-197">   *</span>
-<span class="source-line-no">198</span><span id="line-198">   * @exception NullPointerException if {@code replacementAnnotations} is {@code null}</span>
-<span class="source-line-no">199</span><span id="line-199">   */</span>
-<span class="source-line-no">200</span><span id="line-200">  // Experimental. Unsupported.</span>
-<span class="source-line-no">201</span><span id="line-201">  protected abstract U annotate(final List&lt;? extends AnnotationMirror&gt; replacementAnnotations);</span>
-<span class="source-line-no">202</span><span id="line-202"></span>
-<span class="source-line-no">203</span><span id="line-203">  /**</span>
-<span class="source-line-no">204</span><span id="line-204">   * Returns the delegate to which operations are delegated.</span>
-<span class="source-line-no">205</span><span id="line-205">   *</span>
-<span class="source-line-no">206</span><span id="line-206">   * &lt;p&gt;The delegate is guaranteed not to be an instance of {@link UniversalConstruct}.&lt;/p&gt;</span>
-<span class="source-line-no">207</span><span id="line-207">   *</span>
-<span class="source-line-no">208</span><span id="line-208">   * @return a non-{@code null} delegate</span>
-<span class="source-line-no">209</span><span id="line-209">   *</span>
-<span class="source-line-no">210</span><span id="line-210">   * @see Element</span>
-<span class="source-line-no">211</span><span id="line-211">   *</span>
-<span class="source-line-no">212</span><span id="line-212">   * @see TypeMirror</span>
-<span class="source-line-no">213</span><span id="line-213">   */</span>
-<span class="source-line-no">214</span><span id="line-214">  public final T delegate() {</span>
-<span class="source-line-no">215</span><span id="line-215">    final T delegate = this.delegateSupplier.get();</span>
-<span class="source-line-no">216</span><span id="line-216">    assert !(delegate instanceof UniversalConstruct);</span>
-<span class="source-line-no">217</span><span id="line-217">    return delegate;</span>
-<span class="source-line-no">218</span><span id="line-218">  }</span>
-<span class="source-line-no">219</span><span id="line-219"></span>
-<span class="source-line-no">220</span><span id="line-220">  @Override // Constable</span>
-<span class="source-line-no">221</span><span id="line-221">  public final Optional&lt;? extends ConstantDesc&gt; describeConstable() {</span>
-<span class="source-line-no">222</span><span id="line-222">    final T delegate = this.delegate();</span>
-<span class="source-line-no">223</span><span id="line-223">    final List&lt;? extends UniversalAnnotation&gt; annotations = this.annotations; // volatile read; may be null and that's OK</span>
-<span class="source-line-no">224</span><span id="line-224">    return this.domain() instanceof Domain d ? Constables.describe(delegate, d)</span>
-<span class="source-line-no">225</span><span id="line-225">      .flatMap(delegateDesc -&gt; Constables.describe(annotations, Constable::describeConstable)</span>
-<span class="source-line-no">226</span><span id="line-226">               .map(annosDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
-<span class="source-line-no">227</span><span id="line-227">                                                        ofConstructor(ClassDesc.of(this.getClass().getName()),</span>
-<span class="source-line-no">228</span><span id="line-228">                                                                      ClassDesc.of(delegate instanceof TypeMirror ? TypeMirror.class.getName() : Element.class.getName()),</span>
-<span class="source-line-no">229</span><span id="line-229">                                                                      CD_List,</span>
-<span class="source-line-no">230</span><span id="line-230">                                                                      ClassDesc.of(PrimordialDomain.class.getName())),</span>
-<span class="source-line-no">231</span><span id="line-231">                                                        delegateDesc,</span>
-<span class="source-line-no">232</span><span id="line-232">                                                        annosDesc,</span>
-<span class="source-line-no">233</span><span id="line-233">                                                        ((Constable)d).describeConstable().orElseThrow()))) :</span>
-<span class="source-line-no">234</span><span id="line-234">      Optional.empty();</span>
-<span class="source-line-no">235</span><span id="line-235">  }</span>
-<span class="source-line-no">236</span><span id="line-236"></span>
-<span class="source-line-no">237</span><span id="line-237">  /**</span>
-<span class="source-line-no">238</span><span id="line-238">   * Returns the {@link PrimordialDomain} supplied at construction time.</span>
-<span class="source-line-no">239</span><span id="line-239">   *</span>
-<span class="source-line-no">240</span><span id="line-240">   * @return the non-{@code null} {@link PrimordialDomain} supplied at construction time</span>
-<span class="source-line-no">241</span><span id="line-241">   */</span>
-<span class="source-line-no">242</span><span id="line-242">  public final PrimordialDomain domain() {</span>
-<span class="source-line-no">243</span><span id="line-243">    return this.domain;</span>
-<span class="source-line-no">244</span><span id="line-244">  }</span>
-<span class="source-line-no">245</span><span id="line-245"></span>
-<span class="source-line-no">246</span><span id="line-246">  @Override // Object</span>
-<span class="source-line-no">247</span><span id="line-247">  public final boolean equals(final Object other) {</span>
-<span class="source-line-no">248</span><span id="line-248">    // Interesting; equality does not cause symbol completion. See:</span>
-<span class="source-line-no">249</span><span id="line-249">    //</span>
-<span class="source-line-no">250</span><span id="line-250">    // https://github.com/openjdk/jdk/blob/jdk-26%2B25/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Type.java#L553-L559</span>
-<span class="source-line-no">251</span><span id="line-251">    // (the only type that overrides this is ArrayType; see</span>
-<span class="source-line-no">252</span><span id="line-252">    // https://github.com/openjdk/jdk/blob/jdk-26%2B25/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Type.java#L1402-L1406)</span>
-<span class="source-line-no">253</span><span id="line-253">    //</span>
-<span class="source-line-no">254</span><span id="line-254">    // https://github.com/openjdk/jdk/blob/jdk-26%2B25/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Symbol.java</span>
-<span class="source-line-no">255</span><span id="line-255">    // (Symbol (Element) doesn't override it at all.)</span>
-<span class="source-line-no">256</span><span id="line-256">    return this == other || switch (other) {</span>
-<span class="source-line-no">257</span><span id="line-257">    case null -&gt; false;</span>
-<span class="source-line-no">258</span><span id="line-258">    case UniversalConstruct&lt;?, ?&gt; uc when this.getClass() == uc.getClass() -&gt; this.delegate().equals(uc.delegate());</span>
-<span class="source-line-no">259</span><span id="line-259">    default -&gt; false;</span>
-<span class="source-line-no">260</span><span id="line-260">    };</span>
-<span class="source-line-no">261</span><span id="line-261">  }</span>
-<span class="source-line-no">262</span><span id="line-262"></span>
-<span class="source-line-no">263</span><span id="line-263">  @Override // AnnotatedConstruct</span>
-<span class="source-line-no">264</span><span id="line-264">  @SuppressWarnings("try")</span>
-<span class="source-line-no">265</span><span id="line-265">  public final List&lt;? extends UniversalAnnotation&gt; getAnnotationMirrors() {</span>
-<span class="source-line-no">266</span><span id="line-266">    List&lt;? extends UniversalAnnotation&gt; annotations = this.annotations; // volatile read</span>
-<span class="source-line-no">267</span><span id="line-267">    if (annotations == null) {</span>
-<span class="source-line-no">268</span><span id="line-268">      try (var lock = this.domain().lock()) {</span>
-<span class="source-line-no">269</span><span id="line-269">        annotations =</span>
-<span class="source-line-no">270</span><span id="line-270">          this.annotations = UniversalAnnotation.of(this.delegate().getAnnotationMirrors(), this.domain()); // volatile read/write</span>
-<span class="source-line-no">271</span><span id="line-271">      }</span>
-<span class="source-line-no">272</span><span id="line-272">      assert annotations != null;</span>
-<span class="source-line-no">273</span><span id="line-273">    }</span>
-<span class="source-line-no">274</span><span id="line-274">    if (annotations.isEmpty()) {</span>
-<span class="source-line-no">275</span><span id="line-275">      return this.syntheticAnnotations;</span>
-<span class="source-line-no">276</span><span id="line-276">    } else if (this.syntheticAnnotations.isEmpty()) {</span>
-<span class="source-line-no">277</span><span id="line-277">      return annotations;</span>
-<span class="source-line-no">278</span><span id="line-278">    } else {</span>
-<span class="source-line-no">279</span><span id="line-279">      final List&lt;UniversalAnnotation&gt; rv = new ArrayList&lt;&gt;(annotations);</span>
-<span class="source-line-no">280</span><span id="line-280">      rv.addAll(this.syntheticAnnotations);</span>
-<span class="source-line-no">281</span><span id="line-281">      return unmodifiableList(rv);</span>
-<span class="source-line-no">282</span><span id="line-282">    }</span>
-<span class="source-line-no">283</span><span id="line-283">  }</span>
-<span class="source-line-no">284</span><span id="line-284"></span>
-<span class="source-line-no">285</span><span id="line-285">  @Override // AnnotatedConstruct</span>
-<span class="source-line-no">286</span><span id="line-286">  @SuppressWarnings("try")</span>
-<span class="source-line-no">287</span><span id="line-287">  public final &lt;A extends Annotation&gt; A getAnnotation(final Class&lt;A&gt; annotationType) {</span>
-<span class="source-line-no">288</span><span id="line-288">    // TODO: is this lock actually needed, given how delegateSupplier works?</span>
-<span class="source-line-no">289</span><span id="line-289">    try (var lock = this.domain().lock()) {</span>
-<span class="source-line-no">290</span><span id="line-290">      return this.delegate().getAnnotation(annotationType);</span>
+<span class="source-line-no">184</span><span id="line-184">  @Override // Constable</span>
+<span class="source-line-no">185</span><span id="line-185">  public final Optional&lt;? extends ConstantDesc&gt; describeConstable() {</span>
+<span class="source-line-no">186</span><span id="line-186">    final PrimordialDomain primordialDomain = this.domain();</span>
+<span class="source-line-no">187</span><span id="line-187">    if (domain instanceof Domain d &amp;&amp; d instanceof Constable dc) {</span>
+<span class="source-line-no">188</span><span id="line-188">      final T delegate = this.delegate();</span>
+<span class="source-line-no">189</span><span id="line-189">      final List&lt;AnnotationMirror&gt; annotations = this.annotations; // volatile read; may be null and that's OK</span>
+<span class="source-line-no">190</span><span id="line-190">      return Constables.describe(delegate, d)</span>
+<span class="source-line-no">191</span><span id="line-191">        .flatMap(delegateDesc -&gt; Constables.describe(annotations)</span>
+<span class="source-line-no">192</span><span id="line-192">                 .map(annosDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
+<span class="source-line-no">193</span><span id="line-193">                                                          ofConstructor(ClassDesc.of(this.getClass().getName()),</span>
+<span class="source-line-no">194</span><span id="line-194">                                                                        CD_List,</span>
+<span class="source-line-no">195</span><span id="line-195">                                                                        ClassDesc.of(delegate instanceof TypeMirror ? TypeMirror.class.getName() : Element.class.getName()),</span>
+<span class="source-line-no">196</span><span id="line-196">                                                                        ClassDesc.of(PrimordialDomain.class.getName())),</span>
+<span class="source-line-no">197</span><span id="line-197">                                                          annosDesc,</span>
+<span class="source-line-no">198</span><span id="line-198">                                                          delegateDesc,</span>
+<span class="source-line-no">199</span><span id="line-199">                                                          dc.describeConstable().orElseThrow())));</span>
+<span class="source-line-no">200</span><span id="line-200">    }</span>
+<span class="source-line-no">201</span><span id="line-201">    return Optional.empty();</span>
+<span class="source-line-no">202</span><span id="line-202">  }</span>
+<span class="source-line-no">203</span><span id="line-203"></span>
+<span class="source-line-no">204</span><span id="line-204">  /**</span>
+<span class="source-line-no">205</span><span id="line-205">   * Returns the {@link PrimordialDomain} supplied at construction time.</span>
+<span class="source-line-no">206</span><span id="line-206">   *</span>
+<span class="source-line-no">207</span><span id="line-207">   * @return the non-{@code null} {@link PrimordialDomain} supplied at construction time</span>
+<span class="source-line-no">208</span><span id="line-208">   */</span>
+<span class="source-line-no">209</span><span id="line-209">  public final PrimordialDomain domain() {</span>
+<span class="source-line-no">210</span><span id="line-210">    return this.domain;</span>
+<span class="source-line-no">211</span><span id="line-211">  }</span>
+<span class="source-line-no">212</span><span id="line-212"></span>
+<span class="source-line-no">213</span><span id="line-213">  @Override // Object</span>
+<span class="source-line-no">214</span><span id="line-214">  public final boolean equals(final Object other) {</span>
+<span class="source-line-no">215</span><span id="line-215">    // Interesting; equality does not cause symbol completion. See:</span>
+<span class="source-line-no">216</span><span id="line-216">    //</span>
+<span class="source-line-no">217</span><span id="line-217">    // https://github.com/openjdk/jdk/blob/jdk-26%2B25/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Type.java#L553-L559</span>
+<span class="source-line-no">218</span><span id="line-218">    // (the only type that overrides this is ArrayType; see</span>
+<span class="source-line-no">219</span><span id="line-219">    // https://github.com/openjdk/jdk/blob/jdk-26%2B25/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Type.java#L1402-L1406)</span>
+<span class="source-line-no">220</span><span id="line-220">    //</span>
+<span class="source-line-no">221</span><span id="line-221">    // https://github.com/openjdk/jdk/blob/jdk-26%2B25/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Symbol.java</span>
+<span class="source-line-no">222</span><span id="line-222">    // (Symbol (Element) doesn't override it at all.)</span>
+<span class="source-line-no">223</span><span id="line-223">    return this == other || switch (other) {</span>
+<span class="source-line-no">224</span><span id="line-224">    case null -&gt; false;</span>
+<span class="source-line-no">225</span><span id="line-225">    case UniversalConstruct&lt;?&gt; uc when this.getClass() == uc.getClass() -&gt; this.delegate().equals(uc.delegate());</span>
+<span class="source-line-no">226</span><span id="line-226">    default -&gt; false;</span>
+<span class="source-line-no">227</span><span id="line-227">    };</span>
+<span class="source-line-no">228</span><span id="line-228">  }</span>
+<span class="source-line-no">229</span><span id="line-229"></span>
+<span class="source-line-no">230</span><span id="line-230">  /**</span>
+<span class="source-line-no">231</span><span id="line-231">   * Returns a non-{@code null}, determinate, &lt;strong&gt;mutable&lt;/strong&gt;, thread-safe {@link List} of {@link</span>
+<span class="source-line-no">232</span><span id="line-232">   * AnnotationMirror} instances representing the annotations to be considered &lt;dfn&gt;directly present&lt;/dfn&gt; on this</span>
+<span class="source-line-no">233</span><span id="line-233">   * {@link UniversalConstruct} implementation.</span>
+<span class="source-line-no">234</span><span id="line-234">   *</span>
+<span class="source-line-no">235</span><span id="line-235">   * @return a non-{@code null}, determinate, &lt;strong&gt;mutable&lt;/strong&gt; thread-safe {@link List} of {@link</span>
+<span class="source-line-no">236</span><span id="line-236">   * AnnotationMirror}s</span>
+<span class="source-line-no">237</span><span id="line-237">   *</span>
+<span class="source-line-no">238</span><span id="line-238">   * @see AnnotatedConstruct#getAnnotationMirrors()</span>
+<span class="source-line-no">239</span><span id="line-239">   */</span>
+<span class="source-line-no">240</span><span id="line-240">  @Override // AnnotatedConstruct</span>
+<span class="source-line-no">241</span><span id="line-241">  @SuppressWarnings("try")</span>
+<span class="source-line-no">242</span><span id="line-242">  public final List&lt;AnnotationMirror&gt; getAnnotationMirrors() {</span>
+<span class="source-line-no">243</span><span id="line-243">    CopyOnWriteArrayList&lt;AnnotationMirror&gt; annotations = this.annotations; // volatile read</span>
+<span class="source-line-no">244</span><span id="line-244">    if (annotations == null) {</span>
+<span class="source-line-no">245</span><span id="line-245">      try (var lock = this.domain().lock()) {</span>
+<span class="source-line-no">246</span><span id="line-246">        this.annotations = annotations = // volatile write</span>
+<span class="source-line-no">247</span><span id="line-247">          new CopyOnWriteArrayList&lt;&gt;(UniversalAnnotation.of(this.delegate().getAnnotationMirrors(), this.domain()));</span>
+<span class="source-line-no">248</span><span id="line-248">      }</span>
+<span class="source-line-no">249</span><span id="line-249">    }</span>
+<span class="source-line-no">250</span><span id="line-250">    return annotations;</span>
+<span class="source-line-no">251</span><span id="line-251">  }</span>
+<span class="source-line-no">252</span><span id="line-252"></span>
+<span class="source-line-no">253</span><span id="line-253">  /**</span>
+<span class="source-line-no">254</span><span id="line-254">   * Makes a &lt;strong&gt;best effort&lt;/strong&gt; to return an {@link Annotation} of the appropriate type &lt;dfn&gt;present&lt;/dfn&gt; on</span>
+<span class="source-line-no">255</span><span id="line-255">   * this {@link UniversalConstruct} implementation.</span>
+<span class="source-line-no">256</span><span id="line-256">   *</span>
+<span class="source-line-no">257</span><span id="line-257">   * &lt;p&gt;See the specification for the {@link AnnotatedConstruct#getAnnotation(Class)} method for important details.&lt;/p&gt;</span>
+<span class="source-line-no">258</span><span id="line-258">   *</span>
+<span class="source-line-no">259</span><span id="line-259">   * &lt;p&gt;{@link UniversalConstruct} implementations deliberately permit modification of their {@linkplain</span>
+<span class="source-line-no">260</span><span id="line-260">   * #getAnnotationMirrors() annotations}. Consequently, this override first checks to see if there is at least one</span>
+<span class="source-line-no">261</span><span id="line-261">   * {@link AnnotationMirror} whose {@linkplain AnnotationMirror#getAnnotationType() annotation type} is declared by a</span>
+<span class="source-line-no">262</span><span id="line-262">   * {@link javax.lang.model.element.TypeElement} whose {@linkplain</span>
+<span class="source-line-no">263</span><span id="line-263">   * javax.lang.model.element.TypeElement#getQualifiedName() qualified name} is {@linkplain</span>
+<span class="source-line-no">264</span><span id="line-264">   * javax.lang.model.element.Name#contentEquals(CharSequence) equal to} the {@linkplain Class#getCanonicalName()</span>
+<span class="source-line-no">265</span><span id="line-265">   * canonical name} of the supplied {@link Class}. If there is, then the {@link AnnotatedConstruct#getAnnotation(Class)</span>
+<span class="source-line-no">266</span><span id="line-266">   * getAnnotation(Class)} method is invoked on the {@linkplain #delegate() delegate} and its result is</span>
+<span class="source-line-no">267</span><span id="line-267">   * returned. Otherwise, {@code null} is returned.&lt;/p&gt;</span>
+<span class="source-line-no">268</span><span id="line-268">   *</span>
+<span class="source-line-no">269</span><span id="line-269">   * &lt;p&gt;There are circumstances where the {@link Annotation} returned by this method may not accurately reflect a</span>
+<span class="source-line-no">270</span><span id="line-270">   * synthetic annotation added to this {@link AnnotatedConstruct} implementation's {@linkplain #getAnnotationMirrors()</span>
+<span class="source-line-no">271</span><span id="line-271">   * annotations}.&lt;/p&gt;</span>
+<span class="source-line-no">272</span><span id="line-272">   *</span>
+<span class="source-line-no">273</span><span id="line-273">   * &lt;p&gt;In general, the use of this method is discouraged.&lt;/p&gt;</span>
+<span class="source-line-no">274</span><span id="line-274">   *</span>
+<span class="source-line-no">275</span><span id="line-275">   * @param annotationType a {@link Class} that is an annotation interface; must not be {@code null}</span>
+<span class="source-line-no">276</span><span id="line-276">   *</span>
+<span class="source-line-no">277</span><span id="line-277">   * @return an appropriate {@link Annotation}, or {@code null}</span>
+<span class="source-line-no">278</span><span id="line-278">   *</span>
+<span class="source-line-no">279</span><span id="line-279">   * @exception NullPointerException if {@code annotationType} is {@code null}</span>
+<span class="source-line-no">280</span><span id="line-280">   *</span>
+<span class="source-line-no">281</span><span id="line-281">   * @see AnnotatedConstruct#getAnnotation(Class)</span>
+<span class="source-line-no">282</span><span id="line-282">   *</span>
+<span class="source-line-no">283</span><span id="line-283">   * @deprecated The use of this method is discouraged.</span>
+<span class="source-line-no">284</span><span id="line-284">   */</span>
+<span class="source-line-no">285</span><span id="line-285">  @Deprecated</span>
+<span class="source-line-no">286</span><span id="line-286">  @Override // AnnotatedConstruct</span>
+<span class="source-line-no">287</span><span id="line-287">  @SuppressWarnings("try")</span>
+<span class="source-line-no">288</span><span id="line-288">  public final &lt;A extends Annotation&gt; A getAnnotation(final Class&lt;A&gt; annotationType) {</span>
+<span class="source-line-no">289</span><span id="line-289">    if (!annotationType.isAnnotation()) {</span>
+<span class="source-line-no">290</span><span id="line-290">      return null;</span>
 <span class="source-line-no">291</span><span id="line-291">    }</span>
-<span class="source-line-no">292</span><span id="line-292">  }</span>
-<span class="source-line-no">293</span><span id="line-293"></span>
-<span class="source-line-no">294</span><span id="line-294">  @Override // AnnotatedConstruct</span>
-<span class="source-line-no">295</span><span id="line-295">  @SuppressWarnings("try")</span>
-<span class="source-line-no">296</span><span id="line-296">  public final &lt;A extends Annotation&gt; A[] getAnnotationsByType(final Class&lt;A&gt; annotationType) {</span>
-<span class="source-line-no">297</span><span id="line-297">    // TODO: is this lock actually needed, given how delegateSupplier works?</span>
-<span class="source-line-no">298</span><span id="line-298">    try (var lock = this.domain().lock()) {</span>
-<span class="source-line-no">299</span><span id="line-299">      return this.delegate().getAnnotationsByType(annotationType);</span>
+<span class="source-line-no">292</span><span id="line-292">    final String canonicalName = annotationType.getCanonicalName();</span>
+<span class="source-line-no">293</span><span id="line-293">    for (final AnnotationMirror a : this.getAnnotationMirrors()) {</span>
+<span class="source-line-no">294</span><span id="line-294">      if (((QualifiedNameable)a.getAnnotationType().asElement()).getQualifiedName().contentEquals(canonicalName)) {</span>
+<span class="source-line-no">295</span><span id="line-295">        // TODO: is this lock actually needed, given how delegateSupplier works?</span>
+<span class="source-line-no">296</span><span id="line-296">        try (var lock = this.domain().lock()) {</span>
+<span class="source-line-no">297</span><span id="line-297">          return this.delegate().getAnnotation(annotationType);</span>
+<span class="source-line-no">298</span><span id="line-298">        }</span>
+<span class="source-line-no">299</span><span id="line-299">      }</span>
 <span class="source-line-no">300</span><span id="line-300">    }</span>
-<span class="source-line-no">301</span><span id="line-301">  }</span>
+<span class="source-line-no">301</span><span id="line-301">    return null;</span>
 <span class="source-line-no">302</span><span id="line-302"></span>
-<span class="source-line-no">303</span><span id="line-303">  @Override // Object</span>
-<span class="source-line-no">304</span><span id="line-304">  public final int hashCode() {</span>
-<span class="source-line-no">305</span><span id="line-305">    // Interesting; hashCode doesn't cause symbol completion. See:</span>
-<span class="source-line-no">306</span><span id="line-306">    //</span>
-<span class="source-line-no">307</span><span id="line-307">    // https://github.com/openjdk/jdk/blob/jdk-26%2B25/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Type.java#L565-L568</span>
-<span class="source-line-no">308</span><span id="line-308">    // (AnnoConstruct doesn't define it so super.hashCode() is Object.hashCode())</span>
-<span class="source-line-no">309</span><span id="line-309">    //</span>
-<span class="source-line-no">310</span><span id="line-310">    // https://github.com/openjdk/jdk/blob/jdk-26%2B25/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Symbol.java</span>
-<span class="source-line-no">311</span><span id="line-311">    // (Symbol (Element) doesn't override it at all.)</span>
-<span class="source-line-no">312</span><span id="line-312">    return this.delegate().hashCode();</span>
-<span class="source-line-no">313</span><span id="line-313">  }</span>
-<span class="source-line-no">314</span><span id="line-314"></span>
-<span class="source-line-no">315</span><span id="line-315">  @Override // Object</span>
-<span class="source-line-no">316</span><span id="line-316">  @SuppressWarnings("try")</span>
-<span class="source-line-no">317</span><span id="line-317">  public final String toString() {</span>
-<span class="source-line-no">318</span><span id="line-318">    String s = this.s; // volatile read</span>
-<span class="source-line-no">319</span><span id="line-319">    if (s == null) {</span>
-<span class="source-line-no">320</span><span id="line-320">      try (var lock = this.domain().lock()) {</span>
-<span class="source-line-no">321</span><span id="line-321">        s = this.s = this.delegate().toString(); // volatile write, read</span>
-<span class="source-line-no">322</span><span id="line-322">      }</span>
-<span class="source-line-no">323</span><span id="line-323">      assert s != null;</span>
-<span class="source-line-no">324</span><span id="line-324">    }</span>
-<span class="source-line-no">325</span><span id="line-325">    return s;</span>
-<span class="source-line-no">326</span><span id="line-326">  }</span>
-<span class="source-line-no">327</span><span id="line-327"></span>
-<span class="source-line-no">328</span><span id="line-328"></span>
-<span class="source-line-no">329</span><span id="line-329">  /*</span>
-<span class="source-line-no">330</span><span id="line-330">   * Static methods.</span>
-<span class="source-line-no">331</span><span id="line-331">   */</span>
-<span class="source-line-no">332</span><span id="line-332"></span>
-<span class="source-line-no">333</span><span id="line-333"></span>
-<span class="source-line-no">334</span><span id="line-334">  /**</span>
-<span class="source-line-no">335</span><span id="line-335">   * &lt;dfn&gt;Unwraps&lt;/dfn&gt; the supplied {@link AnnotatedConstruct} implementation such that the returned value is not an</span>
-<span class="source-line-no">336</span><span id="line-336">   * instance of {@link UniversalConstruct}.</span>
-<span class="source-line-no">337</span><span id="line-337">   *</span>
-<span class="source-line-no">338</span><span id="line-338">   * @param &lt;T&gt; an {@link AnnotatedConstruct} subtype (possibly {@link UniversalElement} or {@link UniversalType})</span>
-<span class="source-line-no">339</span><span id="line-339">   *</span>
-<span class="source-line-no">340</span><span id="line-340">   * @param t an {@link AnnotatedConstruct}; may be {@code null}</span>
-<span class="source-line-no">341</span><span id="line-341">   *</span>
-<span class="source-line-no">342</span><span id="line-342">   * @return an object of the appropriate type that is guaranteed not to be an instance of {@link UniversalConstruct}</span>
-<span class="source-line-no">343</span><span id="line-343">   *</span>
-<span class="source-line-no">344</span><span id="line-344">   * @see #delegate()</span>
-<span class="source-line-no">345</span><span id="line-345">   */</span>
-<span class="source-line-no">346</span><span id="line-346">  @SuppressWarnings("unchecked")</span>
-<span class="source-line-no">347</span><span id="line-347">  public static final &lt;T extends AnnotatedConstruct&gt; T unwrap(T t) {</span>
-<span class="source-line-no">348</span><span id="line-348">    while (t instanceof UniversalConstruct&lt;?, ?&gt; uc) {</span>
-<span class="source-line-no">349</span><span id="line-349">      t = (T)uc.delegate();</span>
-<span class="source-line-no">350</span><span id="line-350">    }</span>
-<span class="source-line-no">351</span><span id="line-351">    return t;</span>
-<span class="source-line-no">352</span><span id="line-352">  }</span>
-<span class="source-line-no">353</span><span id="line-353"></span>
-<span class="source-line-no">354</span><span id="line-354">}</span>
+<span class="source-line-no">303</span><span id="line-303">  }</span>
+<span class="source-line-no">304</span><span id="line-304"></span>
+<span class="source-line-no">305</span><span id="line-305">  /**</span>
+<span class="source-line-no">306</span><span id="line-306">   * Makes a &lt;strong&gt;best effort&lt;/strong&gt; to return an array of {@link Annotation}s of the appropriate type</span>
+<span class="source-line-no">307</span><span id="line-307">   * &lt;dfn&gt;associated&lt;/dfn&gt; with this {@link UniversalConstruct} implementation.</span>
+<span class="source-line-no">308</span><span id="line-308">   *</span>
+<span class="source-line-no">309</span><span id="line-309">   * &lt;p&gt;See the specification for the {@link AnnotatedConstruct#getAnnotationsByType(Class)} method for important</span>
+<span class="source-line-no">310</span><span id="line-310">   * details.&lt;/p&gt;</span>
+<span class="source-line-no">311</span><span id="line-311">   *</span>
+<span class="source-line-no">312</span><span id="line-312">   * &lt;p&gt;{@link UniversalConstruct} implementations deliberately permit modification of their {@linkplain</span>
+<span class="source-line-no">313</span><span id="line-313">   * #getAnnotationMirrors() annotations}. Consequently, this override first checks to see if there is at least one</span>
+<span class="source-line-no">314</span><span id="line-314">   * {@link AnnotationMirror} whose {@linkplain AnnotationMirror#getAnnotationType() annotation type} is declared by a</span>
+<span class="source-line-no">315</span><span id="line-315">   * {@link javax.lang.model.element.TypeElement} whose {@linkplain</span>
+<span class="source-line-no">316</span><span id="line-316">   * javax.lang.model.element.TypeElement#getQualifiedName() qualified name} is {@linkplain</span>
+<span class="source-line-no">317</span><span id="line-317">   * javax.lang.model.element.Name#contentEquals(CharSequence) equal to} the {@linkplain Class#getCanonicalName()</span>
+<span class="source-line-no">318</span><span id="line-318">   * canonical name} of the supplied {@link Class}. If there is, then the {@link</span>
+<span class="source-line-no">319</span><span id="line-319">   * AnnotatedConstruct#getAnnotationsByType(Class) getAnnotationsByType(Class)} method is invoked on the {@linkplain</span>
+<span class="source-line-no">320</span><span id="line-320">   * #delegate() delegate} and its result is returned. Otherwise, an empty array is returned.&lt;/p&gt;</span>
+<span class="source-line-no">321</span><span id="line-321">   *</span>
+<span class="source-line-no">322</span><span id="line-322">   * &lt;p&gt;There are circumstances where the {@link Annotation} array returned by this method may not accurately reflect</span>
+<span class="source-line-no">323</span><span id="line-323">   * synthetic annotations added to this {@link AnnotatedConstruct} implementation's {@linkplain #getAnnotationMirrors()</span>
+<span class="source-line-no">324</span><span id="line-324">   * annotations}.&lt;/p&gt;</span>
+<span class="source-line-no">325</span><span id="line-325">   *</span>
+<span class="source-line-no">326</span><span id="line-326">   * &lt;p&gt;In general, the use of this method is discouraged.&lt;/p&gt;</span>
+<span class="source-line-no">327</span><span id="line-327">   *</span>
+<span class="source-line-no">328</span><span id="line-328">   * @param annotationType a {@link Class} that is an annotation interface; must not be {@code null}</span>
+<span class="source-line-no">329</span><span id="line-329">   *</span>
+<span class="source-line-no">330</span><span id="line-330">   * @return an appropriate {@link Annotation}, or {@code null}</span>
+<span class="source-line-no">331</span><span id="line-331">   *</span>
+<span class="source-line-no">332</span><span id="line-332">   * @exception NullPointerException if {@code annotationType} is {@code null}</span>
+<span class="source-line-no">333</span><span id="line-333">   *</span>
+<span class="source-line-no">334</span><span id="line-334">   * @see AnnotatedConstruct#getAnnotation(Class)</span>
+<span class="source-line-no">335</span><span id="line-335">   *</span>
+<span class="source-line-no">336</span><span id="line-336">   * @deprecated The use of this method is discouraged.</span>
+<span class="source-line-no">337</span><span id="line-337">   */</span>
+<span class="source-line-no">338</span><span id="line-338">  @Deprecated</span>
+<span class="source-line-no">339</span><span id="line-339">  @Override // AnnotatedConstruct</span>
+<span class="source-line-no">340</span><span id="line-340">  @SuppressWarnings({"try", "unchecked"})</span>
+<span class="source-line-no">341</span><span id="line-341">  public final &lt;A extends Annotation&gt; A[] getAnnotationsByType(final Class&lt;A&gt; annotationType) {</span>
+<span class="source-line-no">342</span><span id="line-342">    if (!annotationType.isAnnotation()) {</span>
+<span class="source-line-no">343</span><span id="line-343">      return (A[])EMPTY_ANNOTATION_ARRAY;</span>
+<span class="source-line-no">344</span><span id="line-344">    }</span>
+<span class="source-line-no">345</span><span id="line-345">    final String canonicalName = annotationType.getCanonicalName();</span>
+<span class="source-line-no">346</span><span id="line-346">    for (final AnnotationMirror a : this.getAnnotationMirrors()) {</span>
+<span class="source-line-no">347</span><span id="line-347">      if (((QualifiedNameable)a.getAnnotationType().asElement()).getQualifiedName().contentEquals(canonicalName)) {</span>
+<span class="source-line-no">348</span><span id="line-348">        // TODO: is this lock actually needed, given how delegateSupplier works?</span>
+<span class="source-line-no">349</span><span id="line-349">        try (var lock = this.domain().lock()) {</span>
+<span class="source-line-no">350</span><span id="line-350">          return this.delegate().getAnnotationsByType(annotationType);</span>
+<span class="source-line-no">351</span><span id="line-351">        }</span>
+<span class="source-line-no">352</span><span id="line-352">      }</span>
+<span class="source-line-no">353</span><span id="line-353">    }</span>
+<span class="source-line-no">354</span><span id="line-354">    return (A[])EMPTY_ANNOTATION_ARRAY;</span>
+<span class="source-line-no">355</span><span id="line-355">  }</span>
+<span class="source-line-no">356</span><span id="line-356"></span>
+<span class="source-line-no">357</span><span id="line-357">  @Override // Object</span>
+<span class="source-line-no">358</span><span id="line-358">  public final int hashCode() {</span>
+<span class="source-line-no">359</span><span id="line-359">    // Interesting; hashCode doesn't cause symbol completion. See:</span>
+<span class="source-line-no">360</span><span id="line-360">    //</span>
+<span class="source-line-no">361</span><span id="line-361">    // https://github.com/openjdk/jdk/blob/jdk-26%2B25/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Type.java#L565-L568</span>
+<span class="source-line-no">362</span><span id="line-362">    // (AnnoConstruct doesn't define it so super.hashCode() is Object.hashCode())</span>
+<span class="source-line-no">363</span><span id="line-363">    //</span>
+<span class="source-line-no">364</span><span id="line-364">    // https://github.com/openjdk/jdk/blob/jdk-26%2B25/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Symbol.java</span>
+<span class="source-line-no">365</span><span id="line-365">    // (Symbol (Element) doesn't override it at all.)</span>
+<span class="source-line-no">366</span><span id="line-366">    return this.delegate().hashCode();</span>
+<span class="source-line-no">367</span><span id="line-367">  }</span>
+<span class="source-line-no">368</span><span id="line-368"></span>
+<span class="source-line-no">369</span><span id="line-369">  @Override // Object</span>
+<span class="source-line-no">370</span><span id="line-370">  @SuppressWarnings("try")</span>
+<span class="source-line-no">371</span><span id="line-371">  public final String toString() {</span>
+<span class="source-line-no">372</span><span id="line-372">    String s = this.s; // volatile read</span>
+<span class="source-line-no">373</span><span id="line-373">    if (s == null) {</span>
+<span class="source-line-no">374</span><span id="line-374">      try (var lock = this.domain().lock()) {</span>
+<span class="source-line-no">375</span><span id="line-375">        s = this.s = this.delegate().toString(); // volatile write, read</span>
+<span class="source-line-no">376</span><span id="line-376">      }</span>
+<span class="source-line-no">377</span><span id="line-377">    }</span>
+<span class="source-line-no">378</span><span id="line-378">    return s;</span>
+<span class="source-line-no">379</span><span id="line-379">  }</span>
+<span class="source-line-no">380</span><span id="line-380"></span>
+<span class="source-line-no">381</span><span id="line-381"></span>
+<span class="source-line-no">382</span><span id="line-382">  /*</span>
+<span class="source-line-no">383</span><span id="line-383">   * Static methods.</span>
+<span class="source-line-no">384</span><span id="line-384">   */</span>
+<span class="source-line-no">385</span><span id="line-385"></span>
+<span class="source-line-no">386</span><span id="line-386"></span>
+<span class="source-line-no">387</span><span id="line-387">  /**</span>
+<span class="source-line-no">388</span><span id="line-388">   * &lt;dfn&gt;Unwraps&lt;/dfn&gt; the supplied {@link AnnotatedConstruct} implementation such that the returned value is not an</span>
+<span class="source-line-no">389</span><span id="line-389">   * instance of {@link UniversalConstruct}.</span>
+<span class="source-line-no">390</span><span id="line-390">   *</span>
+<span class="source-line-no">391</span><span id="line-391">   * @param &lt;T&gt; an {@link AnnotatedConstruct} subtype (possibly {@link UniversalElement} or {@link UniversalType})</span>
+<span class="source-line-no">392</span><span id="line-392">   *</span>
+<span class="source-line-no">393</span><span id="line-393">   * @param t an {@link AnnotatedConstruct}; may be {@code null}</span>
+<span class="source-line-no">394</span><span id="line-394">   *</span>
+<span class="source-line-no">395</span><span id="line-395">   * @return an object of the appropriate type that is guaranteed not to be an instance of {@link UniversalConstruct}</span>
+<span class="source-line-no">396</span><span id="line-396">   *</span>
+<span class="source-line-no">397</span><span id="line-397">   * @see #delegate()</span>
+<span class="source-line-no">398</span><span id="line-398">   */</span>
+<span class="source-line-no">399</span><span id="line-399">  @SuppressWarnings("unchecked")</span>
+<span class="source-line-no">400</span><span id="line-400">  public static final &lt;T extends AnnotatedConstruct&gt; T unwrap(T t) {</span>
+<span class="source-line-no">401</span><span id="line-401">    while (t instanceof UniversalConstruct&lt;?&gt; uc) {</span>
+<span class="source-line-no">402</span><span id="line-402">      t = (T)uc.delegate();</span>
+<span class="source-line-no">403</span><span id="line-403">    }</span>
+<span class="source-line-no">404</span><span id="line-404">    return t;</span>
+<span class="source-line-no">405</span><span id="line-405">  }</span>
+<span class="source-line-no">406</span><span id="line-406"></span>
+<span class="source-line-no">407</span><span id="line-407">}</span>
 
 
 
