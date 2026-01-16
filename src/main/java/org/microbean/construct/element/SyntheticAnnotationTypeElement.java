@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
@@ -82,7 +84,7 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
    */
 
 
-  private final List<? extends AnnotationMirror> annotationMirrors;
+  private final CopyOnWriteArrayList<AnnotationMirror> annotationMirrors;
 
   private final SyntheticName fqn;
 
@@ -97,6 +99,23 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
    * Constructors.
    */
 
+
+  /**
+   * Creates a new {@link SyntheticAnnotationTypeElement}, mostly, if not exclusively, for use by {@link
+   * SyntheticAnnotationMirror} instances.
+   *
+   * @param fullyQualifiedName the fully qualified name of the synthetic element; must conform to Java classname
+   * restrictions; must not be {@code null}
+   *
+   * @exception NullPointerException if {@code fullyQualifiedName} is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code fullyQualifiedName} does not conform to Java classname restrictions
+   *
+   * @see #SyntheticAnnotationTypeElement(List, SyntheticName, List)
+   */
+  public SyntheticAnnotationTypeElement(final String fullyQualifiedName) {
+    this(List.of(), new SyntheticName(fullyQualifiedName), List.of());
+  }
 
   /**
    * Creates a new {@link SyntheticAnnotationTypeElement}, mostly, if not exclusively, for use by {@link
@@ -131,9 +150,91 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
    *
    * @see #SyntheticAnnotationTypeElement(List, SyntheticName, List)
    */
+  public SyntheticAnnotationTypeElement(final String fullyQualifiedName,
+                                        final List<? extends SyntheticAnnotationElement> elements) {
+    this(List.of(), new SyntheticName(fullyQualifiedName), elements);
+  }
+
+  /**
+   * Creates a new {@link SyntheticAnnotationTypeElement}, mostly, if not exclusively, for use by {@link
+   * SyntheticAnnotationMirror} instances.
+   *
+   * @param fullyQualifiedName the fully qualified name of the synthetic element; must conform to Java classname
+   * restrictions; must not be {@code null}
+   *
+   * @param elements a {@link List} of {@link SyntheticAnnotationElement}s modeling the annotation elements; must not be
+   * {@code null}
+   *
+   * @exception NullPointerException if any argument is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code fullyQualifiedName} does not conform to Java classname restrictions
+   *
+   * @see #SyntheticAnnotationTypeElement(List, SyntheticName, List)
+   */
   public SyntheticAnnotationTypeElement(final SyntheticName fullyQualifiedName,
                                         final List<? extends SyntheticAnnotationElement> elements) {
     this(List.of(), fullyQualifiedName, elements);
+  }
+
+  /**
+   * Creates a new {@link SyntheticAnnotationTypeElement}, mostly, if not exclusively, for use by {@link
+   * SyntheticAnnotationMirror} instances.
+   *
+   * @param annotationMirror an {@link AnnotationMirror}s modeling the (sole) annotation this element has; must not be
+   * {@code null}
+   *
+   * @param fullyQualifiedName the fully qualified name of the synthetic element; must conform to Java classname
+   * restrictions; must not be {@code null}
+   *
+   * @exception NullPointerException if any argument is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code fullyQualifiedName} does not conform to Java classname restrictions
+   *
+   * @see #SyntheticAnnotationTypeElement(List, SyntheticName, List)
+   */
+  public SyntheticAnnotationTypeElement(final AnnotationMirror annotationMirror, final String fullyQualifiedName) {
+    this(List.of(annotationMirror), new SyntheticName(fullyQualifiedName), List.of());
+  }
+
+  /**
+   * Creates a new {@link SyntheticAnnotationTypeElement}, mostly, if not exclusively, for use by {@link
+   * SyntheticAnnotationMirror} instances.
+   *
+   * @param annotationMirror an {@link AnnotationMirror}s modeling the (sole) annotation this element has; must not be
+   * {@code null}
+   *
+   * @param fullyQualifiedName the fully qualified name of the synthetic element; must conform to Java classname
+   * restrictions; must not be {@code null}
+   *
+   * @exception NullPointerException if any argument is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code fullyQualifiedName} does not conform to Java classname restrictions
+   *
+   * @see #SyntheticAnnotationTypeElement(List, SyntheticName, List)
+   */
+  public SyntheticAnnotationTypeElement(final AnnotationMirror annotationMirror, final SyntheticName fullyQualifiedName) {
+    this(List.of(annotationMirror), fullyQualifiedName, List.of());
+  }
+
+  /**
+   * Creates a new {@link SyntheticAnnotationTypeElement}, mostly, if not exclusively, for use by {@link
+   * SyntheticAnnotationMirror} instances.
+   *
+   * @param annotationMirrors a {@link List} of {@link AnnotationMirror}s modeling the annotations this element has;
+   * must not be {@code null}
+   *
+   * @param fullyQualifiedName the fully qualified name of the synthetic element; must conform to Java classname
+   * restrictions; must not be {@code null}
+   *
+   * @exception NullPointerException if any argument is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code fullyQualifiedName} does not conform to Java classname restrictions
+   *
+   * @see #SyntheticAnnotationTypeElement(List, SyntheticName, List)
+   */
+  public SyntheticAnnotationTypeElement(final List<? extends AnnotationMirror> annotationMirrors,
+                                        final String fullyQualifiedName) {
+    this(annotationMirrors, new SyntheticName(fullyQualifiedName), List.of());
   }
 
   /**
@@ -174,6 +275,31 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
    *
    * @exception IllegalArgumentException if {@code fullyQualifiedName} does not conform to Java classname restrictions
    *
+   * @see #SyntheticAnnotationTypeElement(List, SyntheticName, List)
+   */
+  public SyntheticAnnotationTypeElement(final List<? extends AnnotationMirror> annotationMirrors,
+                                        final String fullyQualifiedName,
+                                        final List<? extends SyntheticAnnotationElement> elements) {
+    this(annotationMirrors, new SyntheticName(fullyQualifiedName), elements);
+  }
+
+  /**
+   * Creates a new {@link SyntheticAnnotationTypeElement}, mostly, if not exclusively, for use by {@link
+   * SyntheticAnnotationMirror} instances.
+   *
+   * @param annotationMirrors a {@link List} of {@link AnnotationMirror}s modeling the annotations this element has;
+   * must not be {@code null}
+   *
+   * @param fullyQualifiedName the fully qualified name of the synthetic element; must conform to Java classname
+   * restrictions; must not be {@code null}
+   *
+   * @param elements a {@link List} of {@link SyntheticAnnotationElement}s modeling the annotation elements; must not be
+   * {@code null}
+   *
+   * @exception NullPointerException if any argument is {@code null}
+   *
+   * @exception IllegalArgumentException if {@code fullyQualifiedName} does not conform to Java classname restrictions
+   *
    * @see SyntheticAnnotationElement
    *
    * @see SyntheticAnnotationMirror
@@ -182,7 +308,7 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
                                         final SyntheticName fullyQualifiedName,
                                         final List<? extends SyntheticAnnotationElement> elements) {
     super();
-    this.annotationMirrors = List.copyOf(annotationMirrors);
+    this.annotationMirrors = new CopyOnWriteArrayList<>(annotationMirrors);
     final String fqn = fullyQualifiedName.toString();
     final int i = fqn.lastIndexOf('.');
     this.sn = i >= 0 ? new SyntheticName(fqn.substring(i + 1)) : fullyQualifiedName;
@@ -216,7 +342,7 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
   }
 
   @Override // TypeElement (AnnotatedConstruct)
-  public final List<? extends AnnotationMirror> getAnnotationMirrors() {
+  public final List<AnnotationMirror> getAnnotationMirrors() {
     return this.annotationMirrors;
   }
 
@@ -598,7 +724,7 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
      */
 
 
-    private final List<? extends AnnotationMirror> annotationMirrors;
+    private final CopyOnWriteArrayList<AnnotationMirror> annotationMirrors;
 
     private final Type t;
 
@@ -617,7 +743,7 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
                                       final SyntheticName name,
                                       final SyntheticAnnotationValue defaultValue) {
       super();
-      this.annotationMirrors = List.copyOf(annotationMirrors);
+      this.annotationMirrors = new CopyOnWriteArrayList<>(annotationMirrors);
       this.t = new Type(type);
       this.name = requireNonNull(name, "name");
       this.defaultValue = defaultValue;
@@ -640,7 +766,7 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
     }
 
     @Override // ExecutableElement (AnnotatedConstruct)
-    public final List<? extends AnnotationMirror> getAnnotationMirrors() {
+    public final List<AnnotationMirror> getAnnotationMirrors() {
       return this.annotationMirrors;
     }
 

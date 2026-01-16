@@ -54,7 +54,7 @@ import static javax.lang.model.type.TypeKind.VOID;
  * @see UniversalConstruct
  */
 public final class UniversalType
-  extends UniversalConstruct<TypeMirror, UniversalType>
+  extends UniversalConstruct<TypeMirror>
   implements ArrayType,
              ErrorType,
              ExecutableType,
@@ -80,17 +80,17 @@ public final class UniversalType
    */
   @SuppressWarnings("try")
   public UniversalType(final TypeMirror delegate, final PrimordialDomain domain) {
-    this(delegate, null, domain);
+    this(null, delegate, domain);
   }
 
   /**
    * Creates a new {@link UniversalType}.
    *
-   * @param delegate a {@link TypeMirror} to which operations will be delegated; must not be {@code null}
-   *
    * @param annotations a {@link List} of {@link AnnotationMirror} instances representing annotations, often synthetic,
    * that this {@link UniversalType} should bear; may be {@code null} in which case only the annotations from the
    * supplied {@code delegate} will be used
+   *
+   * @param delegate a {@link TypeMirror} to which operations will be delegated; must not be {@code null}
    *
    * @param domain a {@link PrimordialDomain} from which the supplied {@code delegate} is presumed to have originated;
    * must not be {@code null}
@@ -99,10 +99,10 @@ public final class UniversalType
    *
    * @see #delegate()
    */
-  public UniversalType(final TypeMirror delegate,
-                       final List<? extends AnnotationMirror> annotations,
+  public UniversalType(final List<? extends AnnotationMirror> annotations,
+                       final TypeMirror delegate,
                        final PrimordialDomain domain) {
-    super(delegate, annotations, domain);
+    super(annotations, delegate, domain);
   }
 
   @Override // TypeMirror
@@ -133,11 +133,6 @@ public final class UniversalType
     case WILDCARD     -> v.visitWildcard(this, p);
     case OTHER        -> v.visitUnknown(this, p);
     };
-  }
-
-  @Override // UniversalConstruct<TypeMirror, UniversalType<TypeMirror>>
-  protected UniversalType annotate(final List<? extends AnnotationMirror> replacementAnnotations) {
-    return new UniversalType(this.delegate(), replacementAnnotations, this.domain());
   }
 
   @Override // Various

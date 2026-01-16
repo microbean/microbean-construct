@@ -223,8 +223,8 @@ public final class UniversalAnnotation implements AnnotationMirror, Constable {
    *
    * @exception NullPointerException if either argument is {@code null}
    */
-  public static final List<? extends UniversalAnnotation> of(final Collection<? extends AnnotationMirror> as,
-                                                             final PrimordialDomain domain) {
+  public static final List<UniversalAnnotation> of(final Collection<? extends AnnotationMirror> as,
+                                                   final PrimordialDomain domain) {
     if (as.isEmpty()) {
       return List.of();
     }

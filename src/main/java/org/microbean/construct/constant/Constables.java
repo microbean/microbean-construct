@@ -762,6 +762,23 @@ public final class Constables {
    * @param list a {@link List} to be described; may be {@code null}; if non-{@code null} <strong>must be immutable and
    * must not contain {@code null} elements</strong> or undefined behavior will result
    *
+   * @return a non-{@code null} {@link Optional}
+   *
+   * @see #describe(List, Function)
+   */
+  public static final <E> Optional<? extends ConstantDesc> describe(final List<? extends E> list) {
+    return describe(list, e -> e instanceof Constable c ? c.describeConstable() : Optional.empty());
+  }
+  
+  /**
+   * Returns a nominal descriptor for the supplied {@link List}, or an {@linkplain Optional#empty() empty} {@link
+   * Optional} if the supplied {@link List} cannot be described.
+   *
+   * @param <E> the supplied {@code list}'s element type
+   *
+   * @param list a {@link List} to be described; may be {@code null}; if non-{@code null} <strong>must be immutable and
+   * must not contain {@code null} elements</strong> or undefined behavior will result
+   *
    * @param f a {@link Function} that accepts an element from the supplied {@code list} and returns a non-{@code null}
    * {@link Optional} housing a nominal descriptor for it, or a non-{@code null} {@linkplain Optional#empty() empty}
    * {@link Optional} if the element cannot be described; must not be {@code null}

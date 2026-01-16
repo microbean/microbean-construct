@@ -56,7 +56,7 @@ import static java.util.Collections.unmodifiableList;
  */
 @SuppressWarnings("preview") // isUnnamed() usage
 public final class UniversalElement
-  extends UniversalConstruct<Element, UniversalElement>
+  extends UniversalConstruct<Element>
   implements ExecutableElement,
              ModuleElement,
              PackageElement,
@@ -79,17 +79,17 @@ public final class UniversalElement
    * @exception NullPointerException if either argument is {@code null}
    */
   public UniversalElement(final Element delegate, final PrimordialDomain domain) {
-    this(delegate, null, domain);
+    this(null, delegate, domain);
   }
 
   /**
    * Creates a new {@link UniversalElement}.
    *
-   * @param delegate an {@link Element} to which operations will be delegated; must not be {@code null}
-   *
    * @param annotations a {@link List} of {@link AnnotationMirror} instances representing annotations, often {@linkplain
    * SyntheticAnnotationMirror synthetic}, that this {@link UniversalElement} should bear; may be {@code null} in which
    * case only the annotations from the supplied {@code delegate} will be used
+   *
+   * @param delegate an {@link Element} to which operations will be delegated; must not be {@code null}
    *
    * @param domain a {@link PrimordialDomain} from which the supplied {@code delegate} is presumed to have originated;
    * must not be {@code null}
@@ -99,10 +99,10 @@ public final class UniversalElement
    * @see #delegate()
    */
   @SuppressWarnings("try")
-  private UniversalElement(final Element delegate,
-                           final List<? extends AnnotationMirror> annotations,
+  private UniversalElement(final List<? extends AnnotationMirror> annotations,
+                           final Element delegate,
                            final PrimordialDomain domain) {
-    super(delegate, annotations, domain);
+    super(annotations, delegate, domain);
     this.enclosedElementsSupplier = () -> {
       final List<? extends UniversalElement> ees;
       try (var lock = domain.lock()) {
@@ -141,11 +141,6 @@ public final class UniversalElement
     case MODULE              -> v.visitModule(this, p);
     case OTHER               -> v.visitUnknown(this, p);
     };
-  }
-
-  @Override // UniversalConstruct<Element, UniversalElement<Element>>
-  protected final UniversalElement annotate(final List<? extends AnnotationMirror> replacementAnnotations) {
-    return new UniversalElement(this.delegate(), replacementAnnotations, this.domain());
   }
 
   @Override // Element
