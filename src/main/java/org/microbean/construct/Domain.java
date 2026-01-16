@@ -1511,10 +1511,10 @@ public interface Domain extends PrimordialDomain {
   }
 
   /**
-   * A convenience method that returns the first {@link VariableElement} with a {@linkplain ElementKind#isVariable()
-   * variable <code>ElementKind</code>} and {@linkplain Element#getSimpleName() bearing} the supplied {@code simpleName}
-   * that the supplied {@code enclosingElement} {@linkplain Element#getEnclosedElements() encloses}, <strong>or {@code
-   * null} if there is no such {@link VariableElement}</strong>.
+   * A convenience method that returns the first {@link VariableElement} {@linkplain Element#getSimpleName() bearing}
+   * the supplied {@code simpleName} that the supplied {@code enclosingElement} {@linkplain
+   * Element#getEnclosedElements() encloses}, <strong>or {@code null} if there is no such {@link
+   * VariableElement}</strong>.
    *
    * @param enclosingElement an {@link Element}; must not be {@code null}
    *
@@ -1525,8 +1525,6 @@ public interface Domain extends PrimordialDomain {
    * @exception NullPointerException if either argument is {@code null}
    *
    * @see Element#getEnclosedElements()
-   *
-   * @see ElementKind#isVariable()
    *
    * @see Element#getSimpleName()
    *
@@ -1539,7 +1537,7 @@ public interface Domain extends PrimordialDomain {
     case null -> throw new NullPointerException("enclosingElement");
     case UniversalElement ue -> {
       for (final UniversalElement ee : ue.getEnclosedElements()) {
-        if (ee.getKind().isVariable() && ee.getSimpleName().contentEquals(simpleName)) {
+        if (ee.getSimpleName().contentEquals(simpleName)) {
           yield ee;
         }
       }
@@ -1548,7 +1546,7 @@ public interface Domain extends PrimordialDomain {
     default -> {
       try (var lock = lock()) {
         for (final Element ee : enclosingElement.getEnclosedElements()) {
-          if (ee.getKind().isVariable() && ee.getSimpleName().contentEquals(simpleName)) {
+          if (ee.getSimpleName().contentEquals(simpleName)) {
             yield (VariableElement)ee;
           }
         }
