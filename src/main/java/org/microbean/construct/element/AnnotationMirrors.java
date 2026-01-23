@@ -40,11 +40,14 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
 
 import static java.util.Collections.unmodifiableList;
@@ -63,7 +66,12 @@ import static java.util.stream.Stream.iterate;
 
 import static javax.lang.model.element.ElementKind.ANNOTATION_TYPE;
 import static javax.lang.model.element.ElementKind.CLASS;
+import static javax.lang.model.element.ElementKind.METHOD;
 
+import static javax.lang.model.element.Modifier.ABSTRACT;
+import static javax.lang.model.element.Modifier.PUBLIC;
+
+import static javax.lang.model.type.TypeKind.ARRAY;
 import static javax.lang.model.type.TypeKind.DECLARED;
 
 import static javax.lang.model.util.ElementFilter.methodsIn;
@@ -107,7 +115,7 @@ public final class AnnotationMirrors {
     WHILE_LOOP:
     while (e.getKind() == CLASS && e instanceof TypeElement te) {
       final TypeMirror sct = te.getSuperclass();
-      if (sct.getKind() != DECLARED) {
+      if (sct.getKind() != DECLARED || !(sct instanceof DeclaredType)) {
         break;
       }
       e = ((DeclaredType)sct).asElement();
@@ -136,11 +144,11 @@ public final class AnnotationMirrors {
    * instances indexed by its {@link ExecutableElement}s to which they apply.
    *
    * <p>Each {@link ExecutableElement} represents an <a
-   * href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1">annotation element</a> and meets the
-   * requirements of such an element.</p>
+   * href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1">annotation interface element</a> and
+   * meets the requirements of such an element.</p>
    *
-   * <p>Each {@link AnnotationValue} represents the value of an annotation element and meets the requirements for
-   * annotation values.</p>
+   * <p>Each {@link AnnotationValue} represents the value of an annotation interface element and meets the requirements
+   * for annotation values.</p>
    *
    * <p>This method is a more capable, better-typed replacement of the {@link
    * javax.lang.model.util.Elements#getElementValuesWithDefaults(AnnotationMirror)} method, and should be preferred.</p>
@@ -213,8 +221,9 @@ public final class AnnotationMirrors {
   }
 
   /**
-   * A convenience method that returns a value for an annotation element named by the supplied {@link CharSequence} and
-   * logically owned by the supplied {@link AnnotationMirror}, or {@code null} if no such value exists.
+   * A convenience method that returns a value for an annotation interface element {@linkplain
+   * ExecutableElement#getSimpleName() named} by the supplied {@link CharSequence} and logically owned by the supplied
+   * {@link AnnotationMirror}, or {@code null} if no such value exists.
    *
    * @param am an {@link AnnotationMirror}; must not be {@code null}
    *
@@ -228,12 +237,38 @@ public final class AnnotationMirrors {
    * @see AnnotationValue
    *
    * @see #allAnnotationValues(AnnotationMirror)
+   *
+   * @see #get(Map, CharSequence)
    */
   public static final Object get(final AnnotationMirror am, final CharSequence name) {
+    return name == null ? null : get(allAnnotationValues(am), name);
+  }
+
+  /**
+   * A convenience method that returns a value for an annotation interface element {@linkplain
+   * ExecutableElement#getSimpleName() named} by the supplied {@link CharSequence} and found in the supplied {@link
+   * Map}, or {@code null} if no such value exists.
+   *
+   * @param values a {@link Map} as returned by the {@link #allAnnotationValues(AnnotationMirror)} method; must not be
+   * {@code null}
+   *
+   * @param name a {@link CharSequence}; may be {@code null} in which case {@code null} will be returned
+   *
+   * @return the result of invoking {@link AnnotationValue#getValue() getValue()} on a suitable {@link AnnotationValue}
+   * found in the supplied {@link Map}, or {@code null}
+   *
+   * @exception NullPointerException if {@code values} is {@code null}
+   *
+   * @see AnnotationValue
+   *
+   * @see #allAnnotationValues(AnnotationMirror)
+   */
+  public static final Object get(final Map<? extends ExecutableElement, ? extends AnnotationValue> values,
+                                 final CharSequence name) {
     if (name == null) {
       return null;
     }
-    for (final Entry<? extends Element, ? extends AnnotationValue> e : allAnnotationValues(am).entrySet()) {
+    for (final Entry<? extends Element, ? extends AnnotationValue> e : values.entrySet()) {
       if (e.getKey().getSimpleName().contentEquals(name)) {
         final AnnotationValue av = e.getValue();
         return av == null ? null : av.getValue();
@@ -359,7 +394,7 @@ public final class AnnotationMirrors {
    * @param am1 an {@link AnnotationMirror}; may be {@code null}
    *
    * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an
-   * annotation element, is to be included in the computation; may be {@code null} in which case it is as if
+   * annotation interface element, is to be included in the computation; may be {@code null} in which case it is as if
    * {@code ()-> true} were supplied instead
    *
    * @return {@code true} if the supplied {@link AnnotationMirror}s represent the same (underlying, otherwise opaque)
@@ -377,9 +412,6 @@ public final class AnnotationMirrors {
     } else if (am0 == null || am1 == null) {
       return false;
     }
-    if (p == null) {
-      p = x -> true;
-    }
     final QualifiedNameable qn0 = (QualifiedNameable)am0.getAnnotationType().asElement();
     final QualifiedNameable qn1 = (QualifiedNameable)am1.getAnnotationType().asElement();
     if (qn0 != qn1 && !qn0.getQualifiedName().contentEquals(qn1.getQualifiedName())) {
@@ -387,8 +419,14 @@ public final class AnnotationMirrors {
     }
     final SequencedMap<ExecutableElement, AnnotationValue> m0 = allAnnotationValues(am0);
     final SequencedMap<ExecutableElement, AnnotationValue> m1 = allAnnotationValues(am1);
-    if (m0.size() != m1.size()) {
+    if (m0 == m1) {
+      // Unlikely, but hey
+      return true;
+    } else if (m0.size() != m1.size()) {
       return false;
+    }
+    if (p == null) {
+      p = AnnotationMirrors::returnTrue;
     }
     final Iterator<Entry<ExecutableElement, AnnotationValue>> i0 = m0.entrySet().iterator();
     final Iterator<Entry<ExecutableElement, AnnotationValue>> i1 = m1.entrySet().iterator();
@@ -406,24 +444,22 @@ public final class AnnotationMirrors {
   }
 
   /**
-   * Returns a non-{@code null}, sequential, non-empty {@link Stream} that traverses the supplied {@link
-   * AnnotationMirror}'s {@linkplain AnnotationMirror#getAnnotationType() annotation interface}'s {@link TypeElement}'s
+   * Returns a non-{@code null}, sequential, {@link Stream} that traverses the supplied {@link AnnotatedConstruct}'s
    * {@linkplain AnnotatedConstruct#getAnnotationMirrors() annotations}, and their (meta-) annotations, in breadth-first
    * order.
    *
-   * <p>The first and possibly only element in the {@link Stream} that is returned is guaranteed to be the supplied
-   * {@link AnnotationMirror}.</p>
+   * <p>Cycles are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror)} method.</p>
    *
-   * @param am an {@link AnnotationMirror}; must not be {@code null}
+   * @param ac an {@link AnnotatedConstruct}; must not be {@code null}
    *
    * @return a non-{@code null} {@link Stream} of {@link AnnotationMirror}s
    *
-   * @exception NullPointerException if {@code am} is {@code null}
+   * @exception NullPointerException if {@code ac} is {@code null}
    *
-   * @see #streamBreadthFirst(AnnotatedConstruct)
+   * @see #sameAnnotation(AnnotationMirror, AnnotationMirror)
    */
-  public static final Stream<AnnotationMirror> streamBreadthFirst(final AnnotationMirror am) {
-    return concat(Stream.of(am), streamBreadthFirst(am.getAnnotationType().asElement()));
+  public static final Stream<AnnotationMirror> streamBreadthFirst(final AnnotatedConstruct ac) {
+    return streamBreadthFirst(ac, AnnotationMirrors::returnTrue);
   }
 
   /**
@@ -431,54 +467,99 @@ public final class AnnotationMirrors {
    * {@linkplain AnnotatedConstruct#getAnnotationMirrors() annotations}, and their (meta-) annotations, in breadth-first
    * order.
    *
+   * <p>Cycles and duplicates are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror,
+   * Predicate)} method.</p>
+   *
    * @param ac an {@link AnnotatedConstruct}; must not be {@code null}
+   *
+   * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an
+   * annotation interface element, is to be included in comparison operations; may be {@code null} in which case it is
+   * as if {@code ()-> true} were supplied instead
    *
    * @return a non-{@code null} {@link Stream} of {@link AnnotationMirror}s
    *
    * @exception NullPointerException if {@code ac} is {@code null}
+   *
+   * @see #streamBreadthFirst(Collection, Predicate)
+   *
+   * @see #sameAnnotation(AnnotationMirror, AnnotationMirror)
    */
-  public static final Stream<AnnotationMirror> streamBreadthFirst(final AnnotatedConstruct ac) {
-    final List<? extends AnnotationMirror> ams = ac.getAnnotationMirrors();
-    final Set<String> names = newHashSet(ams.size());
+  public static final Stream<AnnotationMirror> streamBreadthFirst(final AnnotatedConstruct ac,
+                                                                  final Predicate<? super ExecutableElement> p) {
+    return streamBreadthFirst(ac.getAnnotationMirrors(), p);
+  }
+
+  /**
+   * Returns a non-{@code null}, sequential, {@link Stream} that traverses the supplied {@link AnnotationMirror}s, and
+   * their (meta-) annotations, in breadth-first order.
+   *
+   * <p>Cycles and duplicates are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror)}
+   * method. Consequently the returned {@link Stream} yields only semantically distinct elements.</p>
+   *
+   * @param ams a {@link Collection} of {@link AnnotationMirror}s; must not be {@code null}
+   *
+   * @return a non-{@code null} {@link Stream} of (distinct) {@link AnnotationMirror}s
+   *
+   * @exception NullPointerException if {@code ams} is {@code null}
+   *
+   * @see #sameAnnotation(AnnotationMirror, AnnotationMirror)
+   */
+  public static final Stream<AnnotationMirror> streamBreadthFirst(final Collection<? extends AnnotationMirror> ams) {
+    return streamBreadthFirst(ams, AnnotationMirrors::returnTrue);
+  }
+
+  /**
+   * Returns a non-{@code null}, sequential, {@link Stream} that traverses the supplied {@link AnnotationMirror}s, and
+   * their (meta-) annotations, in breadth-first order.
+   *
+   * <p>Cycles and duplicates are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror,
+   * Predicate)} method. Consequently the returned {@link Stream} yields only semantically distinct elements.</p>
+   *
+   * @param ams a {@link Collection} of {@link AnnotationMirror}s; must not be {@code null}
+   *
+   * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an
+   * annotation element, is to be included in comparison operations; may be {@code null} in which case it is as if
+   * {@code ()-> true} were supplied instead
+   *
+   * @return a non-{@code null} {@link Stream} of (distinct) {@link AnnotationMirror}s
+   *
+   * @exception NullPointerException if {@code ams} is {@code null}
+   *
+   * @see #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate)
+   */
+  public static final Stream<AnnotationMirror> streamBreadthFirst(final Collection<? extends AnnotationMirror> ams,
+                                                                  final Predicate<? super ExecutableElement> p) {
+    if (ams.isEmpty()) {
+      return empty();
+    }
+    final Collection<AnnotationMirror> seen = new ArrayList<>();
     final Queue<AnnotationMirror> q = new ArrayDeque<>();
-    ams.forEach(a -> {
-        names.add(((QualifiedNameable)a.getAnnotationType().asElement()).getQualifiedName().toString());
-        q.add(a);
-      });
+    DEDUP_LOOP_0:
+    for (final AnnotationMirror a0 : ams) {
+      for (final AnnotationMirror a1 : seen) {
+        if (sameAnnotation(a0, a1, p)) {
+          continue DEDUP_LOOP_0;
+        }
+      }
+      q.add(a0);
+      seen.add(a0);
+    }
     return
       iterate(q.poll(),
               Objects::nonNull,
               a0 -> {
-                a0.getAnnotationType()
-                  .asElement()
-                  .getAnnotationMirrors()
-                  .stream()
-                  .filter(a1 -> names.add(((QualifiedNameable)a1.getAnnotationType().asElement()).getQualifiedName().toString()))
-                  .forEach(q::add);
+                DEDUP_LOOP_1:
+                for (final AnnotationMirror a1 : a0.getAnnotationType().asElement().getAnnotationMirrors()) {
+                  for (final AnnotationMirror a2 : seen) {
+                    if (sameAnnotation(a1, a2, p)) {
+                      continue DEDUP_LOOP_1;
+                    }
+                  }
+                  q.add(a1);
+                  seen.add(a1);
+                }
                 return q.poll();
               });
-  }
-
-  /**
-   * A convenience method that returns a non-{@code null}, sequential, non-empty {@link Stream} that traverses the
-   * supplied {@link AnnotationMirror}'s {@linkplain AnnotationMirror#getAnnotationType() annotation interface}'s {@link
-   * TypeElement}'s {@linkplain AnnotatedConstruct#getAnnotationMirrors() annotations}, and their (meta-) annotations,
-   * in depth-first order.
-   *
-   * <p>The first and possibly only element in the {@link Stream} that is returned is guaranteed to be the supplied
-   * {@link AnnotationMirror}.</p>
-   *
-   * @param am an {@link AnnotationMirror}; must not be {@code null}
-   *
-   * @return a non-{@code null} {@link Stream} of {@link AnnotationMirror}s
-   *
-   * @exception NullPointerException if {@code am} is {@code null}
-   *
-   * @see #streamDepthFirst(AnnotatedConstruct)
-   */
-  // (Convenience.)
-  public static final Stream<AnnotationMirror> streamDepthFirst(final AnnotationMirror am) {
-    return concat(Stream.of(am), streamDepthFirst(am.getAnnotationType().asElement()));
   }
 
   /**
@@ -486,15 +567,92 @@ public final class AnnotationMirrors {
    * {@linkplain AnnotatedConstruct#getAnnotationMirrors() annotations}, and their (meta-) annotations, in depth-first
    * order.
    *
+   * <p>Cycles are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror)} method.</p>
+   *
    * @param ac an {@link AnnotatedConstruct}; must not be {@code null}
    *
    * @return a non-{@code null} {@link Stream} of {@link AnnotationMirror}s
    *
    * @exception NullPointerException if {@code ac} is {@code null}
+   *
+   * @see #streamDepthFirst(AnnotatedConstruct, Predicate)
+   *
+   * @see #sameAnnotation(AnnotationMirror, AnnotationMirror)
    */
   public static final Stream<AnnotationMirror> streamDepthFirst(final AnnotatedConstruct ac) {
-    return streamDepthFirst(ac, newHashSet(17)); // 17 == arbitrary
+    return streamDepthFirst(ac, AnnotationMirrors::returnTrue); // 17 == arbitrary
   }
+
+  /**
+   * Returns a non-{@code null}, sequential {@link Stream} that traverses the supplied {@link AnnotatedConstruct}'s
+   * {@linkplain AnnotatedConstruct#getAnnotationMirrors() annotations}, and their (meta-) annotations, in depth-first
+   * order.
+   *
+   * <p>Cycles and duplicates are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate)}
+   * method.</p>
+   *
+   * @param ac an {@link AnnotatedConstruct}; must not be {@code null}
+   *
+   * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an
+   * annotation element, is to be included in comparison operations; may be {@code null} in which case it is as if
+   * {@code ()-> true} were supplied instead
+   *
+   * @return a non-{@code null} {@link Stream} of {@link AnnotationMirror}s
+   *
+   * @exception NullPointerException if {@code ac} is {@code null}
+   *
+   * @see #sameAnnotation(AnnotationMirror, AnnotationMirror)
+   */
+  public static final Stream<AnnotationMirror> streamDepthFirst(final AnnotatedConstruct ac,
+                                                                final Predicate<? super ExecutableElement> p) {
+    return streamDepthFirst(ac, new ArrayList<>(17), p); // 17 == arbitrary
+  }
+
+  /**
+   * Returns a non-{@code null}, sequential {@link Stream} that traverses the supplied {@link AnnotationMirror}s, and
+   * their (meta-) annotations, in depth-first order.
+   *
+   * <p>Cycles and duplicates are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror)}
+   * method.</p>
+   *
+   * @param ams a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
+   *
+   * @return a non-{@code null} {@link Stream} of {@link AnnotationMirror}s
+   *
+   * @exception NullPointerException if {@code ams} is {@code null}
+   *
+   * @see #streamDepthFirst(Collection, Predicate)
+   *
+   * @see #sameAnnotation(AnnotationMirror, AnnotationMirror)
+   */
+  public static final Stream<AnnotationMirror> streamDepthFirst(final Collection<? extends AnnotationMirror> ams) {
+    return streamDepthFirst(ams, AnnotationMirrors::returnTrue); // 17 == arbitrary
+  }
+
+  /**
+   * Returns a non-{@code null}, sequential {@link Stream} that traverses the supplied {@link AnnotationMirror}s, and
+   * their (meta-) annotations, in depth-first order.
+   *
+   * <p>Cycles and duplicates are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror,
+   * Predicate)} method.</p>
+   *
+   * @param ams a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
+   *
+   * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an
+   * annotation element, is to be included in comparison operations; may be {@code null} in which case it is as if
+   * {@code ()-> true} were supplied instead
+   *
+   * @return a non-{@code null} {@link Stream} of {@link AnnotationMirror}s
+   *
+   * @exception NullPointerException if {@code ams} is {@code null}
+   *
+   * @see #sameAnnotation(AnnotationMirror, AnnotationMirror)
+   */
+  public static final Stream<AnnotationMirror> streamDepthFirst(final Collection<? extends AnnotationMirror> ams,
+                                                                final Predicate<? super ExecutableElement> p) {
+    return ams.isEmpty() ? empty() : streamDepthFirst(ams, new ArrayList<>(17), p); // 17 == arbitrary
+  }
+
 
   /**
    * Returns a non-{@code null}, determinate, immutable {@link Set} of {@link ElementType}s describing restrictions
@@ -506,6 +664,8 @@ public final class AnnotationMirrors {
    * @return a non-{@code null}, determinate, immutable {@link Set} of {@link ElementType}s describing restrictions
    * concerning where the annotation interface {@linkplain AnnotationMirror#getAnnotationType() represented} by the
    * supplied {@link AnnotationMirror} may be applied
+   *
+   * @exception NullPointerException if {@code a} is {@code null}
    */
   public static final Set<ElementType> targetElementTypes(final AnnotationMirror a) {
     return targetElementTypes((TypeElement)a.getAnnotationType().asElement());
@@ -520,6 +680,8 @@ public final class AnnotationMirrors {
    *
    * @return a non-{@code null}, determinate, immutable {@link Set} of {@link ElementType}s describing restrictions
    * concerning where the supplied annotation interface may be applied
+   *
+   * @exception NullPointerException if {@code annotationInterface} is {@code null}
    *
    * @see java.lang.annotation.ElementType
    *
@@ -548,20 +710,112 @@ public final class AnnotationMirrors {
     return EMPTY_ELEMENT_TYPES;
   }
 
+  /**
+   * Returns {@code true} if and only if the supplied {@link ExecutableElement} represents a valid <dfn>annotation
+   * interface element</dfn> as defined by <a
+   * href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1">the Java Language Specification</a>.
+   *
+   * @param e an {@link ExecutableElement}; must not be {@code null}
+   *
+   * @return {@code true} if and only if the supplied {@link ExecutableElement} represents a valid <dfn>annotation
+   * interface element</dfn> as defined by <a
+   * href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1">the Java Language Specification</a>
+   *
+   * @exception NullPointerException if {@code e} is {@code null}
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1 Java Language Specification, section
+   * 9.6.1
+   */
+  public static final boolean validAnnotationInterfaceElement(final ExecutableElement e) {
+    return
+      e.getKind() == METHOD &&
+      e.getEnclosingElement().getKind() == ANNOTATION_TYPE &&
+      e.getTypeParameters().isEmpty() &&
+      e.getParameters().isEmpty() &&
+      e.getThrownTypes().isEmpty() &&
+      validAnnotationInterfaceElementType(e.getReturnType()) &&
+      (e.getModifiers().isEmpty() ||
+       e.getModifiers().equals(EnumSet.of(ABSTRACT)) ||
+       e.getModifiers().equals(EnumSet.of(PUBLIC)));
+  }
+
+  /**
+   * Returns {@code true} if and only if the supplied {@link TypeMirror} is a valid type for an <dfn>annotation
+   * interface element</dfn> as defined by <a
+   * href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1">the Java Language Specification</a>.
+   *
+   * @param t a {@link TypeMirror}; must not be {@code null}
+   *
+   * @return {@code true} if and only if the supplied {@link TypeMirror} is a valid type for an <dfn>annotation
+   * interface element</dfn> as defined by <a
+   * href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1">the Java Language Specification</a>
+   *
+   * @exception NullPointerException if {@code t} is {@code null}
+   *
+   * @spec https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1 Java Language Specification, section
+   * 9.6.1
+   */
+  public static final boolean validAnnotationInterfaceElementType(final TypeMirror t) {
+    return switch (t) {
+    case null -> throw new NullPointerException("t");
+    case ArrayType at when at.getKind() == ARRAY -> validAnnotationInterfaceElementScalarType(at.getComponentType());
+    default -> validAnnotationInterfaceElementScalarType(t);
+    };
+  }
+
+  static final boolean validAnnotationInterfaceElementScalarType(final TypeMirror t) {
+    return switch (t) {
+    case null -> throw new NullPointerException("t");
+    case PrimitiveType pt when pt.getKind().isPrimitive() -> true;
+    case DeclaredType dt when dt.getKind() == DECLARED -> {
+      final TypeElement te = (TypeElement)dt.asElement();
+      yield switch (te.getKind()) {
+      case ANNOTATION_TYPE, ENUM -> true;
+      case CLASS -> {
+        final Name fqn = te.getQualifiedName();
+        yield fqn.contentEquals("java.lang.Class") || fqn.contentEquals("java.lang.String");
+      }
+      default -> false;
+      };
+    }
+    default -> false;
+    };
+  }
+
   @SuppressWarnings("unchecked")
   private static final <K, V> SequencedMap<K, V> emptySequencedMap() {
     return (SequencedMap<K, V>)EMPTY_MAP;
   }
 
+  private static final <X> boolean returnTrue(final X ignored) {
+    return true;
+  }
+
   private static final Stream<AnnotationMirror> streamDepthFirst(final AnnotatedConstruct ac,
-                                                                 final Set<String> names) {
+                                                                 final Collection<AnnotationMirror> seen,
+                                                                 final Predicate<? super ExecutableElement> p) {
+    return streamDepthFirst(ac.getAnnotationMirrors(), seen, p);
+  }
+
+  private static final Stream<AnnotationMirror> streamDepthFirst(final Collection<? extends AnnotationMirror> ams,
+                                                                 final Collection<AnnotationMirror> seen,
+                                                                 final Predicate<? super ExecutableElement> p) {
+    if (ams.isEmpty()) {
+      return empty();
+    }
     // See https://www.techempower.com/blog/2016/10/19/efficient-multiple-stream-concatenation-in-java/
     return
-      Stream.of(ac.getAnnotationMirrors()
+      Stream.of(ams
                 .stream()
-                .flatMap(a -> {
-                    final TypeElement e = (TypeElement)a.getAnnotationType().asElement();
-                    return names.add(e.getQualifiedName().toString()) ? streamDepthFirst(e, names) : empty();
+                .sequential()
+                .flatMap(a0 -> {
+                    for (final AnnotationMirror a1 : seen) {
+                      if (sameAnnotation(a0, a1, p)) {
+                        return empty();
+                      }
+                    }
+                    seen.add(a0);
+                    return streamDepthFirst(a0.getAnnotationType().asElement().getAnnotationMirrors(), seen, p);
                   }))
       .flatMap(identity());
   }

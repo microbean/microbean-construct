@@ -58,6 +58,8 @@ import static javax.lang.model.element.Modifier.ABSTRACT;
 import static javax.lang.model.type.TypeKind.ARRAY;
 import static javax.lang.model.type.TypeKind.DECLARED;
 
+import static org.microbean.construct.element.AnnotationMirrors.validAnnotationInterfaceElementScalarType;
+
 /**
  * An <strong>experimental</strong> {@link TypeElement} implementation that is wholly synthetic and suitable only for
  * (partially) modeling {@linkplain AnnotationMirror#getAnnotationType() annotation types}.
@@ -420,24 +422,10 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
 
   // See https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1
   private static final TypeMirror validateScalarType(final TypeMirror type) {
-    return switch (type) {
-    case null -> throw new NullPointerException("t");
-    case PrimitiveType t when t.getKind().isPrimitive() -> t;
-    case DeclaredType t when t.getKind() == DECLARED -> {
-      final TypeElement te = (TypeElement)t.asElement();
-      yield switch (te.getKind()) {
-      case ANNOTATION_TYPE, ENUM -> t;
-      default -> {
-        final Name fqn = te.getQualifiedName();
-        if (fqn.contentEquals("java.lang.Class") || fqn.contentEquals("java.lang.String")) {
-          yield t;
-        }
-        throw new IllegalArgumentException("type: " + type);
-      }
-      };
+    if (validAnnotationInterfaceElementScalarType(type)) {
+      return type;
     }
-    default -> throw new IllegalArgumentException("type: " + type);
-    };
+    throw new IllegalArgumentException("type: " + type);
   }
 
 
