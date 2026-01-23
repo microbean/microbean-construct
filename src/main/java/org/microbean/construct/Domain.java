@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024–2025 microBean™.
+ * Copyright © 2024–2026 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -23,7 +23,8 @@ import java.lang.reflect.Type;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+
+import javax.lang.model.AnnotatedConstruct;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -53,11 +54,14 @@ import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Elements.Origin;
 
+import org.microbean.construct.element.AnnotationMirrors;
 import org.microbean.construct.element.UniversalElement;
 
 import org.microbean.construct.type.UniversalType;
 
 import static java.util.Collections.unmodifiableList;
+
+import static java.util.Objects.requireNonNull;
 
 import static javax.lang.model.type.TypeKind.DECLARED;
 
@@ -96,6 +100,10 @@ public interface Domain extends PrimordialDomain {
    * Returns an immutable, determinate, non-{@code null} {@link List} of {@link AnnotationMirror} instances representing
    * all annotations <dfn>present</dfn> on an element, whether <dfn>directly present</dfn> or present via inheritance.
    *
+   * <p>The default implementation of this method calls {@link UniversalElement#of(Element, Domain)} with the supplied
+   * {@code element} and {@code this} as arguments, calls the {@link
+   * AnnotationMirrors#allAnnotationMirrors(Element)} with the result, and returns the result.</p>
+   *
    * @param element the {@link Element} whose present annotations should be returned; must not be {@code null}
    *
    * @return an immutable, determinate, non-{@code null} {@link List} of {@link AnnotationMirror} instances representing
@@ -103,37 +111,91 @@ public interface Domain extends PrimordialDomain {
    *
    * @exception NullPointerException if {@code element} is {@code null}
    *
+   * @see AnnotationMirrors#allAnnotationMirrors(Element)
+   *
    * @see javax.lang.model.util.Elements#getAllAnnotationMirrors(Element)
    */
-  public default List<? extends AnnotationMirror> allAnnotationMirrors(Element element) {
-    element = UniversalElement.of(element, this); // handles locking, symbol completion, etc.
-    final List<AnnotationMirror> annotations = new ArrayList<>(8);
-    annotations.addAll(element.getAnnotationMirrors().reversed());
-    TypeMirror sc = ((TypeElement)element).getSuperclass();
-    if (sc.getKind() == DECLARED) {
-      element = ((DeclaredType)sc).asElement();
-      WHILE_LOOP:
-      while (element != null && element.getKind().isDeclaredType()) {
-        for (final AnnotationMirror a : element.getAnnotationMirrors().reversed()) {
-          // See if it's inherited
-          final TypeElement annotationTypeElement = (TypeElement)a.getAnnotationType().asElement();
-          for (final AnnotationMirror metaAnnotation : annotationTypeElement.getAnnotationMirrors()) {
-            if (((TypeElement)metaAnnotation.getAnnotationType().asElement()).getQualifiedName().contentEquals("java.lang.annotation.Inherited")) {
-              for (final AnnotationMirror existingAnnotation : annotations) {
-                if (existingAnnotation.getAnnotationType().asElement().equals(annotationTypeElement)) {
-                  continue WHILE_LOOP;
-                }
-              }
-              annotations.add(a);
-              break;
-            }
-          }
-        }
-        sc = ((TypeElement)element).getSuperclass();
-        element = sc.getKind() == DECLARED ? ((DeclaredType)sc).asElement() : null;
-      }
-    }
-    return annotations.isEmpty() ? List.of() : unmodifiableList(annotations.reversed());
+  public default List<? extends AnnotationMirror> allAnnotationMirrors(final Element element) {
+    return AnnotationMirrors.allAnnotationMirrors(UniversalElement.of(element, this)); // handles locking, symbol completion
+  }
+
+  /**
+   * Returns a non-{@code null}, determinate, immutable {@link List} whose elements comprise the <dfn>members</dfn> of
+   * the supplied {@link TypeElement}, whether they are inherited or declared directly.
+   *
+   * <p>If the supplied {@link TypeElement} is a {@linkplain ElementKind#CLASS class}, the returned {@link List} will
+   * also include the class' constructors, but not any local or anonymous classes.</p>
+   *
+   * @param e a {@link TypeElement}; must not be {@code null}
+   *
+   * @return a non-{@code null}, determinate, immutable {@link List} whose elements comprise the <dfn>members</dfn> of
+   * the supplied {@link TypeElement}, whether they are inherited or declared directly
+   *
+   * @exception NullPointerException if {@code e} is {@code null}
+   *
+   * @see Elements#getAllMembers(TypeElement)
+   */
+  public abstract List<? extends Element> allMembers(TypeElement e);
+
+  /**
+   * An <strong>experimental</strong> method that returns an {@link Element} that is {@linkplain Element#equals(Object)
+   * equal to} the supplied {@link Element} but {@linkplain Element#getAnnotationMirrors() with} a {@link List} of
+   * annotations {@linkplain List#equals(Object) equal to} the supplied {@link List} of {@link AnnotationMirror}s.
+   *
+   * <p>The supplied {@link Element} may be modified in place if the return value of its {@link
+   * Element#getAnnotationMirrors() getAnnotationMirrors()} method is mutable.</p>
+   *
+   * <p>No validation of any kind is performed on either argument.</p>
+   *
+   * @param annotations a {@link List} of {@link AnnotationMirror}s; must not be {@code null}
+   *
+   * @param e an {@link Element}; must not be {@code null}
+   *
+   * @return an {@link Element} that is {@linkplain Element#equals(Object) equal to} the supplied {@link Element} but
+   * {@linkplain Element#getAnnotationMirrors() with} a {@link List} of annotations {@linkplain List#equals(Object)
+   * equal to} the supplied {@link List} of {@link AnnotationMirror}s
+   *
+   * @exception NullPointerException if any argument is {@code null}
+   *
+   * @see UniversalElement#getAnnotationMirrors()
+   */
+  public default Element annotate(final List<? extends AnnotationMirror> annotations, final Element e) {
+    final UniversalElement ue = UniversalElement.of(e, this);
+    final List<AnnotationMirror> l = ue.getAnnotationMirrors();
+    l.clear();
+    l.addAll(annotations);
+    return ue;
+  }
+
+  /**
+   * An <strong>experimental</strong> method that returns a {@link TypeMirror} that is {@linkplain
+   * TypeMirror#equals(Object) equal to} the supplied {@link TypeMirror} but {@linkplain
+   * TypeMirror#getAnnotationMirrors() with} a {@link List} of annotations {@linkplain List#equals(Object) equal to} the
+   * supplied {@link List} of {@link AnnotationMirror}s.
+   *
+   * <p>The supplied {@link TypeMirror} may be modified in place if the return value of its {@link
+   * TypeMirror#getAnnotationMirrors() getAnnotationMirrors()} method is mutable.</p>
+   *
+   * <p>No validation of any kind is performed on either argument.</p>
+   *
+   * @param annotations a {@link List} of {@link AnnotationMirror}s; must not be {@code null}
+   *
+   * @param t a {@link TypeMirror}; must not be {@code null}
+   *
+   * @return a {@link TypeMirror} that is {@linkplain TypeMirror#equals(Object) equal to} the supplied {@link
+   * TypeMirror} but {@linkplain TypeMirror#getAnnotationMirrors() with} a {@link List} of annotations {@linkplain
+   * List#equals(Object) equal to} the supplied {@link List} of {@link AnnotationMirror}s
+   *
+   * @exception NullPointerException if any argument is {@code null}
+   *
+   * @see UniversalType#getAnnotationMirrors()
+   */
+  public default TypeMirror annotate(final List<? extends AnnotationMirror> annotations, final TypeMirror t) {
+    final UniversalType ut = UniversalType.of(t, this);
+    final List<AnnotationMirror> l = ut.getAnnotationMirrors();
+    l.clear();
+    l.addAll(annotations);
+    return ut;
   }
 
   /**
@@ -970,7 +1032,7 @@ public interface Domain extends PrimordialDomain {
   // (Convenience.)
   // (Unboxing.)
   public default PrimitiveType primitiveType(final CharSequence canonicalName) {
-    final String s = this.toString(Objects.requireNonNull(canonicalName, "canonicalName"));
+    final String s = this.toString(requireNonNull(canonicalName, "canonicalName"));
     return switch (s) {
     case "boolean", "java.lang.Boolean" -> this.primitiveType(TypeKind.BOOLEAN);
     case "byte", "java.lang.Byte" -> this.primitiveType(TypeKind.BYTE);
@@ -1462,8 +1524,8 @@ public interface Domain extends PrimordialDomain {
    */
   // (Convenience.)
   public default TypeParameterElement typeParameterElement(Parameterizable p, final CharSequence name) {
-    Objects.requireNonNull(p, "p");
-    Objects.requireNonNull(name, "name");
+    requireNonNull(p, "p");
+    requireNonNull(name, "name");
     while (p != null) {
       switch (p) {
       case UniversalElement ue:
@@ -1532,7 +1594,7 @@ public interface Domain extends PrimordialDomain {
    */
   // (Convenience.)
   public default VariableElement variableElement(final Element enclosingElement, final CharSequence simpleName) {
-    Objects.requireNonNull(simpleName, "simpleName");
+    requireNonNull(simpleName, "simpleName");
     return switch (enclosingElement) {
     case null -> throw new NullPointerException("enclosingElement");
     case UniversalElement ue -> {

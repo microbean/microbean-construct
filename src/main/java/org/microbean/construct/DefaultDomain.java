@@ -152,6 +152,14 @@ public class DefaultDomain implements Constable, Domain {
    */
 
 
+  @Override // Domain
+  public List<? extends UniversalElement> allMembers(TypeElement e) {
+    e = unwrap(e);
+    try (var lock = lock()) {
+      return UniversalElement.of(this.elements().getAllMembers(e), this);
+    }
+  }
+  
   /**
    * Returns a {@link UniversalType} representing an {@link javax.lang.model.type.ArrayType} whose {@linkplain
    * javax.lang.model.type.ArrayType#getComponentType() component type} {@linkplain #sameType(TypeMirror, TypeMirror) is
