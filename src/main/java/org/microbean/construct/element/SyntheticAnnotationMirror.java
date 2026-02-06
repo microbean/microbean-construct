@@ -18,9 +18,11 @@ import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
 
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 
 import javax.lang.model.element.AnnotationMirror;
@@ -69,7 +71,7 @@ public final class SyntheticAnnotationMirror implements AnnotationMirror, Consta
 
   private final TypeElement annotationTypeElement;
 
-  private final Map<ExecutableElement, AnnotationValue> elementValues;
+  private final Map<? extends ExecutableElement, ? extends AnnotationValue> elementValues;
 
 
   /*
@@ -142,6 +144,39 @@ public final class SyntheticAnnotationMirror implements AnnotationMirror, Consta
     this.elementValues = m.isEmpty() ? Map.of() : unmodifiableMap(m);
   }
 
+  /**
+   * Creates a new {@link SyntheticAnnotationMirror} that is an effective <dfn>copy</dfn> of the supplied {@link
+   * AnnotationMirror}.
+   *
+   * @param a a non-{@code null} {@link AnnotationMirror} to semantically copy
+   *
+   * @exception NullPointerException if {@code a} is {@code null}
+   */
+  public SyntheticAnnotationMirror(final AnnotationMirror a) {
+    super();
+    this.annotationTypeElement = new SyntheticAnnotationTypeElement((TypeElement)a.getAnnotationType().asElement());
+    final Map<? extends ExecutableElement, ? extends AnnotationValue> originalElementValues = a.getElementValues();
+    if (originalElementValues.isEmpty()) {
+      // If there are no explicit values, then...there are no explicit values whether the annotation interface type
+      // contains/encloses any elements at all.
+      this.elementValues = Map.of();
+    } else {
+      // There are explicit values. That also means that the annotation interface type contains/encloses at least one
+      // element.
+      final List<ExecutableElement> syntheticElements = methodsIn(this.annotationTypeElement.getEnclosedElements());
+      assert !syntheticElements.isEmpty();
+      final Map<ExecutableElement, AnnotationValue> newElementValues = newLinkedHashMap(originalElementValues.size());
+      for (final Entry<? extends ExecutableElement, ? extends AnnotationValue> originalEntry : originalElementValues.entrySet()) {
+        final ExecutableElement originalElement = originalEntry.getKey();
+        final ExecutableElement syntheticElement = element(syntheticElements, originalElement.getSimpleName());
+        if (syntheticElement != null) {
+          newElementValues.put(syntheticElement, originalEntry.getValue());
+        }
+      }
+      this.elementValues = unmodifiableMap(newElementValues);
+    }
+  }
+
 
   /*
    * Instance methods.
@@ -172,6 +207,11 @@ public final class SyntheticAnnotationMirror implements AnnotationMirror, Consta
     return this.elementValues;
   }
 
+  @Override
+  public final String toString() {
+    return "@" + this.annotationTypeElement.toString(); // TODO: not anywhere near good enough
+  }
+
 
   /*
    * Static methods.
@@ -195,6 +235,15 @@ public final class SyntheticAnnotationMirror implements AnnotationMirror, Consta
     case ConstantDesc cd -> Optional.of(cd);
     default -> Optional.empty();
     };
+  }
+
+  private static final <E extends Element> E element(final Iterable<? extends E> elements, final CharSequence simpleName) {
+    for (final E e : elements) {
+      if (e.getSimpleName().contentEquals(simpleName)) {
+        return e;
+      }
+    }
+    return null;
   }
 
 }

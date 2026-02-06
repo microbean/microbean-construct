@@ -68,6 +68,18 @@ public final class SyntheticName implements Constable, Name {
    *
    * @exception NullPointerException if {@code value} is {@code null}
    */
+  public SyntheticName(final Name value) {
+    super();
+    this.value = value instanceof SyntheticName sn ? sn.value : value.toString();
+  }
+  
+  /**
+   * Creates a new {@link SyntheticName}.
+   *
+   * @param value the actual name; must not be {@code null}
+   *
+   * @exception NullPointerException if {@code value} is {@code null}
+   */
   public SyntheticName(final String value) {
     super();
     this.value = requireNonNull(value, "value");

@@ -58,6 +58,8 @@ import static javax.lang.model.element.Modifier.ABSTRACT;
 import static javax.lang.model.type.TypeKind.ARRAY;
 import static javax.lang.model.type.TypeKind.DECLARED;
 
+import static javax.lang.model.util.ElementFilter.methodsIn;
+
 import static org.microbean.construct.element.AnnotationMirrors.validAnnotationInterfaceElementScalarType;
 
 /**
@@ -289,6 +291,46 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
    * Creates a new {@link SyntheticAnnotationTypeElement}, mostly, if not exclusively, for use by {@link
    * SyntheticAnnotationMirror} instances.
    *
+   * @param e a non-{@code null} {@link TypeElement} whose {@link TypeElement#getKind() getKind()} method returns {@link
+   * javax.lang.model.element.ElementKind#ANNOTATION_TYPE}
+   *
+   * @exception NullPointerException if {@code e} is {@code null}
+   *
+   * @exception IllegalArgumentException if the supplied {@link TypeElement}'s {@link TypeElement#getKind() getKind()}
+   * method does not return {@link javax.lang.model.element.ElementKind#ANNOTATION_TYPE}
+   */
+  public SyntheticAnnotationTypeElement(final TypeElement e) {
+    super();
+    if (e.getKind() != ANNOTATION_TYPE) {
+      throw new IllegalArgumentException("e: " + e);
+    }
+    this.annotationMirrors = new CopyOnWriteArrayList<>(e.getAnnotationMirrors());
+    Name n = e.getSimpleName();
+    this.sn = n instanceof SyntheticName sn ? sn : new SyntheticName(n.toString());
+    n = e.getQualifiedName();
+    this.fqn = n instanceof SyntheticName sn ? sn : new SyntheticName(n.toString());
+    // Deliberate: Type is an inner class and hence cannot be shared
+    this.type = new Type();
+    final List<ExecutableElement> elements = methodsIn(e.getEnclosedElements());
+    if (elements.isEmpty()) {
+      this.elements = List.of();
+    } else {
+      final List<InternalAnnotationElement> elements0 = new ArrayList<>(elements.size());
+      for (final ExecutableElement ee :elements) {
+        // Deliberate: no instanceof InternalAnnotationElement check, i.e. wrapping/copying is deliberate and necessary
+        elements0.add(new InternalAnnotationElement(ee.getAnnotationMirrors(),
+                                                    ee.getReturnType(),
+                                                    ee.getSimpleName(),
+                                                    ee.getDefaultValue()));
+      }
+      this.elements = unmodifiableList(elements0);
+    }
+  }
+
+  /**
+   * Creates a new {@link SyntheticAnnotationTypeElement}, mostly, if not exclusively, for use by {@link
+   * SyntheticAnnotationMirror} instances.
+   *
    * @param annotationMirrors a {@link List} of {@link AnnotationMirror}s modeling the annotations this element has;
    * must not be {@code null}
    *
@@ -320,8 +362,8 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
       this.elements = List.of();
     } else {
       final List<InternalAnnotationElement> elements0 = new ArrayList<>(elements.size());
-      for (final SyntheticAnnotationElement e : elements) {
-        elements0.add(new InternalAnnotationElement(e.annotationMirrors(), e.type(), e.name(), e.defaultValue()));
+      for (final SyntheticAnnotationElement sae : elements) {
+        elements0.add(new InternalAnnotationElement(sae.annotationMirrors(), sae.type(), sae.name(), sae.defaultValue()));
       }
       this.elements = unmodifiableList(elements0);
     }
@@ -572,7 +614,7 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
       case ArrayType t when t.getKind() == ARRAY -> validateScalarType(t.getComponentType());
       default -> validateScalarType(type);
       };
-      if (name.equals("getClass") || name.equals("hashCode") || name.equals("toString")) {
+      if (name.contentEquals("getClass") || name.contentEquals("hashCode") || name.contentEquals("toString")) {
         // java.lang.Object-declared methods that might otherwise meet annotation element requirements
         throw new IllegalArgumentException("name: " + name);
       }
@@ -728,13 +770,15 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
 
     private InternalAnnotationElement(final List<? extends AnnotationMirror> annotationMirrors,
                                       final TypeMirror type,
-                                      final SyntheticName name,
-                                      final SyntheticAnnotationValue defaultValue) {
+                                      final Name name,
+                                      final AnnotationValue defaultValue) {
       super();
       this.annotationMirrors = new CopyOnWriteArrayList<>(annotationMirrors);
-      this.t = new Type(type);
-      this.name = requireNonNull(name, "name");
-      this.defaultValue = defaultValue;
+      // This Type is NOT an inner class and cannot receive annotations so this is OK.
+      this.t = type instanceof Type t ? t : new Type(type);
+      this.name = name instanceof SyntheticName sn ? sn : new SyntheticName(name);
+      this.defaultValue =
+        defaultValue instanceof SyntheticAnnotationValue sav ? sav : new SyntheticAnnotationValue(defaultValue.getValue());
     }
 
 
@@ -861,6 +905,7 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
         this.type = switch (type) {
         case null -> throw new NullPointerException("type");
         case ArrayType t when t.getKind() == ARRAY -> validateScalarType(t.getComponentType());
+        case Type t -> t.type;
         default -> validateScalarType(type);
         };
       }
