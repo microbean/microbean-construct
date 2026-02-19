@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024–2025 microBean™.
+ * Copyright © 2024–2026 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -55,7 +55,7 @@ import org.microbean.construct.type.UniversalType;
 import static java.lang.constant.ConstantDescs.BSM_INVOKE;
 
 /**
- * A {@linkplain Domain domain of Java constructs} that can be used at annotation processing time or at runtime.
+ * A {@linkplain Domain domain of valid Java constructs} that can be used at annotation processing time or at runtime.
  *
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
  *
@@ -83,13 +83,15 @@ public class DefaultDomain implements Constable, Domain {
    * Creates a new {@link DefaultDomain} <strong>normally for use at annotation processing time</strong>, whose usage
    * type is actually determined by the argument supplied to this constructor.
    *
-   * @param pe a {@link ProcessingEnvironment}; may be {@code null} in which case the return value of an invocation of
-   * {@link Supplier#get()} on the return value of an invocation of {@link RuntimeProcessingEnvironmentSupplier#of()}
-   * will be used instead
+   * @param pe a {@link ProcessingEnvironment}; may be {@code null} (<strong>the expected value for runtime
+   * usage</strong>), in which case the return value of an invocation of {@link Supplier#get()} on the return value of
+   * an invocation of {@link RuntimeProcessingEnvironmentSupplier#of()} will be used instead
    *
    * @see #DefaultDomain(ProcessingEnvironment, Lock)
    *
-   * @see SymbolCompletionLock
+   * @see RuntimeProcessingEnvironmentSupplier#get()
+   *
+   * @see SymbolCompletionLock#INSTANCE
    */
   public DefaultDomain(final ProcessingEnvironment pe) {
     this(pe, null);
@@ -103,9 +105,9 @@ public class DefaultDomain implements Constable, Domain {
    *
    * @see #DefaultDomain(ProcessingEnvironment, Lock)
    *
-   * @see RuntimeProcessingEnvironmentSupplier
+   * @see RuntimeProcessingEnvironmentSupplier#get()
    *
-   * @see SymbolCompletionLock
+   * @see SymbolCompletionLock#INSTANCE
    */
   public DefaultDomain(final Lock lock) {
     this(null, lock);
@@ -115,18 +117,18 @@ public class DefaultDomain implements Constable, Domain {
    * Creates a new {@link DefaultDomain} <strong>normally for use at annotation processing time</strong>, whose usage
    * type is actually determined by the arguments supplied to this constructor.
    *
-   * @param pe a {@link ProcessingEnvironment}; may be {@code null} in which case the return value of an invocation of
-   * {@link Supplier#get()} on the return value of an invocation of {@link RuntimeProcessingEnvironmentSupplier#of()}
-   * will be used instead
+   * @param pe a {@link ProcessingEnvironment}; may be {@code null} (<strong>the expected value for runtime
+   * usage</strong>), in which case the return value of an invocation of {@link Supplier#get()} on the return value of
+   * an invocation of {@link RuntimeProcessingEnvironmentSupplier#of()} will be used instead
    *
    * @param lock a {@link Lock} to use to serialize symbol completion; if {@code null} and {@code pe} is {@code null},
    * then a global {@link ReentrantLock} will be used instead; if {@code null} and {@code pe} is non-{@code null}, then
    * no serialization of symbol completion will occur <strong>and this {@link DefaultDomain} therefore will not be safe
    * for concurrent use by multiple threads</strong>
    *
-   * @see RuntimeProcessingEnvironmentSupplier
+   * @see RuntimeProcessingEnvironmentSupplier#get()
    *
-   * @see SymbolCompletionLock
+   * @see SymbolCompletionLock#INSTANCE
    */
   public DefaultDomain(final ProcessingEnvironment pe, final Lock lock) {
     super();
@@ -159,7 +161,7 @@ public class DefaultDomain implements Constable, Domain {
       return UniversalElement.of(this.elements().getAllMembers(e), this);
     }
   }
-  
+
   /**
    * Returns a {@link UniversalType} representing an {@link javax.lang.model.type.ArrayType} whose {@linkplain
    * javax.lang.model.type.ArrayType#getComponentType() component type} {@linkplain #sameType(TypeMirror, TypeMirror) is
@@ -611,8 +613,10 @@ public class DefaultDomain implements Constable, Domain {
    */
 
 
+  // (Invoked only by method reference.)
   private static final void doNothing() {}
 
+  // (Invoked only by method reference.)
   private static final Unlockable noopLock() {
     return DefaultDomain::doNothing;
   }
@@ -626,7 +630,7 @@ public class DefaultDomain implements Constable, Domain {
   }
 
   private static final TypeMirror[] unwrap(final TypeMirror[] ts) {
-    if (ts == null || ts.length <= 0) {
+    if (ts == null || ts.length == 0) {
       return ts;
     }
     final TypeMirror[] rv = new TypeMirror[ts.length];

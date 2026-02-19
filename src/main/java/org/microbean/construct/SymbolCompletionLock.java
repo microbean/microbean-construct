@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024 microBean™.
+ * Copyright © 2024–2026 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -19,6 +19,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * A class holding a {@link ReentrantLock} that should be used to serialize <dfn>symbol completion</dfn> and <dfn>name
  * expansion</dfn>.
  *
+ * <p>Most users should simply {@linkplain DefaultDomain#DefaultDomain() use an appropriate <code>DefaultDomain</code>}
+ * instead of working directly with instances of this class.</p>
+ *
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
  *
  * @see #INSTANCE
@@ -26,6 +29,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * @see Domain#lock()
  *
  * @see Domain#toString(CharSequence)
+ *
+ * @see DefaultDomain#DefaultDomain()
  */
 public final class SymbolCompletionLock {
 

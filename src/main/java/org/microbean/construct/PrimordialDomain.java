@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2025 microBean™.
+ * Copyright © 2025–2026 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -42,6 +42,8 @@ import org.microbean.construct.element.SyntheticName;
  * @see #noType(TypeKind)
  *
  * @see #nullType()
+ *
+ * @see Domain
  */
 public interface PrimordialDomain {
 
@@ -95,7 +97,7 @@ public interface PrimordialDomain {
   /**
    * Returns a (non-{@code null}, determinate) {@link NullType} representing the null type.
    *
-   * <p>Implementations of thsi method must not return {@code null}.</p>
+   * <p>Implementations of this method must not return {@code null}.</p>
    *
    * @return a {@link NullType} representing the null type; never {@code null}
    *
@@ -110,9 +112,9 @@ public interface PrimordialDomain {
    * <p>The default implementation of this method may return {@code null} if the supplied {@code name} is {@code
    * null}.</p>
    *
-   * <p>In many implementations of domains, converting a {@link Name} to a {@link String} can cause problems if symbol
-   * completion is taking place concurrently and the symbol completion lock is not held. This method helps avoid those
-   * problems.</p>
+   * <p>In many implementations of {@link PrimordialDomain}s, converting a {@link Name} to a {@link String} can cause
+   * problems if symbol completion is taking place concurrently and the symbol completion lock is not held. This method
+   * helps avoid those problems.</p>
    *
    * <p>Overriding this method is not normally needed.</p>
    *
@@ -139,5 +141,5 @@ public interface PrimordialDomain {
     default -> name.toString();
     };
   }
-  
+
 }

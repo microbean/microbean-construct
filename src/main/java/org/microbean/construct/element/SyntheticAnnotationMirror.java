@@ -52,7 +52,7 @@ import static javax.lang.model.util.ElementFilter.methodsIn;
  * An <strong>experimental</strong> {@link AnnotationMirror} implementation that is partially or wholly synthetic.
  *
  * <p>It is possible to create {@link SyntheticAnnotationMirror} instances representing annotations that a Java compiler
- * will not produce. For example, <a
+ * will never produce. For example, <a
  * href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1">annotations cannot refer to each
  * other, directly or indirectly</a>, but two {@link SyntheticAnnotationMirror}s may do so.</p>
  *

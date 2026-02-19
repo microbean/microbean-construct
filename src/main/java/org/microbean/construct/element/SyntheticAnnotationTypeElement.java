@@ -632,29 +632,32 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
       return this.annotationMirrors;
     }
 
-    @Override // Object
-    public final boolean equals(final Object other) {
-      return this == other || switch (other) {
-      case null -> false;
-      case SyntheticAnnotationElement sae when this.getClass() == sae.getClass() ->
-      Objects.equals(this.name, sae.name) &&
-      Objects.equals(this.type, sae.type) &&
-      Objects.equals(this.annotationMirrors, sae.annotationMirrors); // TODO: hmm
-      default -> false;
-      };
-    }
+    // It's not clear that equals and hashCode should be overridden. You can compare annotation members for "sameness"
+    // indirectly via AnnotationMirrors#sameAnnotation if needed.
 
-    @Override // Object
-    public final int hashCode() {
-      int hashCode = 31;
-      int c = this.name.hashCode();
-      hashCode = 17 * hashCode + c;
-      c = this.type.hashCode();
-      hashCode = 17 * hashCode + c;
-      c = this.annotationMirrors.hashCode(); // TODO: hmm
-      hashCode = 17 * hashCode + c;
-      return hashCode;
-    }
+    // @Override // Object
+    // public final boolean equals(final Object other) {
+    //   return this == other || switch (other) {
+    //   case null -> false;
+    //   case SyntheticAnnotationElement sae when this.getClass() == sae.getClass() ->
+    //   Objects.equals(this.name, sae.name) &&
+    //   Objects.equals(this.type, sae.type) &&
+    //   Objects.equals(this.annotationMirrors, sae.annotationMirrors); // TODO: hmm
+    //   default -> false;
+    //   };
+    // }
+
+    // @Override // Object
+    // public final int hashCode() {
+    //   int hashCode = 31;
+    //   int c = this.name.hashCode();
+    //   hashCode = 17 * hashCode + c;
+    //   c = this.type.hashCode();
+    //   hashCode = 17 * hashCode + c;
+    //   c = this.annotationMirrors.hashCode(); // TODO: hmm
+    //   hashCode = 17 * hashCode + c;
+    //   return hashCode;
+    // }
 
     final SyntheticName name() {
       return this.name;

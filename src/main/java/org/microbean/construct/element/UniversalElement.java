@@ -65,8 +65,34 @@ public final class UniversalElement
              TypeParameterElement,
              VariableElement {
 
+
+  /*
+   * Instance fields.
+   */
+
+
   // volatile not needed
   private Supplier<? extends List<? extends UniversalElement>> enclosedElementsSupplier;
+
+
+  /*
+   * Constructors.
+   */
+
+
+  /**
+   * Creates a new {@link UniversalElement} that is a copy of the supplied {@link UniversalElement}.
+   *
+   * @param ue a non-{@code null} {@link UniversalElement}
+   *
+   * @exception NullPointerException if {@code uc} is {@code null}
+   *
+   * @see #clone()
+   */
+  public UniversalElement(final UniversalElement ue) {
+    super(ue);
+    this.enclosedElementsSupplier = ue.enclosedElementsSupplier;
+  }
 
   /**
    * Creates a new {@link UniversalElement}.
@@ -99,9 +125,9 @@ public final class UniversalElement
    * @see #delegate()
    */
   @SuppressWarnings("try")
-  private UniversalElement(final List<? extends AnnotationMirror> annotations,
-                           final Element delegate,
-                           final PrimordialDomain domain) {
+  public UniversalElement(final List<? extends AnnotationMirror> annotations,
+                          final Element delegate,
+                          final PrimordialDomain domain) {
     super(annotations, delegate, domain);
     this.enclosedElementsSupplier = () -> {
       final List<? extends UniversalElement> ees;
@@ -112,6 +138,12 @@ public final class UniversalElement
       return ees;
     };
   }
+
+
+  /*
+   * Instance methods.
+   */
+
 
   @Override // Element
   public final <R, P> R accept(final ElementVisitor<R, P> v, final P p) {
@@ -146,6 +178,18 @@ public final class UniversalElement
   @Override // Element
   public final UniversalType asType() {
     return UniversalType.of(this.delegate().asType(), this.domain());
+  }
+
+  /**
+   * Returns a non-{@code null}, determinate, shallow copy of this {@link UniversalElement}.
+   *
+   * @return a non-{@code null}, determinate, shallow copy of this {@link UniversalElement}
+   */
+  @Override // UniversalConstruct (Cloneable)
+  public final UniversalElement clone() {
+    final UniversalElement clone = (UniversalElement)super.clone();
+    assert clone.enclosedElementsSupplier != null;
+    return clone;
   }
 
   /**

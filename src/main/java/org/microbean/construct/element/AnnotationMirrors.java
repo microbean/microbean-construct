@@ -88,8 +88,6 @@ public final class AnnotationMirrors {
 
   private static final SequencedMap<?, ?> EMPTY_MAP = unmodifiableSequencedMap(newLinkedHashMap(0));
 
-  private static final SameAnnotationValueVisitor sameAnnotationValueVisitor = new SameAnnotationValueVisitor();
-
   private AnnotationMirrors() {
     super();
   }
@@ -140,21 +138,21 @@ public final class AnnotationMirrors {
   }
 
   /**
-   * For the supplied {@link AnnotationMirror}, returns an immutable, determinate {@link Map} of {@link AnnotationValue}
-   * instances indexed by its {@link ExecutableElement}s to which they apply.
+   * For the supplied {@link AnnotationMirror}, returns an immutable, determinate {@link SequencedMap} of {@link
+   * AnnotationValue} instances indexed by the {@link ExecutableElement}s to which they apply.
    *
    * <p>Each {@link ExecutableElement} represents an <a
    * href="https://docs.oracle.com/javase/specs/jls/se25/html/jls-9.html#jls-9.6.1">annotation interface element</a> and
    * meets the requirements of such an element.</p>
    *
    * <p>Each {@link AnnotationValue} represents the value of an annotation interface element and meets the requirements
-   * for annotation values.</p>
+   * of such a value.</p>
    *
    * <p>This method is a more capable, better-typed replacement of the {@link
    * javax.lang.model.util.Elements#getElementValuesWithDefaults(AnnotationMirror)} method, and should be preferred.</p>
    *
    * @param a an {@link AnnotationMirror}; may be {@code null} in which case an empty, immutable, determinate {@link
-   * Map} will be returned
+   * SequencedMap} will be returned
    *
    * @return an immutable, determinate {@link Map} of {@link AnnotationValue} instances indexed by {@link
    * ExecutableElement}s
@@ -179,6 +177,78 @@ public final class AnnotationMirrors {
       m.put(ee, explicitValues.containsKey(ee) ? explicitValues.get(ee) : ee.getDefaultValue());
     }
     return m.isEmpty() ? emptySequencedMap() : unmodifiableSequencedMap(m);
+  }
+
+  /**
+   * Returns {@code true} if and only if the supplied {@link Collection} of {@link AnnotationMirror}s contains an {@link
+   * AnnotationMirror} that is {@linkplain #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate) the same} as
+   * the supplied {@link AnnotationMirror}.
+   *
+   * @param c a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
+   *
+   * @param a a non-{@code null} {@link AnnotationMirror}
+   *
+   * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an
+   * annotation element, is to be included in comparison operations; may be {@code null} in which case it is as if
+   * {@code e -> true} were supplied instead
+   *
+   * @return {@code true} if and only if the supplied {@link Collection} of {@link AnnotationMirror}s contains an {@link
+   * AnnotationMirror} that is {@linkplain #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate) the same} as
+   * the supplied {@link AnnotationMirror}
+   *
+   * @exception NullPointerException if {@code c} or {@code a} is {@code null}
+   *
+   * @see #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate)
+   */
+  public static final boolean contains(final Collection<? extends AnnotationMirror> c,
+                                       final AnnotationMirror a,
+                                       final Predicate<? super ExecutableElement> p) {
+    if (c.isEmpty()) {
+      return false;
+    }
+    for (final AnnotationMirror ca : c) {
+      if (sameAnnotation(ca, a, p)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Returns {@code true} if and only if {@code c0} contains {@linkplain #sameAnnotation(AnnotationMirror,
+   * AnnotationMirror, Predicate) the same} {@link AnnotationMirror}s as are found in {@code c1},
+   *
+   * @param c0 a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
+   *
+   * @param c1 a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
+   *
+   * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an
+   * annotation element, is to be included in comparison operations; may be {@code null} in which case it is as if
+   * {@code e -> true} were supplied instead
+   *
+   * @return {@code true} if and only if {@code c0} contains {@linkplain #sameAnnotation(AnnotationMirror,
+   * AnnotationMirror, Predicate) the same} {@link AnnotationMirror}s as are found in {@code c1}
+   *
+   * @exception NullPointerException if either {@code c0} or {@code c1} is {@code null}
+   *
+   * @see #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate)
+   */
+  public static final boolean containsAll(final Collection<? extends AnnotationMirror> c0,
+                                          final Collection<? extends AnnotationMirror> c1,
+                                          final Predicate<? super ExecutableElement> p) {
+    if (c0.size() < c1.size()) {
+      return false;
+    }
+    OUTER_LOOP:
+    for (final AnnotationMirror a0 : c0) {
+      for (final AnnotationMirror a1 : c1) {
+        if (sameAnnotation(a0, a1, p)) {
+          continue OUTER_LOOP;
+        }
+      }
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -275,6 +345,44 @@ public final class AnnotationMirrors {
       }
     }
     return null;
+  }
+
+  /**
+   * An <strong>experimental</strong> method that returns a hashcode for an {@link AnnotationMirror} according as much
+   * as possible to the rules described in the {@link java.lang.annotation.Annotation#hashCode()} contract.
+   *
+   * @param a an {@link AnnotationMirror} for which a hashcode should be computed; may be {@code null} in which case
+   * {@code 0} will be returned
+   *
+   * @return a hashcode for the supplied {@link AnnotationMirror} computed according to the rules described in the
+   * {@link java.lang.annotation.Annotation#hashCode()} contract
+   *
+   * @see #hashCode(AnnotationMirror, Predicate)
+   *
+   * @see java.lang.annotation.Annotation#hashCode()
+   */
+  public static final int hashCode(final AnnotationMirror a) {
+    return hashCode(a, null);
+  }
+
+  /**
+   * An <strong>experimental</strong> method that returns a hashcode for an {@link AnnotationMirror} according as much
+   * as possible to the rules described in the {@link java.lang.annotation.Annotation#hashCode()} contract.
+   *
+   * @param a an {@link AnnotationMirror} for which a hashcode should be computed; may be {@code null} in which case
+   * {@code 0} will be returned
+   *
+   * @param p a {@link Predicate} that accepts a (non-{@code null}) {@link ExecutableElement} representing an annotation
+   * element and returns {@code true} if and only if the element should be included; may be {@code null} in which case a
+   * {@link Predicate} semantically identical to {@code ee -> true} will be used instead
+   *
+   * @return a hashcode for the supplied {@link AnnotationMirror} computed according to the rules described in the
+   * {@link java.lang.annotation.Annotation#hashCode()} contract
+   *
+   * @see java.lang.annotation.Annotation#hashCode()
+   */
+  public static final int hashCode(final AnnotationMirror a, final Predicate<? super ExecutableElement> p) {
+    return a == null ? 0 : new AnnotationValueHashcodeVisitor().visitAnnotation(a, p == null ? ee -> true : p).intValue();
   }
 
   /**
@@ -383,7 +491,7 @@ public final class AnnotationMirrors {
    * @see #sameAnnotation(AnnotationMirror, AnnotationMirror)
    */
   public static final boolean sameAnnotation(final AnnotationMirror am0, final AnnotationMirror am1) {
-    return sameAnnotation(am0, am1, x -> true);
+    return sameAnnotation(am0, am1, null);
   }
 
   /**
@@ -395,60 +503,57 @@ public final class AnnotationMirrors {
    *
    * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an
    * annotation interface element, is to be included in the computation; may be {@code null} in which case it is as if
-   * {@code ()-> true} were supplied instead
+   * {@code e -> true} were supplied instead
    *
    * @return {@code true} if the supplied {@link AnnotationMirror}s represent the same (underlying, otherwise opaque)
    * annotation; {@code false} otherwise
    *
    * @see SameAnnotationValueVisitor
    *
+   * @see SameAnnotationValueVisitor#visitAnnotation(AnnotationMirror, Object)
+   *
    * @see #allAnnotationValues(AnnotationMirror)
    */
   public static final boolean sameAnnotation(final AnnotationMirror am0,
                                              final AnnotationMirror am1,
-                                             Predicate<? super ExecutableElement> p) {
-    if (am0 == am1) {
-      return true;
-    } else if (am0 == null || am1 == null) {
-      return false;
-    }
-    final QualifiedNameable qn0 = (QualifiedNameable)am0.getAnnotationType().asElement();
-    final QualifiedNameable qn1 = (QualifiedNameable)am1.getAnnotationType().asElement();
-    if (qn0 != qn1 && !qn0.getQualifiedName().contentEquals(qn1.getQualifiedName())) {
-      return false;
-    }
-    final SequencedMap<ExecutableElement, AnnotationValue> m0 = allAnnotationValues(am0);
-    final SequencedMap<ExecutableElement, AnnotationValue> m1 = allAnnotationValues(am1);
-    if (m0 == m1) {
-      // Unlikely, but hey
-      return true;
-    } else if (m0.size() != m1.size()) {
-      return false;
-    }
-    if (p == null) {
-      p = AnnotationMirrors::returnTrue;
-    }
-    final Iterator<Entry<ExecutableElement, AnnotationValue>> i0 = m0.entrySet().iterator();
-    final Iterator<Entry<ExecutableElement, AnnotationValue>> i1 = m1.entrySet().iterator();
-    while (i0.hasNext()) {
-      final Entry<ExecutableElement, AnnotationValue> e0 = i0.next();
-      final Entry<ExecutableElement, AnnotationValue> e1 = i1.next();
-      final ExecutableElement ee0 = e0.getKey();
-      if (p.test(ee0) &&
-          (!e0.getKey().getSimpleName().contentEquals(e1.getKey().getSimpleName()) ||
-           !sameAnnotationValueVisitor.visit(e0.getValue(), e1.getValue().getValue()))) {
-        return false;
-      }
-    }
-    return !i1.hasNext();
+                                             final Predicate<? super ExecutableElement> p) {
+    return am0 == am1 || new SameAnnotationValueVisitor(p).visitAnnotation(am0, am1);
   }
 
   /**
-   * Returns a non-{@code null}, sequential, {@link Stream} that traverses the supplied {@link AnnotatedConstruct}'s
+   * Returns {@code true} if {@code c0} has all the {@linkplain #sameAnnotation(AnnotationMirror, AnnotationMirror,
+   * Predicate) same annotations} as {@code c1}, and if {@code c1} has all the {@linkplain
+   * #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate) same annotations} as {@code c0}.
+   *
+   * @param c0 a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
+   *
+   * @param c1 a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
+   *
+   * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an
+   * annotation interface element, is to be included in the computation; may be {@code null} in which case it is as if
+   * {@code e -> true} were supplied instead
+   *
+   * @return {@code true} if {@code c0} has all the {@linkplain #sameAnnotation(AnnotationMirror, AnnotationMirror,
+   * Predicate) same annotations} as {@code c1}, and if {@code c1} has all the {@linkplain
+   * #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate) same annotations} as {@code c0}
+   *
+   * @exception NullPointerException if either {@code c0} or {@code c1} is {@code null}
+   *
+   * @see #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate)
+   */
+  public static final boolean sameAnnotations(final Collection<? extends AnnotationMirror> c0,
+                                              final Collection<? extends AnnotationMirror> c1,
+                                              final Predicate<? super ExecutableElement> p) {
+    return c0.size() == c1.size() && containsAll(c0, c1, p) && containsAll(c1, c0, p);
+  }
+
+  /**
+   * Returns a non-{@code null}, sequential {@link Stream} that traverses the supplied {@link AnnotatedConstruct}'s
    * {@linkplain AnnotatedConstruct#getAnnotationMirrors() annotations}, and their (meta-) annotations, in breadth-first
    * order.
    *
-   * <p>Cycles are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror)} method.</p>
+   * <p>Cycles and duplicates are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror)}
+   * method. Consequently the returned {@link Stream} yields only semantically distinct elements.</p>
    *
    * @param ac an {@link AnnotatedConstruct}; must not be {@code null}
    *
@@ -463,18 +568,18 @@ public final class AnnotationMirrors {
   }
 
   /**
-   * Returns a non-{@code null}, sequential, {@link Stream} that traverses the supplied {@link AnnotatedConstruct}'s
+   * Returns a non-{@code null}, sequential {@link Stream} that traverses the supplied {@link AnnotatedConstruct}'s
    * {@linkplain AnnotatedConstruct#getAnnotationMirrors() annotations}, and their (meta-) annotations, in breadth-first
    * order.
    *
    * <p>Cycles and duplicates are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror,
-   * Predicate)} method.</p>
+   * Predicate)} method. Consequently the returned {@link Stream} yields only semantically distinct elements.</p>
    *
    * @param ac an {@link AnnotatedConstruct}; must not be {@code null}
    *
    * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an
    * annotation interface element, is to be included in comparison operations; may be {@code null} in which case it is
-   * as if {@code ()-> true} were supplied instead
+   * as if {@code e -> true} were supplied instead
    *
    * @return a non-{@code null} {@link Stream} of {@link AnnotationMirror}s
    *
@@ -490,7 +595,7 @@ public final class AnnotationMirrors {
   }
 
   /**
-   * Returns a non-{@code null}, sequential, {@link Stream} that traverses the supplied {@link AnnotationMirror}s, and
+   * Returns a non-{@code null}, sequential {@link Stream} that traverses the supplied {@link AnnotationMirror}s, and
    * their (meta-) annotations, in breadth-first order.
    *
    * <p>Cycles and duplicates are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror)}
@@ -509,7 +614,7 @@ public final class AnnotationMirrors {
   }
 
   /**
-   * Returns a non-{@code null}, sequential, {@link Stream} that traverses the supplied {@link AnnotationMirror}s, and
+   * Returns a non-{@code null}, sequential {@link Stream} that traverses the supplied {@link AnnotationMirror}s, and
    * their (meta-) annotations, in breadth-first order.
    *
    * <p>Cycles and duplicates are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror,
@@ -519,7 +624,7 @@ public final class AnnotationMirrors {
    *
    * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an
    * annotation element, is to be included in comparison operations; may be {@code null} in which case it is as if
-   * {@code ()-> true} were supplied instead
+   * {@code e -> true} were supplied instead
    *
    * @return a non-{@code null} {@link Stream} of (distinct) {@link AnnotationMirror}s
    *
@@ -567,7 +672,8 @@ public final class AnnotationMirrors {
    * {@linkplain AnnotatedConstruct#getAnnotationMirrors() annotations}, and their (meta-) annotations, in depth-first
    * order.
    *
-   * <p>Cycles are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror)} method.</p>
+   * <p>Cycles and duplicates are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror)}
+   * method. Consequently the returned {@link Stream} yields only semantically distinct elements.</p>
    *
    * @param ac an {@link AnnotatedConstruct}; must not be {@code null}
    *
@@ -588,16 +694,16 @@ public final class AnnotationMirrors {
    * {@linkplain AnnotatedConstruct#getAnnotationMirrors() annotations}, and their (meta-) annotations, in depth-first
    * order.
    *
-   * <p>Cycles and duplicates are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate)}
-   * method.</p>
+   * <p>Cycles and duplicates are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror,
+   * Predicate)} method. Consequently the returned {@link Stream} yields only semantically distinct elements.</p>
    *
    * @param ac an {@link AnnotatedConstruct}; must not be {@code null}
    *
    * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an
    * annotation element, is to be included in comparison operations; may be {@code null} in which case it is as if
-   * {@code ()-> true} were supplied instead
+   * {@code e -> true} were supplied instead
    *
-   * @return a non-{@code null} {@link Stream} of {@link AnnotationMirror}s
+   * @return a non-{@code null}, sequential {@link Stream} of {@link AnnotationMirror}s
    *
    * @exception NullPointerException if {@code ac} is {@code null}
    *
@@ -613,11 +719,11 @@ public final class AnnotationMirrors {
    * their (meta-) annotations, in depth-first order.
    *
    * <p>Cycles and duplicates are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror)}
-   * method.</p>
+   * method. Consequently the returned {@link Stream} yields only semantically distinct elements.</p>
    *
    * @param ams a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
    *
-   * @return a non-{@code null} {@link Stream} of {@link AnnotationMirror}s
+   * @return a non-{@code null}, seqwuential {@link Stream} of {@link AnnotationMirror}s
    *
    * @exception NullPointerException if {@code ams} is {@code null}
    *
@@ -634,15 +740,15 @@ public final class AnnotationMirrors {
    * their (meta-) annotations, in depth-first order.
    *
    * <p>Cycles and duplicates are avoided via usage of the {@link #sameAnnotation(AnnotationMirror, AnnotationMirror,
-   * Predicate)} method.</p>
+   * Predicate)} method. Consequently the returned {@link Stream} yields only semantically distinct elements.</p>
    *
    * @param ams a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
    *
    * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an
    * annotation element, is to be included in comparison operations; may be {@code null} in which case it is as if
-   * {@code ()-> true} were supplied instead
+   * {@code e -> true} were supplied instead
    *
-   * @return a non-{@code null} {@link Stream} of {@link AnnotationMirror}s
+   * @return a non-{@code null}, sequential {@link Stream} of {@link AnnotationMirror}s
    *
    * @exception NullPointerException if {@code ams} is {@code null}
    *

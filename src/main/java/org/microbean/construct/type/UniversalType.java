@@ -66,6 +66,25 @@ public final class UniversalType
              UnionType,
              WildcardType {
 
+
+  /*
+   * Constructors.
+   */
+
+
+  /**
+   * Creates a new {@link UniversalType} that is a copy of the supplied {@link UniversalType}.
+   *
+   * @param ut a non-{@code null} {@link UniversalType}
+   *
+   * @exception NullPointerException if {@code ut} is {@code null}
+   *
+   * @see #clone()
+   */
+  public UniversalType(final UniversalType ut) {
+    super(ut);
+  }
+  
   /**
    * Creates a new {@link UniversalType}.
    *
@@ -78,7 +97,6 @@ public final class UniversalType
    *
    * @see #delegate()
    */
-  @SuppressWarnings("try")
   public UniversalType(final TypeMirror delegate, final PrimordialDomain domain) {
     this(null, delegate, domain);
   }
@@ -104,6 +122,12 @@ public final class UniversalType
                        final PrimordialDomain domain) {
     super(annotations, delegate, domain);
   }
+  
+
+  /*
+   * Instance methods.
+   */
+
 
   @Override // TypeMirror
   public final <R, P> R accept(final TypeVisitor<R, P> v, final P p) {
@@ -142,6 +166,16 @@ public final class UniversalType
     case TYPEVAR  -> UniversalElement.of(((TypeVariable)this.delegate()).asElement(), this.domain());
     default -> null;
     };
+  }
+
+  /**
+   * Returns a non-{@code null}, determinate, shallow copy of this {@link UniversalType}.
+   *
+   * @return a non-{@code null}, determinate, shallow copy of this {@link UniversalType}
+   */
+  @Override // UniversalConstruct (Cloneable)
+  public final UniversalType clone() {
+    return (UniversalType)super.clone();
   }
 
   /**
