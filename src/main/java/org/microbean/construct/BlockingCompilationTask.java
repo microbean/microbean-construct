@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024–2025 microBean™.
+ * Copyright © 2024–2026 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -170,7 +170,7 @@ final class BlockingCompilationTask extends CompletableFuture<ProcessingEnvironm
       options.add("-verbose");
     }
 
-    // Use an appropriate compiler-supplied thread-safe name table.
+    // Use an appropriate compiler-supplied name table. None are thread-safe, sadly.
     installNameTableOptions(options::add);
 
     // Propagate the current classpath to the compiler environment.
@@ -193,7 +193,7 @@ final class BlockingCompilationTask extends CompletableFuture<ProcessingEnvironm
                                                     moduleLocations),
                  diagnosticLogger,
                  options,
-                 List.of("java.lang.Deprecated"), // arbitrary, but is always read by the compiler no matter what so incurs no extra reads
+                 List.of("java.lang.Deprecated"), // arbitrary, but always read by the compiler no matter what so incurs no extra reads
                  null); // no compilation units; we're -proc:only
     task.setLocale(locale);
     task.addModules(additionalRootModuleNames);
@@ -252,6 +252,7 @@ final class BlockingCompilationTask extends CompletableFuture<ProcessingEnvironm
     return Collections.unmodifiableSet(additionalRootModuleNames);
   }
 
+  // (Invoked only by method reference.)
   private final void obtrudeException() {
     // Ideally we'd use CancellationException but see
     // https://github.com/openjdk/jdk/blob/jdk-25%2B3/src/java.base/share/classes/java/util/concurrent/CompletableFuture.java#L2210.

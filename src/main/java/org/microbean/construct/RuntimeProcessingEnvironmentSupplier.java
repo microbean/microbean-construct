@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024–2025 microBean™.
+ * Copyright © 2024–2026 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,6 +29,9 @@ import static java.lang.System.Logger.Level.ERROR;
 /**
  * A utility class that can {@linkplain #of() supply} a {@link ProcessingEnvironment} suitable for use at runtime.
  *
+ * <p>Most users should simply {@linkplain DefaultDomain#DefaultDomain() use an appropriate <code>DefaultDomain</code>}
+ * instead of working directly with instances of this class.</p>
+ *
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
  *
  * @see #get()
@@ -39,7 +42,7 @@ import static java.lang.System.Logger.Level.ERROR;
  *
  * @see ProcessingEnvironment
  *
- * @see Domain
+ * @see DefaultDomain#DefaultDomain()
  */
 public final class RuntimeProcessingEnvironmentSupplier implements AutoCloseable, Supplier<ProcessingEnvironment> {
 
@@ -103,9 +106,12 @@ public final class RuntimeProcessingEnvironmentSupplier implements AutoCloseable
    * <p><strong>{@link ProcessingEnvironment} instances are not guaranteed to be safe for concurrent use by multiple
    * threads.</strong></p>
    *
+   * <p>Most users should simply use an appropriate {@link DefaultDomain} instead of working directly with instances of
+   * this class.</p>
+   *
    * @return a non-{@code null} {@link ProcessingEnvironment}
    *
-   * @see Domain
+   * @see DefaultDomain#DefaultDomain()
    */
   @Override // Supplier<ProcessingEnvironment>
   public final ProcessingEnvironment get() {
@@ -139,11 +145,14 @@ public final class RuntimeProcessingEnvironmentSupplier implements AutoCloseable
   /**
    * Returns a non-{@code null} {@link RuntimeProcessingEnvironmentSupplier}.
    *
+   * <p>Most users should simply use an appropriate {@link DefaultDomain} instead of working directly with instances of
+   * this class.</p>
+   *
    * @return a non-{@code null} {@link RuntimeProcessingEnvironmentSupplier}
    *
    * @see ProcessingEnvironment
    *
-   * @see Domain
+   * @see DefaultDomain#DefaultDomain()
    */
   public static final RuntimeProcessingEnvironmentSupplier of() {
     return INSTANCE;

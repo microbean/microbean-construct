@@ -20,6 +20,7 @@ import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -64,7 +65,7 @@ import static java.util.Objects.requireNonNull;
  * @see UniversalType
  */
 public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct>
-  implements AnnotatedConstruct, Constable
+  implements AnnotatedConstruct, Cloneable, Constable
   permits UniversalElement, UniversalType {
 
 
@@ -100,7 +101,27 @@ public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct>
 
 
   /**
-   * Creates a new {@link AnnotatedConstruct}.
+   * Creates a new {@link UniversalConstruct} that is a copy of the supplied {@link UniversalConstruct}.
+   *
+   * @param uc a non-{@code null} {@link UniversalConstruct}
+   *
+   * @exception NullPointerException if {@code uc} is {@code null}
+   *
+   * @see #clone()
+   */
+  protected UniversalConstruct(final UniversalConstruct<T> uc) {
+    super();
+    this.domain = uc.domain;
+    this.delegateSupplier = uc.delegateSupplier;
+    this.s = uc.s;
+    final Collection<? extends AnnotationMirror> annotations = uc.annotations; // volatile read
+    if (annotations != null) {
+      this.annotations = new CopyOnWriteArrayList<>(annotations);
+    }
+  }
+
+  /**
+   * Creates a new {@link UniversalConstruct}.
    *
    * @param delegate a delegate to which operations are delegated; must not be {@code null}
    *
@@ -116,7 +137,7 @@ public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct>
   }
 
   /**
-   * Creates a new {@link AnnotatedConstruct}.
+   * Creates a new {@link UniversalConstruct}.
    *
    * @param annotations a {@link List} of {@link AnnotationMirror} instances representing annotations, often
    * synthetic, that this {@link UniversalConstruct} should bear; may be {@code null} in which case only the annotations
@@ -163,6 +184,21 @@ public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct>
    * Instance methods.
    */
 
+
+  @Override // Cloneable
+  @SuppressWarnings("unchecked")
+  protected UniversalConstruct<T> clone() {
+    final UniversalConstruct<T> clone;
+    try {
+      clone = (UniversalConstruct<T>)super.clone();
+    } catch (final CloneNotSupportedException e) {
+      throw new AssertionError(e.getMessage(), e);
+    }
+    if (clone.annotations != null) {
+      clone.annotations = new CopyOnWriteArrayList<>(this.getAnnotationMirrors());
+    }
+    return clone;
+  }
 
   /**
    * Returns the delegate to which operations are delegated.
@@ -299,7 +335,6 @@ public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct>
       }
     }
     return null;
-
   }
 
   /**

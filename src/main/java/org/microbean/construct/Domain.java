@@ -66,10 +66,10 @@ import static java.util.Objects.requireNonNull;
 import static javax.lang.model.type.TypeKind.DECLARED;
 
 /**
- * A representation of a domain of valid Java constructs.
+ * A {@link PrimordialDomain} that represents a domain of valid Java language constructs.
  *
- * <p>A <dfn id="domain">domain</dfn> is a set of valid Java <a href="#construct">constructs</a>. A {@link Domain}
- * provides access to a domain and its members.</p>
+ * <p>A <dfn id="domain">domain</dfn> is a set of valid Java language <a href="#construct">constructs</a>. A {@link
+ * Domain} provides access to a domain and its members.</p>
  *
  * <p>A Java <dfn id="construct">construct</dfn> is either a <a href="#type">type</a> or an <a
  * href="#element">element</a>.</p>
@@ -90,6 +90,8 @@ import static javax.lang.model.type.TypeKind.DECLARED;
  * @author <a href="https://about.me/lairdnelson" target="_top">Laird Nelson</a>
  *
  * @see PrimordialDomain
+ *
+ * @see DefaultDomain
  *
  * @see <a href="https://bugs.openjdk.org/browse/JDK-8055219">JDK-8055219</a>
  */
