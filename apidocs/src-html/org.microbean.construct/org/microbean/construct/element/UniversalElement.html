@@ -78,396 +78,440 @@
 <span class="source-line-no">065</span><span id="line-65">             TypeParameterElement,</span>
 <span class="source-line-no">066</span><span id="line-66">             VariableElement {</span>
 <span class="source-line-no">067</span><span id="line-67"></span>
-<span class="source-line-no">068</span><span id="line-68">  // volatile not needed</span>
-<span class="source-line-no">069</span><span id="line-69">  private Supplier&lt;? extends List&lt;? extends UniversalElement&gt;&gt; enclosedElementsSupplier;</span>
-<span class="source-line-no">070</span><span id="line-70"></span>
-<span class="source-line-no">071</span><span id="line-71">  /**</span>
-<span class="source-line-no">072</span><span id="line-72">   * Creates a new {@link UniversalElement}.</span>
-<span class="source-line-no">073</span><span id="line-73">   *</span>
-<span class="source-line-no">074</span><span id="line-74">   * @param delegate an {@link Element} to which operations will be delegated; must not be {@code null}</span>
-<span class="source-line-no">075</span><span id="line-75">   *</span>
-<span class="source-line-no">076</span><span id="line-76">   * @param domain a {@link PrimordialDomain} from which the supplied {@code delegate} is presumed to have originated;</span>
-<span class="source-line-no">077</span><span id="line-77">   * must not be {@code null}</span>
-<span class="source-line-no">078</span><span id="line-78">   *</span>
-<span class="source-line-no">079</span><span id="line-79">   * @exception NullPointerException if either argument is {@code null}</span>
+<span class="source-line-no">068</span><span id="line-68"></span>
+<span class="source-line-no">069</span><span id="line-69">  /*</span>
+<span class="source-line-no">070</span><span id="line-70">   * Instance fields.</span>
+<span class="source-line-no">071</span><span id="line-71">   */</span>
+<span class="source-line-no">072</span><span id="line-72"></span>
+<span class="source-line-no">073</span><span id="line-73"></span>
+<span class="source-line-no">074</span><span id="line-74">  // volatile not needed</span>
+<span class="source-line-no">075</span><span id="line-75">  private Supplier&lt;? extends List&lt;? extends UniversalElement&gt;&gt; enclosedElementsSupplier;</span>
+<span class="source-line-no">076</span><span id="line-76"></span>
+<span class="source-line-no">077</span><span id="line-77"></span>
+<span class="source-line-no">078</span><span id="line-78">  /*</span>
+<span class="source-line-no">079</span><span id="line-79">   * Constructors.</span>
 <span class="source-line-no">080</span><span id="line-80">   */</span>
-<span class="source-line-no">081</span><span id="line-81">  public UniversalElement(final Element delegate, final PrimordialDomain domain) {</span>
-<span class="source-line-no">082</span><span id="line-82">    this(null, delegate, domain);</span>
-<span class="source-line-no">083</span><span id="line-83">  }</span>
-<span class="source-line-no">084</span><span id="line-84"></span>
-<span class="source-line-no">085</span><span id="line-85">  /**</span>
-<span class="source-line-no">086</span><span id="line-86">   * Creates a new {@link UniversalElement}.</span>
+<span class="source-line-no">081</span><span id="line-81"></span>
+<span class="source-line-no">082</span><span id="line-82"></span>
+<span class="source-line-no">083</span><span id="line-83">  /**</span>
+<span class="source-line-no">084</span><span id="line-84">   * Creates a new {@link UniversalElement} that is a copy of the supplied {@link UniversalElement}.</span>
+<span class="source-line-no">085</span><span id="line-85">   *</span>
+<span class="source-line-no">086</span><span id="line-86">   * @param ue a non-{@code null} {@link UniversalElement}</span>
 <span class="source-line-no">087</span><span id="line-87">   *</span>
-<span class="source-line-no">088</span><span id="line-88">   * @param annotations a {@link List} of {@link AnnotationMirror} instances representing annotations, often {@linkplain</span>
-<span class="source-line-no">089</span><span id="line-89">   * SyntheticAnnotationMirror synthetic}, that this {@link UniversalElement} should bear; may be {@code null} in which</span>
-<span class="source-line-no">090</span><span id="line-90">   * case only the annotations from the supplied {@code delegate} will be used</span>
-<span class="source-line-no">091</span><span id="line-91">   *</span>
-<span class="source-line-no">092</span><span id="line-92">   * @param delegate an {@link Element} to which operations will be delegated; must not be {@code null}</span>
-<span class="source-line-no">093</span><span id="line-93">   *</span>
-<span class="source-line-no">094</span><span id="line-94">   * @param domain a {@link PrimordialDomain} from which the supplied {@code delegate} is presumed to have originated;</span>
-<span class="source-line-no">095</span><span id="line-95">   * must not be {@code null}</span>
-<span class="source-line-no">096</span><span id="line-96">   *</span>
-<span class="source-line-no">097</span><span id="line-97">   * @exception NullPointerException if any argument is {@code null}</span>
-<span class="source-line-no">098</span><span id="line-98">   *</span>
-<span class="source-line-no">099</span><span id="line-99">   * @see #delegate()</span>
-<span class="source-line-no">100</span><span id="line-100">   */</span>
-<span class="source-line-no">101</span><span id="line-101">  @SuppressWarnings("try")</span>
-<span class="source-line-no">102</span><span id="line-102">  private UniversalElement(final List&lt;? extends AnnotationMirror&gt; annotations,</span>
-<span class="source-line-no">103</span><span id="line-103">                           final Element delegate,</span>
-<span class="source-line-no">104</span><span id="line-104">                           final PrimordialDomain domain) {</span>
-<span class="source-line-no">105</span><span id="line-105">    super(annotations, delegate, domain);</span>
-<span class="source-line-no">106</span><span id="line-106">    this.enclosedElementsSupplier = () -&gt; {</span>
-<span class="source-line-no">107</span><span id="line-107">      final List&lt;? extends UniversalElement&gt; ees;</span>
-<span class="source-line-no">108</span><span id="line-108">      try (var lock = domain.lock()) {</span>
-<span class="source-line-no">109</span><span id="line-109">        ees = this.wrap(this.delegate().getEnclosedElements());</span>
-<span class="source-line-no">110</span><span id="line-110">        this.enclosedElementsSupplier = () -&gt; ees;</span>
-<span class="source-line-no">111</span><span id="line-111">      }</span>
-<span class="source-line-no">112</span><span id="line-112">      return ees;</span>
-<span class="source-line-no">113</span><span id="line-113">    };</span>
-<span class="source-line-no">114</span><span id="line-114">  }</span>
-<span class="source-line-no">115</span><span id="line-115"></span>
-<span class="source-line-no">116</span><span id="line-116">  @Override // Element</span>
-<span class="source-line-no">117</span><span id="line-117">  public final &lt;R, P&gt; R accept(final ElementVisitor&lt;R, P&gt; v, final P p) {</span>
-<span class="source-line-no">118</span><span id="line-118">    return switch (this.getKind()) {</span>
-<span class="source-line-no">119</span><span id="line-119">    case</span>
-<span class="source-line-no">120</span><span id="line-120">      ANNOTATION_TYPE,</span>
-<span class="source-line-no">121</span><span id="line-121">      CLASS,</span>
-<span class="source-line-no">122</span><span id="line-122">      ENUM,</span>
-<span class="source-line-no">123</span><span id="line-123">      INTERFACE,</span>
-<span class="source-line-no">124</span><span id="line-124">      RECORD                 -&gt; v.visitType(this, p);</span>
-<span class="source-line-no">125</span><span id="line-125">    case TYPE_PARAMETER      -&gt; v.visitTypeParameter(this, p);</span>
-<span class="source-line-no">126</span><span id="line-126">    case</span>
-<span class="source-line-no">127</span><span id="line-127">      BINDING_VARIABLE,</span>
-<span class="source-line-no">128</span><span id="line-128">      ENUM_CONSTANT,</span>
-<span class="source-line-no">129</span><span id="line-129">      EXCEPTION_PARAMETER,</span>
-<span class="source-line-no">130</span><span id="line-130">      FIELD,</span>
-<span class="source-line-no">131</span><span id="line-131">      LOCAL_VARIABLE,</span>
-<span class="source-line-no">132</span><span id="line-132">      PARAMETER,</span>
-<span class="source-line-no">133</span><span id="line-133">      RESOURCE_VARIABLE      -&gt; v.visitVariable(this, p);</span>
-<span class="source-line-no">134</span><span id="line-134">    case RECORD_COMPONENT    -&gt; v.visitRecordComponent(this, p);</span>
-<span class="source-line-no">135</span><span id="line-135">    case</span>
-<span class="source-line-no">136</span><span id="line-136">      CONSTRUCTOR,</span>
-<span class="source-line-no">137</span><span id="line-137">      INSTANCE_INIT,</span>
-<span class="source-line-no">138</span><span id="line-138">      METHOD,</span>
-<span class="source-line-no">139</span><span id="line-139">      STATIC_INIT            -&gt; v.visitExecutable(this, p);</span>
-<span class="source-line-no">140</span><span id="line-140">    case PACKAGE             -&gt; v.visitPackage(this, p);</span>
-<span class="source-line-no">141</span><span id="line-141">    case MODULE              -&gt; v.visitModule(this, p);</span>
-<span class="source-line-no">142</span><span id="line-142">    case OTHER               -&gt; v.visitUnknown(this, p);</span>
-<span class="source-line-no">143</span><span id="line-143">    };</span>
-<span class="source-line-no">144</span><span id="line-144">  }</span>
-<span class="source-line-no">145</span><span id="line-145"></span>
-<span class="source-line-no">146</span><span id="line-146">  @Override // Element</span>
-<span class="source-line-no">147</span><span id="line-147">  public final UniversalType asType() {</span>
-<span class="source-line-no">148</span><span id="line-148">    return UniversalType.of(this.delegate().asType(), this.domain());</span>
-<span class="source-line-no">149</span><span id="line-149">  }</span>
-<span class="source-line-no">150</span><span id="line-150"></span>
-<span class="source-line-no">151</span><span id="line-151">  /**</span>
-<span class="source-line-no">152</span><span id="line-152">   * Returns {@code true} if and only if this {@link UniversalElement} is a &lt;dfn&gt;generic class declaration&lt;/dfn&gt;.</span>
-<span class="source-line-no">153</span><span id="line-153">   *</span>
-<span class="source-line-no">154</span><span id="line-154">   * @return {@code true} if and only if this {@link UniversalElement} is a &lt;dfn&gt;generic class declaration&lt;/dfn&gt;</span>
-<span class="source-line-no">155</span><span id="line-155">   *</span>
-<span class="source-line-no">156</span><span id="line-156">   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-8.html#jls-8.1.2 Java Language Specification, section</span>
-<span class="source-line-no">157</span><span id="line-157">   * 8.1.2</span>
-<span class="source-line-no">158</span><span id="line-158">   */</span>
-<span class="source-line-no">159</span><span id="line-159">  public final boolean generic() {</span>
-<span class="source-line-no">160</span><span id="line-160">    return switch (this.getKind()) {</span>
-<span class="source-line-no">161</span><span id="line-161">    case CLASS, CONSTRUCTOR, ENUM, INTERFACE, METHOD, RECORD -&gt; !this.getTypeParameters().isEmpty();</span>
-<span class="source-line-no">162</span><span id="line-162">    default -&gt; false;</span>
-<span class="source-line-no">163</span><span id="line-163">    };</span>
-<span class="source-line-no">164</span><span id="line-164">  }</span>
-<span class="source-line-no">165</span><span id="line-165"></span>
-<span class="source-line-no">166</span><span id="line-166">  @Override // RecordComponentElement</span>
-<span class="source-line-no">167</span><span id="line-167">  public final UniversalElement getAccessor() {</span>
-<span class="source-line-no">168</span><span id="line-168">    return switch (this.getKind()) {</span>
-<span class="source-line-no">169</span><span id="line-169">    case RECORD_COMPONENT -&gt; this.wrap(((RecordComponentElement)this.delegate()).getAccessor());</span>
-<span class="source-line-no">170</span><span id="line-170">    default -&gt; null;</span>
-<span class="source-line-no">171</span><span id="line-171">    };</span>
-<span class="source-line-no">172</span><span id="line-172">  }</span>
-<span class="source-line-no">173</span><span id="line-173"></span>
-<span class="source-line-no">174</span><span id="line-174">  @Override // TypeParameterElement</span>
-<span class="source-line-no">175</span><span id="line-175">  public final List&lt;? extends UniversalType&gt; getBounds() {</span>
-<span class="source-line-no">176</span><span id="line-176">    return switch (this.getKind()) {</span>
-<span class="source-line-no">177</span><span id="line-177">    case TYPE_PARAMETER -&gt; UniversalType.of(((TypeParameterElement)this.delegate()).getBounds(), this.domain());</span>
-<span class="source-line-no">178</span><span id="line-178">    default -&gt; List.of();</span>
-<span class="source-line-no">179</span><span id="line-179">    };</span>
-<span class="source-line-no">180</span><span id="line-180">  }</span>
-<span class="source-line-no">181</span><span id="line-181"></span>
-<span class="source-line-no">182</span><span id="line-182">  @Override // VariableElement</span>
-<span class="source-line-no">183</span><span id="line-183">  @SuppressWarnings("try")</span>
-<span class="source-line-no">184</span><span id="line-184">  public final Object getConstantValue() {</span>
-<span class="source-line-no">185</span><span id="line-185">    return switch (this.getKind()) {</span>
-<span class="source-line-no">186</span><span id="line-186">    case BINDING_VARIABLE, ENUM_CONSTANT, EXCEPTION_PARAMETER, FIELD, LOCAL_VARIABLE, PARAMETER, RESOURCE_VARIABLE -&gt; {</span>
-<span class="source-line-no">187</span><span id="line-187">      try (var lock = this.domain().lock()) {</span>
-<span class="source-line-no">188</span><span id="line-188">        // There is a LOT going on here; take the domain lock for safety. See</span>
-<span class="source-line-no">189</span><span id="line-189">        // https://github.com/openjdk/jdk/blob/jdk-25%2B3/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Symbol.java#L1813-L1829</span>
-<span class="source-line-no">190</span><span id="line-190">        yield</span>
-<span class="source-line-no">191</span><span id="line-191">          ((VariableElement)this.delegate()).getConstantValue(); // will be a boxed type or String</span>
-<span class="source-line-no">192</span><span id="line-192">      }</span>
-<span class="source-line-no">193</span><span id="line-193">    }</span>
-<span class="source-line-no">194</span><span id="line-194">    default -&gt; null;</span>
-<span class="source-line-no">195</span><span id="line-195">    };</span>
-<span class="source-line-no">196</span><span id="line-196">  }</span>
-<span class="source-line-no">197</span><span id="line-197"></span>
-<span class="source-line-no">198</span><span id="line-198">  @Override // ExecutableElement</span>
-<span class="source-line-no">199</span><span id="line-199">  public final UniversalAnnotationValue getDefaultValue() {</span>
-<span class="source-line-no">200</span><span id="line-200">    return switch (this.getKind()) {</span>
-<span class="source-line-no">201</span><span id="line-201">      // See</span>
-<span class="source-line-no">202</span><span id="line-202">      // https://github.com/openjdk/jdk/blob/jdk-25%2B3/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Symbol.java#L2287-L2290;</span>
-<span class="source-line-no">203</span><span id="line-203">      // no concurrent Name access so no lock needed</span>
-<span class="source-line-no">204</span><span id="line-204">    case METHOD -&gt; UniversalAnnotationValue.of(((ExecutableElement)this.delegate()).getDefaultValue(), this.domain());</span>
-<span class="source-line-no">205</span><span id="line-205">    default -&gt; null;</span>
-<span class="source-line-no">206</span><span id="line-206">    };</span>
-<span class="source-line-no">207</span><span id="line-207">  }</span>
-<span class="source-line-no">208</span><span id="line-208"></span>
-<span class="source-line-no">209</span><span id="line-209">  @Override // ModuleElement</span>
-<span class="source-line-no">210</span><span id="line-210">  public final List&lt;? extends UniversalDirective&gt; getDirectives() {</span>
-<span class="source-line-no">211</span><span id="line-211">    return switch (this.getKind()) {</span>
-<span class="source-line-no">212</span><span id="line-212">    case MODULE -&gt; UniversalDirective.of(((ModuleElement)this.delegate()).getDirectives(), this.domain());</span>
-<span class="source-line-no">213</span><span id="line-213">    default -&gt; List.of();</span>
-<span class="source-line-no">214</span><span id="line-214">    };</span>
-<span class="source-line-no">215</span><span id="line-215">  }</span>
-<span class="source-line-no">216</span><span id="line-216"></span>
-<span class="source-line-no">217</span><span id="line-217">  /*</span>
-<span class="source-line-no">218</span><span id="line-218">    java.lang.AssertionError: Filling jrt:/java.base/java/lang/String$CaseInsensitiveComparator.class during DirectoryFileObject[/modules/java.base:java/lang/Integer$IntegerCache.class]</span>
-<span class="source-line-no">219</span><span id="line-219">    at jdk.compiler/com.sun.tools.javac.util.Assert.error(Assert.java:162)</span>
-<span class="source-line-no">220</span><span id="line-220">    at jdk.compiler/com.sun.tools.javac.code.ClassFinder.fillIn(ClassFinder.java:366)</span>
-<span class="source-line-no">221</span><span id="line-221">    at jdk.compiler/com.sun.tools.javac.code.ClassFinder.complete(ClassFinder.java:302)</span>
-<span class="source-line-no">222</span><span id="line-222">    at jdk.compiler/com.sun.tools.javac.code.Symbol.complete(Symbol.java:687)</span>
-<span class="source-line-no">223</span><span id="line-223">    at jdk.compiler/com.sun.tools.javac.code.Symbol$ClassSymbol.complete(Symbol.java:1455)</span>
-<span class="source-line-no">224</span><span id="line-224">    at jdk.compiler/com.sun.tools.javac.code.Symbol.apiComplete(Symbol.java:693)</span>
-<span class="source-line-no">225</span><span id="line-225">    at jdk.compiler/com.sun.tools.javac.code.Symbol$TypeSymbol.getEnclosedElements(Symbol.java:864)</span>
-<span class="source-line-no">226</span><span id="line-226">    at jdk.compiler/com.sun.tools.javac.code.Symbol$ClassSymbol.getEnclosedElements(Symbol.java:1420)</span>
-<span class="source-line-no">227</span><span id="line-227">    at jdk.compiler/com.sun.tools.javac.code.Symbol$ClassSymbol.getEnclosedElements(Symbol.java:1264)</span>
-<span class="source-line-no">228</span><span id="line-228">    at org.microbean.construct@0.0.10-SNAPSHOT/org.microbean.construct.element.UniversalElement.getEnclosedElements(UniversalElement.java:195)</span>
-<span class="source-line-no">229</span><span id="line-229">  */</span>
-<span class="source-line-no">230</span><span id="line-230">  // See https://github.com/microbean/microbean-construct/issues/18</span>
-<span class="source-line-no">231</span><span id="line-231">  @Override // Element</span>
-<span class="source-line-no">232</span><span id="line-232">  public final List&lt;? extends UniversalElement&gt; getEnclosedElements() {</span>
-<span class="source-line-no">233</span><span id="line-233">    return this.enclosedElementsSupplier.get();</span>
-<span class="source-line-no">234</span><span id="line-234">  }</span>
-<span class="source-line-no">235</span><span id="line-235"></span>
-<span class="source-line-no">236</span><span id="line-236">  @Override // Element</span>
-<span class="source-line-no">237</span><span id="line-237">  public final UniversalElement getEnclosingElement() {</span>
-<span class="source-line-no">238</span><span id="line-238">    return this.wrap(this.delegate().getEnclosingElement());</span>
-<span class="source-line-no">239</span><span id="line-239">  }</span>
-<span class="source-line-no">240</span><span id="line-240"></span>
-<span class="source-line-no">241</span><span id="line-241">  @Override // TypeParameterElement</span>
-<span class="source-line-no">242</span><span id="line-242">  public final UniversalElement getGenericElement() {</span>
-<span class="source-line-no">243</span><span id="line-243">    return switch (this.getKind()) {</span>
-<span class="source-line-no">244</span><span id="line-244">    case TYPE_PARAMETER -&gt; this.wrap(((TypeParameterElement)this.delegate()).getGenericElement());</span>
-<span class="source-line-no">245</span><span id="line-245">    default -&gt; this.getEnclosingElement(); // illegal state</span>
-<span class="source-line-no">246</span><span id="line-246">    };</span>
-<span class="source-line-no">247</span><span id="line-247">  }</span>
-<span class="source-line-no">248</span><span id="line-248"></span>
-<span class="source-line-no">249</span><span id="line-249">  @Override // TypeElement</span>
-<span class="source-line-no">250</span><span id="line-250">  public final List&lt;? extends UniversalType&gt; getInterfaces() {</span>
-<span class="source-line-no">251</span><span id="line-251">    return switch (this.getKind()) {</span>
-<span class="source-line-no">252</span><span id="line-252">    case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD -&gt;</span>
-<span class="source-line-no">253</span><span id="line-253">      UniversalType.of(((TypeElement)this.delegate()).getInterfaces(), this.domain());</span>
-<span class="source-line-no">254</span><span id="line-254">    default -&gt; List.of();</span>
-<span class="source-line-no">255</span><span id="line-255">    };</span>
-<span class="source-line-no">256</span><span id="line-256">  }</span>
-<span class="source-line-no">257</span><span id="line-257"></span>
-<span class="source-line-no">258</span><span id="line-258">  @Override // Element</span>
-<span class="source-line-no">259</span><span id="line-259">  public final ElementKind getKind() {</span>
-<span class="source-line-no">260</span><span id="line-260">    return this.delegate().getKind();</span>
-<span class="source-line-no">261</span><span id="line-261">  }</span>
-<span class="source-line-no">262</span><span id="line-262"></span>
-<span class="source-line-no">263</span><span id="line-263">  @Override // Element</span>
-<span class="source-line-no">264</span><span id="line-264">  public final Set&lt;Modifier&gt; getModifiers() {</span>
-<span class="source-line-no">265</span><span id="line-265">    return this.delegate().getModifiers();</span>
-<span class="source-line-no">266</span><span id="line-266">  }</span>
-<span class="source-line-no">267</span><span id="line-267"></span>
-<span class="source-line-no">268</span><span id="line-268">  @Override // TypeElement</span>
-<span class="source-line-no">269</span><span id="line-269">  public final NestingKind getNestingKind() {</span>
-<span class="source-line-no">270</span><span id="line-270">    return switch (this.getKind()) {</span>
-<span class="source-line-no">271</span><span id="line-271">    case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD -&gt; ((TypeElement)this.delegate()).getNestingKind();</span>
-<span class="source-line-no">272</span><span id="line-272">    default -&gt; NestingKind.TOP_LEVEL; // illegal state</span>
-<span class="source-line-no">273</span><span id="line-273">    };</span>
-<span class="source-line-no">274</span><span id="line-274">  }</span>
-<span class="source-line-no">275</span><span id="line-275"></span>
-<span class="source-line-no">276</span><span id="line-276">  @Override // ExecutableElement</span>
-<span class="source-line-no">277</span><span id="line-277">  public final List&lt;? extends UniversalElement&gt; getParameters() {</span>
-<span class="source-line-no">278</span><span id="line-278">    return switch (this.getKind()) {</span>
-<span class="source-line-no">279</span><span id="line-279">    case CONSTRUCTOR, METHOD -&gt; this.wrap(((ExecutableElement)this.delegate()).getParameters());</span>
-<span class="source-line-no">280</span><span id="line-280">    default -&gt; List.of();</span>
-<span class="source-line-no">281</span><span id="line-281">    };</span>
-<span class="source-line-no">282</span><span id="line-282">  }</span>
-<span class="source-line-no">283</span><span id="line-283"></span>
-<span class="source-line-no">284</span><span id="line-284">  @Override // ModuleElement, PackageElement, TypeElement</span>
-<span class="source-line-no">285</span><span id="line-285">  @SuppressWarnings("try")</span>
-<span class="source-line-no">286</span><span id="line-286">  public final StringName getQualifiedName() {</span>
+<span class="source-line-no">088</span><span id="line-88">   * @exception NullPointerException if {@code uc} is {@code null}</span>
+<span class="source-line-no">089</span><span id="line-89">   *</span>
+<span class="source-line-no">090</span><span id="line-90">   * @see #clone()</span>
+<span class="source-line-no">091</span><span id="line-91">   */</span>
+<span class="source-line-no">092</span><span id="line-92">  public UniversalElement(final UniversalElement ue) {</span>
+<span class="source-line-no">093</span><span id="line-93">    super(ue);</span>
+<span class="source-line-no">094</span><span id="line-94">    this.enclosedElementsSupplier = ue.enclosedElementsSupplier;</span>
+<span class="source-line-no">095</span><span id="line-95">  }</span>
+<span class="source-line-no">096</span><span id="line-96"></span>
+<span class="source-line-no">097</span><span id="line-97">  /**</span>
+<span class="source-line-no">098</span><span id="line-98">   * Creates a new {@link UniversalElement}.</span>
+<span class="source-line-no">099</span><span id="line-99">   *</span>
+<span class="source-line-no">100</span><span id="line-100">   * @param delegate an {@link Element} to which operations will be delegated; must not be {@code null}</span>
+<span class="source-line-no">101</span><span id="line-101">   *</span>
+<span class="source-line-no">102</span><span id="line-102">   * @param domain a {@link PrimordialDomain} from which the supplied {@code delegate} is presumed to have originated;</span>
+<span class="source-line-no">103</span><span id="line-103">   * must not be {@code null}</span>
+<span class="source-line-no">104</span><span id="line-104">   *</span>
+<span class="source-line-no">105</span><span id="line-105">   * @exception NullPointerException if either argument is {@code null}</span>
+<span class="source-line-no">106</span><span id="line-106">   */</span>
+<span class="source-line-no">107</span><span id="line-107">  public UniversalElement(final Element delegate, final PrimordialDomain domain) {</span>
+<span class="source-line-no">108</span><span id="line-108">    this(null, delegate, domain);</span>
+<span class="source-line-no">109</span><span id="line-109">  }</span>
+<span class="source-line-no">110</span><span id="line-110"></span>
+<span class="source-line-no">111</span><span id="line-111">  /**</span>
+<span class="source-line-no">112</span><span id="line-112">   * Creates a new {@link UniversalElement}.</span>
+<span class="source-line-no">113</span><span id="line-113">   *</span>
+<span class="source-line-no">114</span><span id="line-114">   * @param annotations a {@link List} of {@link AnnotationMirror} instances representing annotations, often {@linkplain</span>
+<span class="source-line-no">115</span><span id="line-115">   * SyntheticAnnotationMirror synthetic}, that this {@link UniversalElement} should bear; may be {@code null} in which</span>
+<span class="source-line-no">116</span><span id="line-116">   * case only the annotations from the supplied {@code delegate} will be used</span>
+<span class="source-line-no">117</span><span id="line-117">   *</span>
+<span class="source-line-no">118</span><span id="line-118">   * @param delegate an {@link Element} to which operations will be delegated; must not be {@code null}</span>
+<span class="source-line-no">119</span><span id="line-119">   *</span>
+<span class="source-line-no">120</span><span id="line-120">   * @param domain a {@link PrimordialDomain} from which the supplied {@code delegate} is presumed to have originated;</span>
+<span class="source-line-no">121</span><span id="line-121">   * must not be {@code null}</span>
+<span class="source-line-no">122</span><span id="line-122">   *</span>
+<span class="source-line-no">123</span><span id="line-123">   * @exception NullPointerException if any argument is {@code null}</span>
+<span class="source-line-no">124</span><span id="line-124">   *</span>
+<span class="source-line-no">125</span><span id="line-125">   * @see #delegate()</span>
+<span class="source-line-no">126</span><span id="line-126">   */</span>
+<span class="source-line-no">127</span><span id="line-127">  @SuppressWarnings("try")</span>
+<span class="source-line-no">128</span><span id="line-128">  public UniversalElement(final List&lt;? extends AnnotationMirror&gt; annotations,</span>
+<span class="source-line-no">129</span><span id="line-129">                          final Element delegate,</span>
+<span class="source-line-no">130</span><span id="line-130">                          final PrimordialDomain domain) {</span>
+<span class="source-line-no">131</span><span id="line-131">    super(annotations, delegate, domain);</span>
+<span class="source-line-no">132</span><span id="line-132">    this.enclosedElementsSupplier = () -&gt; {</span>
+<span class="source-line-no">133</span><span id="line-133">      final List&lt;? extends UniversalElement&gt; ees;</span>
+<span class="source-line-no">134</span><span id="line-134">      try (var lock = domain.lock()) {</span>
+<span class="source-line-no">135</span><span id="line-135">        ees = this.wrap(this.delegate().getEnclosedElements());</span>
+<span class="source-line-no">136</span><span id="line-136">        this.enclosedElementsSupplier = () -&gt; ees;</span>
+<span class="source-line-no">137</span><span id="line-137">      }</span>
+<span class="source-line-no">138</span><span id="line-138">      return ees;</span>
+<span class="source-line-no">139</span><span id="line-139">    };</span>
+<span class="source-line-no">140</span><span id="line-140">  }</span>
+<span class="source-line-no">141</span><span id="line-141"></span>
+<span class="source-line-no">142</span><span id="line-142"></span>
+<span class="source-line-no">143</span><span id="line-143">  /*</span>
+<span class="source-line-no">144</span><span id="line-144">   * Instance methods.</span>
+<span class="source-line-no">145</span><span id="line-145">   */</span>
+<span class="source-line-no">146</span><span id="line-146"></span>
+<span class="source-line-no">147</span><span id="line-147"></span>
+<span class="source-line-no">148</span><span id="line-148">  @Override // Element</span>
+<span class="source-line-no">149</span><span id="line-149">  public final &lt;R, P&gt; R accept(final ElementVisitor&lt;R, P&gt; v, final P p) {</span>
+<span class="source-line-no">150</span><span id="line-150">    return switch (this.getKind()) {</span>
+<span class="source-line-no">151</span><span id="line-151">    case</span>
+<span class="source-line-no">152</span><span id="line-152">      ANNOTATION_TYPE,</span>
+<span class="source-line-no">153</span><span id="line-153">      CLASS,</span>
+<span class="source-line-no">154</span><span id="line-154">      ENUM,</span>
+<span class="source-line-no">155</span><span id="line-155">      INTERFACE,</span>
+<span class="source-line-no">156</span><span id="line-156">      RECORD                 -&gt; v.visitType(this, p);</span>
+<span class="source-line-no">157</span><span id="line-157">    case TYPE_PARAMETER      -&gt; v.visitTypeParameter(this, p);</span>
+<span class="source-line-no">158</span><span id="line-158">    case</span>
+<span class="source-line-no">159</span><span id="line-159">      BINDING_VARIABLE,</span>
+<span class="source-line-no">160</span><span id="line-160">      ENUM_CONSTANT,</span>
+<span class="source-line-no">161</span><span id="line-161">      EXCEPTION_PARAMETER,</span>
+<span class="source-line-no">162</span><span id="line-162">      FIELD,</span>
+<span class="source-line-no">163</span><span id="line-163">      LOCAL_VARIABLE,</span>
+<span class="source-line-no">164</span><span id="line-164">      PARAMETER,</span>
+<span class="source-line-no">165</span><span id="line-165">      RESOURCE_VARIABLE      -&gt; v.visitVariable(this, p);</span>
+<span class="source-line-no">166</span><span id="line-166">    case RECORD_COMPONENT    -&gt; v.visitRecordComponent(this, p);</span>
+<span class="source-line-no">167</span><span id="line-167">    case</span>
+<span class="source-line-no">168</span><span id="line-168">      CONSTRUCTOR,</span>
+<span class="source-line-no">169</span><span id="line-169">      INSTANCE_INIT,</span>
+<span class="source-line-no">170</span><span id="line-170">      METHOD,</span>
+<span class="source-line-no">171</span><span id="line-171">      STATIC_INIT            -&gt; v.visitExecutable(this, p);</span>
+<span class="source-line-no">172</span><span id="line-172">    case PACKAGE             -&gt; v.visitPackage(this, p);</span>
+<span class="source-line-no">173</span><span id="line-173">    case MODULE              -&gt; v.visitModule(this, p);</span>
+<span class="source-line-no">174</span><span id="line-174">    case OTHER               -&gt; v.visitUnknown(this, p);</span>
+<span class="source-line-no">175</span><span id="line-175">    };</span>
+<span class="source-line-no">176</span><span id="line-176">  }</span>
+<span class="source-line-no">177</span><span id="line-177"></span>
+<span class="source-line-no">178</span><span id="line-178">  @Override // Element</span>
+<span class="source-line-no">179</span><span id="line-179">  public final UniversalType asType() {</span>
+<span class="source-line-no">180</span><span id="line-180">    return UniversalType.of(this.delegate().asType(), this.domain());</span>
+<span class="source-line-no">181</span><span id="line-181">  }</span>
+<span class="source-line-no">182</span><span id="line-182"></span>
+<span class="source-line-no">183</span><span id="line-183">  /**</span>
+<span class="source-line-no">184</span><span id="line-184">   * Returns a non-{@code null}, determinate, shallow copy of this {@link UniversalElement}.</span>
+<span class="source-line-no">185</span><span id="line-185">   *</span>
+<span class="source-line-no">186</span><span id="line-186">   * @return a non-{@code null}, determinate, shallow copy of this {@link UniversalElement}</span>
+<span class="source-line-no">187</span><span id="line-187">   */</span>
+<span class="source-line-no">188</span><span id="line-188">  @Override // UniversalConstruct (Cloneable)</span>
+<span class="source-line-no">189</span><span id="line-189">  public final UniversalElement clone() {</span>
+<span class="source-line-no">190</span><span id="line-190">    final UniversalElement clone = (UniversalElement)super.clone();</span>
+<span class="source-line-no">191</span><span id="line-191">    assert clone.enclosedElementsSupplier != null;</span>
+<span class="source-line-no">192</span><span id="line-192">    return clone;</span>
+<span class="source-line-no">193</span><span id="line-193">  }</span>
+<span class="source-line-no">194</span><span id="line-194"></span>
+<span class="source-line-no">195</span><span id="line-195">  /**</span>
+<span class="source-line-no">196</span><span id="line-196">   * Returns {@code true} if and only if this {@link UniversalElement} is a &lt;dfn&gt;generic class declaration&lt;/dfn&gt;.</span>
+<span class="source-line-no">197</span><span id="line-197">   *</span>
+<span class="source-line-no">198</span><span id="line-198">   * @return {@code true} if and only if this {@link UniversalElement} is a &lt;dfn&gt;generic class declaration&lt;/dfn&gt;</span>
+<span class="source-line-no">199</span><span id="line-199">   *</span>
+<span class="source-line-no">200</span><span id="line-200">   * @spec https://docs.oracle.com/javase/specs/jls/se23/html/jls-8.html#jls-8.1.2 Java Language Specification, section</span>
+<span class="source-line-no">201</span><span id="line-201">   * 8.1.2</span>
+<span class="source-line-no">202</span><span id="line-202">   */</span>
+<span class="source-line-no">203</span><span id="line-203">  public final boolean generic() {</span>
+<span class="source-line-no">204</span><span id="line-204">    return switch (this.getKind()) {</span>
+<span class="source-line-no">205</span><span id="line-205">    case CLASS, CONSTRUCTOR, ENUM, INTERFACE, METHOD, RECORD -&gt; !this.getTypeParameters().isEmpty();</span>
+<span class="source-line-no">206</span><span id="line-206">    default -&gt; false;</span>
+<span class="source-line-no">207</span><span id="line-207">    };</span>
+<span class="source-line-no">208</span><span id="line-208">  }</span>
+<span class="source-line-no">209</span><span id="line-209"></span>
+<span class="source-line-no">210</span><span id="line-210">  @Override // RecordComponentElement</span>
+<span class="source-line-no">211</span><span id="line-211">  public final UniversalElement getAccessor() {</span>
+<span class="source-line-no">212</span><span id="line-212">    return switch (this.getKind()) {</span>
+<span class="source-line-no">213</span><span id="line-213">    case RECORD_COMPONENT -&gt; this.wrap(((RecordComponentElement)this.delegate()).getAccessor());</span>
+<span class="source-line-no">214</span><span id="line-214">    default -&gt; null;</span>
+<span class="source-line-no">215</span><span id="line-215">    };</span>
+<span class="source-line-no">216</span><span id="line-216">  }</span>
+<span class="source-line-no">217</span><span id="line-217"></span>
+<span class="source-line-no">218</span><span id="line-218">  @Override // TypeParameterElement</span>
+<span class="source-line-no">219</span><span id="line-219">  public final List&lt;? extends UniversalType&gt; getBounds() {</span>
+<span class="source-line-no">220</span><span id="line-220">    return switch (this.getKind()) {</span>
+<span class="source-line-no">221</span><span id="line-221">    case TYPE_PARAMETER -&gt; UniversalType.of(((TypeParameterElement)this.delegate()).getBounds(), this.domain());</span>
+<span class="source-line-no">222</span><span id="line-222">    default -&gt; List.of();</span>
+<span class="source-line-no">223</span><span id="line-223">    };</span>
+<span class="source-line-no">224</span><span id="line-224">  }</span>
+<span class="source-line-no">225</span><span id="line-225"></span>
+<span class="source-line-no">226</span><span id="line-226">  @Override // VariableElement</span>
+<span class="source-line-no">227</span><span id="line-227">  @SuppressWarnings("try")</span>
+<span class="source-line-no">228</span><span id="line-228">  public final Object getConstantValue() {</span>
+<span class="source-line-no">229</span><span id="line-229">    return switch (this.getKind()) {</span>
+<span class="source-line-no">230</span><span id="line-230">    case BINDING_VARIABLE, ENUM_CONSTANT, EXCEPTION_PARAMETER, FIELD, LOCAL_VARIABLE, PARAMETER, RESOURCE_VARIABLE -&gt; {</span>
+<span class="source-line-no">231</span><span id="line-231">      try (var lock = this.domain().lock()) {</span>
+<span class="source-line-no">232</span><span id="line-232">        // There is a LOT going on here; take the domain lock for safety. See</span>
+<span class="source-line-no">233</span><span id="line-233">        // https://github.com/openjdk/jdk/blob/jdk-25%2B3/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Symbol.java#L1813-L1829</span>
+<span class="source-line-no">234</span><span id="line-234">        yield</span>
+<span class="source-line-no">235</span><span id="line-235">          ((VariableElement)this.delegate()).getConstantValue(); // will be a boxed type or String</span>
+<span class="source-line-no">236</span><span id="line-236">      }</span>
+<span class="source-line-no">237</span><span id="line-237">    }</span>
+<span class="source-line-no">238</span><span id="line-238">    default -&gt; null;</span>
+<span class="source-line-no">239</span><span id="line-239">    };</span>
+<span class="source-line-no">240</span><span id="line-240">  }</span>
+<span class="source-line-no">241</span><span id="line-241"></span>
+<span class="source-line-no">242</span><span id="line-242">  @Override // ExecutableElement</span>
+<span class="source-line-no">243</span><span id="line-243">  public final UniversalAnnotationValue getDefaultValue() {</span>
+<span class="source-line-no">244</span><span id="line-244">    return switch (this.getKind()) {</span>
+<span class="source-line-no">245</span><span id="line-245">      // See</span>
+<span class="source-line-no">246</span><span id="line-246">      // https://github.com/openjdk/jdk/blob/jdk-25%2B3/src/jdk.compiler/share/classes/com/sun/tools/javac/code/Symbol.java#L2287-L2290;</span>
+<span class="source-line-no">247</span><span id="line-247">      // no concurrent Name access so no lock needed</span>
+<span class="source-line-no">248</span><span id="line-248">    case METHOD -&gt; UniversalAnnotationValue.of(((ExecutableElement)this.delegate()).getDefaultValue(), this.domain());</span>
+<span class="source-line-no">249</span><span id="line-249">    default -&gt; null;</span>
+<span class="source-line-no">250</span><span id="line-250">    };</span>
+<span class="source-line-no">251</span><span id="line-251">  }</span>
+<span class="source-line-no">252</span><span id="line-252"></span>
+<span class="source-line-no">253</span><span id="line-253">  @Override // ModuleElement</span>
+<span class="source-line-no">254</span><span id="line-254">  public final List&lt;? extends UniversalDirective&gt; getDirectives() {</span>
+<span class="source-line-no">255</span><span id="line-255">    return switch (this.getKind()) {</span>
+<span class="source-line-no">256</span><span id="line-256">    case MODULE -&gt; UniversalDirective.of(((ModuleElement)this.delegate()).getDirectives(), this.domain());</span>
+<span class="source-line-no">257</span><span id="line-257">    default -&gt; List.of();</span>
+<span class="source-line-no">258</span><span id="line-258">    };</span>
+<span class="source-line-no">259</span><span id="line-259">  }</span>
+<span class="source-line-no">260</span><span id="line-260"></span>
+<span class="source-line-no">261</span><span id="line-261">  /*</span>
+<span class="source-line-no">262</span><span id="line-262">    java.lang.AssertionError: Filling jrt:/java.base/java/lang/String$CaseInsensitiveComparator.class during DirectoryFileObject[/modules/java.base:java/lang/Integer$IntegerCache.class]</span>
+<span class="source-line-no">263</span><span id="line-263">    at jdk.compiler/com.sun.tools.javac.util.Assert.error(Assert.java:162)</span>
+<span class="source-line-no">264</span><span id="line-264">    at jdk.compiler/com.sun.tools.javac.code.ClassFinder.fillIn(ClassFinder.java:366)</span>
+<span class="source-line-no">265</span><span id="line-265">    at jdk.compiler/com.sun.tools.javac.code.ClassFinder.complete(ClassFinder.java:302)</span>
+<span class="source-line-no">266</span><span id="line-266">    at jdk.compiler/com.sun.tools.javac.code.Symbol.complete(Symbol.java:687)</span>
+<span class="source-line-no">267</span><span id="line-267">    at jdk.compiler/com.sun.tools.javac.code.Symbol$ClassSymbol.complete(Symbol.java:1455)</span>
+<span class="source-line-no">268</span><span id="line-268">    at jdk.compiler/com.sun.tools.javac.code.Symbol.apiComplete(Symbol.java:693)</span>
+<span class="source-line-no">269</span><span id="line-269">    at jdk.compiler/com.sun.tools.javac.code.Symbol$TypeSymbol.getEnclosedElements(Symbol.java:864)</span>
+<span class="source-line-no">270</span><span id="line-270">    at jdk.compiler/com.sun.tools.javac.code.Symbol$ClassSymbol.getEnclosedElements(Symbol.java:1420)</span>
+<span class="source-line-no">271</span><span id="line-271">    at jdk.compiler/com.sun.tools.javac.code.Symbol$ClassSymbol.getEnclosedElements(Symbol.java:1264)</span>
+<span class="source-line-no">272</span><span id="line-272">    at org.microbean.construct@0.0.10-SNAPSHOT/org.microbean.construct.element.UniversalElement.getEnclosedElements(UniversalElement.java:195)</span>
+<span class="source-line-no">273</span><span id="line-273">  */</span>
+<span class="source-line-no">274</span><span id="line-274">  // See https://github.com/microbean/microbean-construct/issues/18</span>
+<span class="source-line-no">275</span><span id="line-275">  @Override // Element</span>
+<span class="source-line-no">276</span><span id="line-276">  public final List&lt;? extends UniversalElement&gt; getEnclosedElements() {</span>
+<span class="source-line-no">277</span><span id="line-277">    return this.enclosedElementsSupplier.get();</span>
+<span class="source-line-no">278</span><span id="line-278">  }</span>
+<span class="source-line-no">279</span><span id="line-279"></span>
+<span class="source-line-no">280</span><span id="line-280">  @Override // Element</span>
+<span class="source-line-no">281</span><span id="line-281">  public final UniversalElement getEnclosingElement() {</span>
+<span class="source-line-no">282</span><span id="line-282">    return this.wrap(this.delegate().getEnclosingElement());</span>
+<span class="source-line-no">283</span><span id="line-283">  }</span>
+<span class="source-line-no">284</span><span id="line-284"></span>
+<span class="source-line-no">285</span><span id="line-285">  @Override // TypeParameterElement</span>
+<span class="source-line-no">286</span><span id="line-286">  public final UniversalElement getGenericElement() {</span>
 <span class="source-line-no">287</span><span id="line-287">    return switch (this.getKind()) {</span>
-<span class="source-line-no">288</span><span id="line-288">    case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, MODULE, PACKAGE, RECORD -&gt; {</span>
-<span class="source-line-no">289</span><span id="line-289">      try (var lock = this.domain().lock()) {</span>
-<span class="source-line-no">290</span><span id="line-290">        yield StringName.of(((QualifiedNameable)this.delegate()).getQualifiedName().toString(), this.domain());</span>
-<span class="source-line-no">291</span><span id="line-291">      }</span>
-<span class="source-line-no">292</span><span id="line-292">    }</span>
-<span class="source-line-no">293</span><span id="line-293">    default -&gt; StringName.of("", this.domain());</span>
-<span class="source-line-no">294</span><span id="line-294">    };</span>
-<span class="source-line-no">295</span><span id="line-295">  }</span>
-<span class="source-line-no">296</span><span id="line-296"></span>
-<span class="source-line-no">297</span><span id="line-297">  @Override // ExecutableElement</span>
-<span class="source-line-no">298</span><span id="line-298">  public final UniversalType getReceiverType() {</span>
-<span class="source-line-no">299</span><span id="line-299">    return</span>
-<span class="source-line-no">300</span><span id="line-300">      this.getKind().isExecutable() ?</span>
-<span class="source-line-no">301</span><span id="line-301">      UniversalType.of(this.asType(), this.domain()).getReceiverType() :</span>
-<span class="source-line-no">302</span><span id="line-302">      UniversalType.of(this.domain().noType(TypeKind.NONE), this.domain());</span>
-<span class="source-line-no">303</span><span id="line-303">  }</span>
-<span class="source-line-no">304</span><span id="line-304"></span>
-<span class="source-line-no">305</span><span id="line-305">  @Override // TypeElement</span>
-<span class="source-line-no">306</span><span id="line-306">  public final List&lt;? extends UniversalElement&gt; getRecordComponents() {</span>
-<span class="source-line-no">307</span><span id="line-307">    return switch (this.getKind()) {</span>
-<span class="source-line-no">308</span><span id="line-308">    case RECORD -&gt; this.wrap(((TypeElement)this.delegate()).getRecordComponents());</span>
-<span class="source-line-no">309</span><span id="line-309">    default -&gt; List.of();</span>
-<span class="source-line-no">310</span><span id="line-310">    };</span>
-<span class="source-line-no">311</span><span id="line-311">  }</span>
-<span class="source-line-no">312</span><span id="line-312"></span>
-<span class="source-line-no">313</span><span id="line-313">  @Override // ExecutableElement</span>
-<span class="source-line-no">314</span><span id="line-314">  public final UniversalType getReturnType() {</span>
-<span class="source-line-no">315</span><span id="line-315">    return UniversalType.of(this.asType(), this.domain()).getReturnType();</span>
-<span class="source-line-no">316</span><span id="line-316">  }</span>
-<span class="source-line-no">317</span><span id="line-317"></span>
-<span class="source-line-no">318</span><span id="line-318">  @Override // Element</span>
-<span class="source-line-no">319</span><span id="line-319">  @SuppressWarnings("try")</span>
-<span class="source-line-no">320</span><span id="line-320">  public final StringName getSimpleName() {</span>
-<span class="source-line-no">321</span><span id="line-321">    try (var lock = this.domain().lock()) {</span>
-<span class="source-line-no">322</span><span id="line-322">      return new StringName(this.delegate().getSimpleName().toString(), this.domain());</span>
-<span class="source-line-no">323</span><span id="line-323">    }</span>
-<span class="source-line-no">324</span><span id="line-324">  }</span>
-<span class="source-line-no">325</span><span id="line-325"></span>
-<span class="source-line-no">326</span><span id="line-326">  @Override // TypeElement</span>
-<span class="source-line-no">327</span><span id="line-327">  public final UniversalType getSuperclass() {</span>
-<span class="source-line-no">328</span><span id="line-328">    return switch (this.getKind()) {</span>
-<span class="source-line-no">329</span><span id="line-329">    case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD -&gt;</span>
-<span class="source-line-no">330</span><span id="line-330">      UniversalType.of(((TypeElement)this.delegate()).getSuperclass(), this.domain());</span>
-<span class="source-line-no">331</span><span id="line-331">    default -&gt; UniversalType.of(this.domain().noType(TypeKind.NONE), this.domain());</span>
-<span class="source-line-no">332</span><span id="line-332">    };</span>
-<span class="source-line-no">333</span><span id="line-333">  }</span>
-<span class="source-line-no">334</span><span id="line-334"></span>
-<span class="source-line-no">335</span><span id="line-335">  @Override // ExecutableElement</span>
-<span class="source-line-no">336</span><span id="line-336">  public final List&lt;? extends UniversalType&gt; getThrownTypes() {</span>
-<span class="source-line-no">337</span><span id="line-337">    return</span>
-<span class="source-line-no">338</span><span id="line-338">      this.getKind().isExecutable() ?</span>
-<span class="source-line-no">339</span><span id="line-339">      UniversalType.of(((ExecutableElement)this.delegate()).getThrownTypes(), this.domain()) :</span>
-<span class="source-line-no">340</span><span id="line-340">      List.of();</span>
-<span class="source-line-no">341</span><span id="line-341">  }</span>
-<span class="source-line-no">342</span><span id="line-342"></span>
-<span class="source-line-no">343</span><span id="line-343">  @Override // ExecutableElement</span>
-<span class="source-line-no">344</span><span id="line-344">  public final List&lt;? extends UniversalElement&gt; getTypeParameters() {</span>
-<span class="source-line-no">345</span><span id="line-345">    return switch (this.getKind()) {</span>
-<span class="source-line-no">346</span><span id="line-346">    case CLASS, CONSTRUCTOR, ENUM, INTERFACE, RECORD, METHOD -&gt;</span>
-<span class="source-line-no">347</span><span id="line-347">      this.wrap(((Parameterizable)this.delegate()).getTypeParameters());</span>
-<span class="source-line-no">348</span><span id="line-348">    default -&gt; List.of();</span>
-<span class="source-line-no">349</span><span id="line-349">    };</span>
-<span class="source-line-no">350</span><span id="line-350">  }</span>
-<span class="source-line-no">351</span><span id="line-351"></span>
-<span class="source-line-no">352</span><span id="line-352">  @Override // ExecutableElement</span>
-<span class="source-line-no">353</span><span id="line-353">  public final boolean isDefault() {</span>
-<span class="source-line-no">354</span><span id="line-354">    return switch (this.getKind()) {</span>
-<span class="source-line-no">355</span><span id="line-355">    case METHOD -&gt; ((ExecutableElement)this.delegate()).isDefault();</span>
-<span class="source-line-no">356</span><span id="line-356">    default -&gt; false;</span>
-<span class="source-line-no">357</span><span id="line-357">    };</span>
-<span class="source-line-no">358</span><span id="line-358">  }</span>
-<span class="source-line-no">359</span><span id="line-359"></span>
-<span class="source-line-no">360</span><span id="line-360">  @Override // ModuleElement</span>
-<span class="source-line-no">361</span><span id="line-361">  public final boolean isOpen() {</span>
-<span class="source-line-no">362</span><span id="line-362">    return switch (this.getKind()) {</span>
-<span class="source-line-no">363</span><span id="line-363">    case MODULE -&gt; ((ModuleElement)this.delegate()).isOpen();</span>
-<span class="source-line-no">364</span><span id="line-364">    default -&gt; false;</span>
-<span class="source-line-no">365</span><span id="line-365">    };</span>
-<span class="source-line-no">366</span><span id="line-366">  }</span>
-<span class="source-line-no">367</span><span id="line-367"></span>
-<span class="source-line-no">368</span><span id="line-368">  @Override // ModuleElement, PackageElement</span>
-<span class="source-line-no">369</span><span id="line-369">  public final boolean isUnnamed() {</span>
-<span class="source-line-no">370</span><span id="line-370">    return switch (this.getKind()) {</span>
-<span class="source-line-no">371</span><span id="line-371">    case MODULE  -&gt; ((ModuleElement)this.delegate()).isUnnamed();</span>
-<span class="source-line-no">372</span><span id="line-372">    case PACKAGE -&gt; ((PackageElement)this.delegate()).isUnnamed();</span>
-<span class="source-line-no">373</span><span id="line-373">    default -&gt; false;</span>
-<span class="source-line-no">374</span><span id="line-374">    };</span>
-<span class="source-line-no">375</span><span id="line-375">  }</span>
-<span class="source-line-no">376</span><span id="line-376"></span>
-<span class="source-line-no">377</span><span id="line-377">  @Override // ExecutableElement</span>
-<span class="source-line-no">378</span><span id="line-378">  public final boolean isVarArgs() {</span>
-<span class="source-line-no">379</span><span id="line-379">    return switch (this.getKind()) {</span>
-<span class="source-line-no">380</span><span id="line-380">    case CONSTRUCTOR, METHOD -&gt; ((ExecutableElement)this.delegate()).isVarArgs();</span>
-<span class="source-line-no">381</span><span id="line-381">    default -&gt; false;</span>
-<span class="source-line-no">382</span><span id="line-382">    };</span>
-<span class="source-line-no">383</span><span id="line-383">  }</span>
-<span class="source-line-no">384</span><span id="line-384"></span>
-<span class="source-line-no">385</span><span id="line-385">  /**</span>
-<span class="source-line-no">386</span><span id="line-386">   * A convenience method that returns {@code true} if this {@link UniversalElement} represents the class declaration</span>
-<span class="source-line-no">387</span><span id="line-387">   * for {@code java.lang.Object}.</span>
-<span class="source-line-no">388</span><span id="line-388">   *</span>
-<span class="source-line-no">389</span><span id="line-389">   * @return {@code true} if this {@link UniversalElement} is the class declaration for {@code java.lang.Object}</span>
-<span class="source-line-no">390</span><span id="line-390">   */</span>
-<span class="source-line-no">391</span><span id="line-391">  public final boolean javaLangObject() {</span>
-<span class="source-line-no">392</span><span id="line-392">    return switch (this.getKind()) {</span>
-<span class="source-line-no">393</span><span id="line-393">    case CLASS -&gt; this.getQualifiedName().contentEquals("java.lang.Object");</span>
-<span class="source-line-no">394</span><span id="line-394">    default -&gt; false;</span>
-<span class="source-line-no">395</span><span id="line-395">    };</span>
-<span class="source-line-no">396</span><span id="line-396">  }</span>
-<span class="source-line-no">397</span><span id="line-397"></span>
-<span class="source-line-no">398</span><span id="line-398">  private final UniversalElement wrap(final Element e) {</span>
-<span class="source-line-no">399</span><span id="line-399">    return of(e, this.domain());</span>
-<span class="source-line-no">400</span><span id="line-400">  }</span>
-<span class="source-line-no">401</span><span id="line-401"></span>
-<span class="source-line-no">402</span><span id="line-402">  private final List&lt;? extends UniversalElement&gt; wrap(final Collection&lt;? extends Element&gt; es) {</span>
-<span class="source-line-no">403</span><span id="line-403">    return of(es, this.domain());</span>
-<span class="source-line-no">404</span><span id="line-404">  }</span>
-<span class="source-line-no">405</span><span id="line-405"></span>
-<span class="source-line-no">406</span><span id="line-406"></span>
-<span class="source-line-no">407</span><span id="line-407">  /*</span>
-<span class="source-line-no">408</span><span id="line-408">   * Static methods.</span>
-<span class="source-line-no">409</span><span id="line-409">   */</span>
-<span class="source-line-no">410</span><span id="line-410"></span>
+<span class="source-line-no">288</span><span id="line-288">    case TYPE_PARAMETER -&gt; this.wrap(((TypeParameterElement)this.delegate()).getGenericElement());</span>
+<span class="source-line-no">289</span><span id="line-289">    default -&gt; this.getEnclosingElement(); // illegal state</span>
+<span class="source-line-no">290</span><span id="line-290">    };</span>
+<span class="source-line-no">291</span><span id="line-291">  }</span>
+<span class="source-line-no">292</span><span id="line-292"></span>
+<span class="source-line-no">293</span><span id="line-293">  @Override // TypeElement</span>
+<span class="source-line-no">294</span><span id="line-294">  public final List&lt;? extends UniversalType&gt; getInterfaces() {</span>
+<span class="source-line-no">295</span><span id="line-295">    return switch (this.getKind()) {</span>
+<span class="source-line-no">296</span><span id="line-296">    case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD -&gt;</span>
+<span class="source-line-no">297</span><span id="line-297">      UniversalType.of(((TypeElement)this.delegate()).getInterfaces(), this.domain());</span>
+<span class="source-line-no">298</span><span id="line-298">    default -&gt; List.of();</span>
+<span class="source-line-no">299</span><span id="line-299">    };</span>
+<span class="source-line-no">300</span><span id="line-300">  }</span>
+<span class="source-line-no">301</span><span id="line-301"></span>
+<span class="source-line-no">302</span><span id="line-302">  @Override // Element</span>
+<span class="source-line-no">303</span><span id="line-303">  public final ElementKind getKind() {</span>
+<span class="source-line-no">304</span><span id="line-304">    return this.delegate().getKind();</span>
+<span class="source-line-no">305</span><span id="line-305">  }</span>
+<span class="source-line-no">306</span><span id="line-306"></span>
+<span class="source-line-no">307</span><span id="line-307">  @Override // Element</span>
+<span class="source-line-no">308</span><span id="line-308">  public final Set&lt;Modifier&gt; getModifiers() {</span>
+<span class="source-line-no">309</span><span id="line-309">    return this.delegate().getModifiers();</span>
+<span class="source-line-no">310</span><span id="line-310">  }</span>
+<span class="source-line-no">311</span><span id="line-311"></span>
+<span class="source-line-no">312</span><span id="line-312">  @Override // TypeElement</span>
+<span class="source-line-no">313</span><span id="line-313">  public final NestingKind getNestingKind() {</span>
+<span class="source-line-no">314</span><span id="line-314">    return switch (this.getKind()) {</span>
+<span class="source-line-no">315</span><span id="line-315">    case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD -&gt; ((TypeElement)this.delegate()).getNestingKind();</span>
+<span class="source-line-no">316</span><span id="line-316">    default -&gt; NestingKind.TOP_LEVEL; // illegal state</span>
+<span class="source-line-no">317</span><span id="line-317">    };</span>
+<span class="source-line-no">318</span><span id="line-318">  }</span>
+<span class="source-line-no">319</span><span id="line-319"></span>
+<span class="source-line-no">320</span><span id="line-320">  @Override // ExecutableElement</span>
+<span class="source-line-no">321</span><span id="line-321">  public final List&lt;? extends UniversalElement&gt; getParameters() {</span>
+<span class="source-line-no">322</span><span id="line-322">    return switch (this.getKind()) {</span>
+<span class="source-line-no">323</span><span id="line-323">    case CONSTRUCTOR, METHOD -&gt; this.wrap(((ExecutableElement)this.delegate()).getParameters());</span>
+<span class="source-line-no">324</span><span id="line-324">    default -&gt; List.of();</span>
+<span class="source-line-no">325</span><span id="line-325">    };</span>
+<span class="source-line-no">326</span><span id="line-326">  }</span>
+<span class="source-line-no">327</span><span id="line-327"></span>
+<span class="source-line-no">328</span><span id="line-328">  @Override // ModuleElement, PackageElement, TypeElement</span>
+<span class="source-line-no">329</span><span id="line-329">  @SuppressWarnings("try")</span>
+<span class="source-line-no">330</span><span id="line-330">  public final StringName getQualifiedName() {</span>
+<span class="source-line-no">331</span><span id="line-331">    return switch (this.getKind()) {</span>
+<span class="source-line-no">332</span><span id="line-332">    case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, MODULE, PACKAGE, RECORD -&gt; {</span>
+<span class="source-line-no">333</span><span id="line-333">      try (var lock = this.domain().lock()) {</span>
+<span class="source-line-no">334</span><span id="line-334">        yield StringName.of(((QualifiedNameable)this.delegate()).getQualifiedName().toString(), this.domain());</span>
+<span class="source-line-no">335</span><span id="line-335">      }</span>
+<span class="source-line-no">336</span><span id="line-336">    }</span>
+<span class="source-line-no">337</span><span id="line-337">    default -&gt; StringName.of("", this.domain());</span>
+<span class="source-line-no">338</span><span id="line-338">    };</span>
+<span class="source-line-no">339</span><span id="line-339">  }</span>
+<span class="source-line-no">340</span><span id="line-340"></span>
+<span class="source-line-no">341</span><span id="line-341">  @Override // ExecutableElement</span>
+<span class="source-line-no">342</span><span id="line-342">  public final UniversalType getReceiverType() {</span>
+<span class="source-line-no">343</span><span id="line-343">    return</span>
+<span class="source-line-no">344</span><span id="line-344">      this.getKind().isExecutable() ?</span>
+<span class="source-line-no">345</span><span id="line-345">      UniversalType.of(this.asType(), this.domain()).getReceiverType() :</span>
+<span class="source-line-no">346</span><span id="line-346">      UniversalType.of(this.domain().noType(TypeKind.NONE), this.domain());</span>
+<span class="source-line-no">347</span><span id="line-347">  }</span>
+<span class="source-line-no">348</span><span id="line-348"></span>
+<span class="source-line-no">349</span><span id="line-349">  @Override // TypeElement</span>
+<span class="source-line-no">350</span><span id="line-350">  public final List&lt;? extends UniversalElement&gt; getRecordComponents() {</span>
+<span class="source-line-no">351</span><span id="line-351">    return switch (this.getKind()) {</span>
+<span class="source-line-no">352</span><span id="line-352">    case RECORD -&gt; this.wrap(((TypeElement)this.delegate()).getRecordComponents());</span>
+<span class="source-line-no">353</span><span id="line-353">    default -&gt; List.of();</span>
+<span class="source-line-no">354</span><span id="line-354">    };</span>
+<span class="source-line-no">355</span><span id="line-355">  }</span>
+<span class="source-line-no">356</span><span id="line-356"></span>
+<span class="source-line-no">357</span><span id="line-357">  @Override // ExecutableElement</span>
+<span class="source-line-no">358</span><span id="line-358">  public final UniversalType getReturnType() {</span>
+<span class="source-line-no">359</span><span id="line-359">    return UniversalType.of(this.asType(), this.domain()).getReturnType();</span>
+<span class="source-line-no">360</span><span id="line-360">  }</span>
+<span class="source-line-no">361</span><span id="line-361"></span>
+<span class="source-line-no">362</span><span id="line-362">  @Override // Element</span>
+<span class="source-line-no">363</span><span id="line-363">  @SuppressWarnings("try")</span>
+<span class="source-line-no">364</span><span id="line-364">  public final StringName getSimpleName() {</span>
+<span class="source-line-no">365</span><span id="line-365">    try (var lock = this.domain().lock()) {</span>
+<span class="source-line-no">366</span><span id="line-366">      return new StringName(this.delegate().getSimpleName().toString(), this.domain());</span>
+<span class="source-line-no">367</span><span id="line-367">    }</span>
+<span class="source-line-no">368</span><span id="line-368">  }</span>
+<span class="source-line-no">369</span><span id="line-369"></span>
+<span class="source-line-no">370</span><span id="line-370">  @Override // TypeElement</span>
+<span class="source-line-no">371</span><span id="line-371">  public final UniversalType getSuperclass() {</span>
+<span class="source-line-no">372</span><span id="line-372">    return switch (this.getKind()) {</span>
+<span class="source-line-no">373</span><span id="line-373">    case ANNOTATION_TYPE, CLASS, ENUM, INTERFACE, RECORD -&gt;</span>
+<span class="source-line-no">374</span><span id="line-374">      UniversalType.of(((TypeElement)this.delegate()).getSuperclass(), this.domain());</span>
+<span class="source-line-no">375</span><span id="line-375">    default -&gt; UniversalType.of(this.domain().noType(TypeKind.NONE), this.domain());</span>
+<span class="source-line-no">376</span><span id="line-376">    };</span>
+<span class="source-line-no">377</span><span id="line-377">  }</span>
+<span class="source-line-no">378</span><span id="line-378"></span>
+<span class="source-line-no">379</span><span id="line-379">  @Override // ExecutableElement</span>
+<span class="source-line-no">380</span><span id="line-380">  public final List&lt;? extends UniversalType&gt; getThrownTypes() {</span>
+<span class="source-line-no">381</span><span id="line-381">    return</span>
+<span class="source-line-no">382</span><span id="line-382">      this.getKind().isExecutable() ?</span>
+<span class="source-line-no">383</span><span id="line-383">      UniversalType.of(((ExecutableElement)this.delegate()).getThrownTypes(), this.domain()) :</span>
+<span class="source-line-no">384</span><span id="line-384">      List.of();</span>
+<span class="source-line-no">385</span><span id="line-385">  }</span>
+<span class="source-line-no">386</span><span id="line-386"></span>
+<span class="source-line-no">387</span><span id="line-387">  @Override // ExecutableElement</span>
+<span class="source-line-no">388</span><span id="line-388">  public final List&lt;? extends UniversalElement&gt; getTypeParameters() {</span>
+<span class="source-line-no">389</span><span id="line-389">    return switch (this.getKind()) {</span>
+<span class="source-line-no">390</span><span id="line-390">    case CLASS, CONSTRUCTOR, ENUM, INTERFACE, RECORD, METHOD -&gt;</span>
+<span class="source-line-no">391</span><span id="line-391">      this.wrap(((Parameterizable)this.delegate()).getTypeParameters());</span>
+<span class="source-line-no">392</span><span id="line-392">    default -&gt; List.of();</span>
+<span class="source-line-no">393</span><span id="line-393">    };</span>
+<span class="source-line-no">394</span><span id="line-394">  }</span>
+<span class="source-line-no">395</span><span id="line-395"></span>
+<span class="source-line-no">396</span><span id="line-396">  @Override // ExecutableElement</span>
+<span class="source-line-no">397</span><span id="line-397">  public final boolean isDefault() {</span>
+<span class="source-line-no">398</span><span id="line-398">    return switch (this.getKind()) {</span>
+<span class="source-line-no">399</span><span id="line-399">    case METHOD -&gt; ((ExecutableElement)this.delegate()).isDefault();</span>
+<span class="source-line-no">400</span><span id="line-400">    default -&gt; false;</span>
+<span class="source-line-no">401</span><span id="line-401">    };</span>
+<span class="source-line-no">402</span><span id="line-402">  }</span>
+<span class="source-line-no">403</span><span id="line-403"></span>
+<span class="source-line-no">404</span><span id="line-404">  @Override // ModuleElement</span>
+<span class="source-line-no">405</span><span id="line-405">  public final boolean isOpen() {</span>
+<span class="source-line-no">406</span><span id="line-406">    return switch (this.getKind()) {</span>
+<span class="source-line-no">407</span><span id="line-407">    case MODULE -&gt; ((ModuleElement)this.delegate()).isOpen();</span>
+<span class="source-line-no">408</span><span id="line-408">    default -&gt; false;</span>
+<span class="source-line-no">409</span><span id="line-409">    };</span>
+<span class="source-line-no">410</span><span id="line-410">  }</span>
 <span class="source-line-no">411</span><span id="line-411"></span>
-<span class="source-line-no">412</span><span id="line-412">  /**</span>
-<span class="source-line-no">413</span><span id="line-413">   * Returns a non-{@code null}, immutable {@link List} of {@link UniversalElement}s whose elements wrap the supplied</span>
-<span class="source-line-no">414</span><span id="line-414">   * {@link List}'s elements.</span>
-<span class="source-line-no">415</span><span id="line-415">   *</span>
-<span class="source-line-no">416</span><span id="line-416">   * @param es a {@link Collection} of {@link Element}s; must not be {@code null}</span>
-<span class="source-line-no">417</span><span id="line-417">   *</span>
-<span class="source-line-no">418</span><span id="line-418">   * @param domain a {@link PrimordialDomain}; must not be {@code null}</span>
-<span class="source-line-no">419</span><span id="line-419">   *</span>
-<span class="source-line-no">420</span><span id="line-420">   * @return a non-{@code null}, immutable {@link List} of {@link UniversalElement}s</span>
-<span class="source-line-no">421</span><span id="line-421">   *</span>
-<span class="source-line-no">422</span><span id="line-422">   * @exception NullPointerException if either argument is {@code null}</span>
-<span class="source-line-no">423</span><span id="line-423">   */</span>
-<span class="source-line-no">424</span><span id="line-424">  public static final List&lt;? extends UniversalElement&gt; of(final Collection&lt;? extends Element&gt; es, final PrimordialDomain domain) {</span>
-<span class="source-line-no">425</span><span id="line-425">    if (es.isEmpty()) {</span>
-<span class="source-line-no">426</span><span id="line-426">      return List.of();</span>
-<span class="source-line-no">427</span><span id="line-427">    }</span>
-<span class="source-line-no">428</span><span id="line-428">    final List&lt;UniversalElement&gt; newEs = new ArrayList&lt;&gt;(es.size());</span>
-<span class="source-line-no">429</span><span id="line-429">    for (final Element e : es) {</span>
-<span class="source-line-no">430</span><span id="line-430">      newEs.add(of(e, domain));</span>
-<span class="source-line-no">431</span><span id="line-431">    }</span>
-<span class="source-line-no">432</span><span id="line-432">    return unmodifiableList(newEs);</span>
-<span class="source-line-no">433</span><span id="line-433">  }</span>
-<span class="source-line-no">434</span><span id="line-434"></span>
-<span class="source-line-no">435</span><span id="line-435">  /**</span>
-<span class="source-line-no">436</span><span id="line-436">   * Returns a {@link UniversalElement} that is either the supplied {@link Element} (if it itself is {@code null} or is</span>
-<span class="source-line-no">437</span><span id="line-437">   * a {@link UniversalElement}) or one that wraps it.</span>
-<span class="source-line-no">438</span><span id="line-438">   *</span>
-<span class="source-line-no">439</span><span id="line-439">   * @param e an {@link Element}; may be {@code null} in which case {@code null} will be returned</span>
-<span class="source-line-no">440</span><span id="line-440">   *</span>
-<span class="source-line-no">441</span><span id="line-441">   * @param domain a {@link PrimordialDomain}; must not be {@code null}</span>
-<span class="source-line-no">442</span><span id="line-442">   *</span>
-<span class="source-line-no">443</span><span id="line-443">   * @return a {@link UniversalElement}, or {@code null} (if {@code e} is {@code null})</span>
-<span class="source-line-no">444</span><span id="line-444">   *</span>
-<span class="source-line-no">445</span><span id="line-445">   * @exception NullPointerException if {@code domain} is {@code null}</span>
-<span class="source-line-no">446</span><span id="line-446">   *</span>
-<span class="source-line-no">447</span><span id="line-447">   * @see #UniversalElement(Element, PrimordialDomain)</span>
-<span class="source-line-no">448</span><span id="line-448">   */</span>
-<span class="source-line-no">449</span><span id="line-449">  public static final UniversalElement of(final Element e, final PrimordialDomain domain) {</span>
-<span class="source-line-no">450</span><span id="line-450">    return switch (e) {</span>
-<span class="source-line-no">451</span><span id="line-451">    case null -&gt; null;</span>
-<span class="source-line-no">452</span><span id="line-452">    case UniversalElement ue -&gt; ue;</span>
-<span class="source-line-no">453</span><span id="line-453">    default -&gt; new UniversalElement(e, domain);</span>
-<span class="source-line-no">454</span><span id="line-454">    };</span>
-<span class="source-line-no">455</span><span id="line-455">  }</span>
-<span class="source-line-no">456</span><span id="line-456"></span>
-<span class="source-line-no">457</span><span id="line-457">}</span>
+<span class="source-line-no">412</span><span id="line-412">  @Override // ModuleElement, PackageElement</span>
+<span class="source-line-no">413</span><span id="line-413">  public final boolean isUnnamed() {</span>
+<span class="source-line-no">414</span><span id="line-414">    return switch (this.getKind()) {</span>
+<span class="source-line-no">415</span><span id="line-415">    case MODULE  -&gt; ((ModuleElement)this.delegate()).isUnnamed();</span>
+<span class="source-line-no">416</span><span id="line-416">    case PACKAGE -&gt; ((PackageElement)this.delegate()).isUnnamed();</span>
+<span class="source-line-no">417</span><span id="line-417">    default -&gt; false;</span>
+<span class="source-line-no">418</span><span id="line-418">    };</span>
+<span class="source-line-no">419</span><span id="line-419">  }</span>
+<span class="source-line-no">420</span><span id="line-420"></span>
+<span class="source-line-no">421</span><span id="line-421">  @Override // ExecutableElement</span>
+<span class="source-line-no">422</span><span id="line-422">  public final boolean isVarArgs() {</span>
+<span class="source-line-no">423</span><span id="line-423">    return switch (this.getKind()) {</span>
+<span class="source-line-no">424</span><span id="line-424">    case CONSTRUCTOR, METHOD -&gt; ((ExecutableElement)this.delegate()).isVarArgs();</span>
+<span class="source-line-no">425</span><span id="line-425">    default -&gt; false;</span>
+<span class="source-line-no">426</span><span id="line-426">    };</span>
+<span class="source-line-no">427</span><span id="line-427">  }</span>
+<span class="source-line-no">428</span><span id="line-428"></span>
+<span class="source-line-no">429</span><span id="line-429">  /**</span>
+<span class="source-line-no">430</span><span id="line-430">   * A convenience method that returns {@code true} if this {@link UniversalElement} represents the class declaration</span>
+<span class="source-line-no">431</span><span id="line-431">   * for {@code java.lang.Object}.</span>
+<span class="source-line-no">432</span><span id="line-432">   *</span>
+<span class="source-line-no">433</span><span id="line-433">   * @return {@code true} if this {@link UniversalElement} is the class declaration for {@code java.lang.Object}</span>
+<span class="source-line-no">434</span><span id="line-434">   */</span>
+<span class="source-line-no">435</span><span id="line-435">  public final boolean javaLangObject() {</span>
+<span class="source-line-no">436</span><span id="line-436">    return switch (this.getKind()) {</span>
+<span class="source-line-no">437</span><span id="line-437">    case CLASS -&gt; this.getQualifiedName().contentEquals("java.lang.Object");</span>
+<span class="source-line-no">438</span><span id="line-438">    default -&gt; false;</span>
+<span class="source-line-no">439</span><span id="line-439">    };</span>
+<span class="source-line-no">440</span><span id="line-440">  }</span>
+<span class="source-line-no">441</span><span id="line-441"></span>
+<span class="source-line-no">442</span><span id="line-442">  private final UniversalElement wrap(final Element e) {</span>
+<span class="source-line-no">443</span><span id="line-443">    return of(e, this.domain());</span>
+<span class="source-line-no">444</span><span id="line-444">  }</span>
+<span class="source-line-no">445</span><span id="line-445"></span>
+<span class="source-line-no">446</span><span id="line-446">  private final List&lt;? extends UniversalElement&gt; wrap(final Collection&lt;? extends Element&gt; es) {</span>
+<span class="source-line-no">447</span><span id="line-447">    return of(es, this.domain());</span>
+<span class="source-line-no">448</span><span id="line-448">  }</span>
+<span class="source-line-no">449</span><span id="line-449"></span>
+<span class="source-line-no">450</span><span id="line-450"></span>
+<span class="source-line-no">451</span><span id="line-451">  /*</span>
+<span class="source-line-no">452</span><span id="line-452">   * Static methods.</span>
+<span class="source-line-no">453</span><span id="line-453">   */</span>
+<span class="source-line-no">454</span><span id="line-454"></span>
+<span class="source-line-no">455</span><span id="line-455"></span>
+<span class="source-line-no">456</span><span id="line-456">  /**</span>
+<span class="source-line-no">457</span><span id="line-457">   * Returns a non-{@code null}, immutable {@link List} of {@link UniversalElement}s whose elements wrap the supplied</span>
+<span class="source-line-no">458</span><span id="line-458">   * {@link List}'s elements.</span>
+<span class="source-line-no">459</span><span id="line-459">   *</span>
+<span class="source-line-no">460</span><span id="line-460">   * @param es a {@link Collection} of {@link Element}s; must not be {@code null}</span>
+<span class="source-line-no">461</span><span id="line-461">   *</span>
+<span class="source-line-no">462</span><span id="line-462">   * @param domain a {@link PrimordialDomain}; must not be {@code null}</span>
+<span class="source-line-no">463</span><span id="line-463">   *</span>
+<span class="source-line-no">464</span><span id="line-464">   * @return a non-{@code null}, immutable {@link List} of {@link UniversalElement}s</span>
+<span class="source-line-no">465</span><span id="line-465">   *</span>
+<span class="source-line-no">466</span><span id="line-466">   * @exception NullPointerException if either argument is {@code null}</span>
+<span class="source-line-no">467</span><span id="line-467">   */</span>
+<span class="source-line-no">468</span><span id="line-468">  public static final List&lt;? extends UniversalElement&gt; of(final Collection&lt;? extends Element&gt; es, final PrimordialDomain domain) {</span>
+<span class="source-line-no">469</span><span id="line-469">    if (es.isEmpty()) {</span>
+<span class="source-line-no">470</span><span id="line-470">      return List.of();</span>
+<span class="source-line-no">471</span><span id="line-471">    }</span>
+<span class="source-line-no">472</span><span id="line-472">    final List&lt;UniversalElement&gt; newEs = new ArrayList&lt;&gt;(es.size());</span>
+<span class="source-line-no">473</span><span id="line-473">    for (final Element e : es) {</span>
+<span class="source-line-no">474</span><span id="line-474">      newEs.add(of(e, domain));</span>
+<span class="source-line-no">475</span><span id="line-475">    }</span>
+<span class="source-line-no">476</span><span id="line-476">    return unmodifiableList(newEs);</span>
+<span class="source-line-no">477</span><span id="line-477">  }</span>
+<span class="source-line-no">478</span><span id="line-478"></span>
+<span class="source-line-no">479</span><span id="line-479">  /**</span>
+<span class="source-line-no">480</span><span id="line-480">   * Returns a {@link UniversalElement} that is either the supplied {@link Element} (if it itself is {@code null} or is</span>
+<span class="source-line-no">481</span><span id="line-481">   * a {@link UniversalElement}) or one that wraps it.</span>
+<span class="source-line-no">482</span><span id="line-482">   *</span>
+<span class="source-line-no">483</span><span id="line-483">   * @param e an {@link Element}; may be {@code null} in which case {@code null} will be returned</span>
+<span class="source-line-no">484</span><span id="line-484">   *</span>
+<span class="source-line-no">485</span><span id="line-485">   * @param domain a {@link PrimordialDomain}; must not be {@code null}</span>
+<span class="source-line-no">486</span><span id="line-486">   *</span>
+<span class="source-line-no">487</span><span id="line-487">   * @return a {@link UniversalElement}, or {@code null} (if {@code e} is {@code null})</span>
+<span class="source-line-no">488</span><span id="line-488">   *</span>
+<span class="source-line-no">489</span><span id="line-489">   * @exception NullPointerException if {@code domain} is {@code null}</span>
+<span class="source-line-no">490</span><span id="line-490">   *</span>
+<span class="source-line-no">491</span><span id="line-491">   * @see #UniversalElement(Element, PrimordialDomain)</span>
+<span class="source-line-no">492</span><span id="line-492">   */</span>
+<span class="source-line-no">493</span><span id="line-493">  public static final UniversalElement of(final Element e, final PrimordialDomain domain) {</span>
+<span class="source-line-no">494</span><span id="line-494">    return switch (e) {</span>
+<span class="source-line-no">495</span><span id="line-495">    case null -&gt; null;</span>
+<span class="source-line-no">496</span><span id="line-496">    case UniversalElement ue -&gt; ue;</span>
+<span class="source-line-no">497</span><span id="line-497">    default -&gt; new UniversalElement(e, domain);</span>
+<span class="source-line-no">498</span><span id="line-498">    };</span>
+<span class="source-line-no">499</span><span id="line-499">  }</span>
+<span class="source-line-no">500</span><span id="line-500"></span>
+<span class="source-line-no">501</span><span id="line-501">}</span>
 
 
 

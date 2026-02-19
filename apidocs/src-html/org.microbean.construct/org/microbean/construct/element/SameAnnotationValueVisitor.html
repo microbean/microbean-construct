@@ -31,248 +31,310 @@
 <span class="source-line-no">018</span><span id="line-18">import java.util.Map.Entry;</span>
 <span class="source-line-no">019</span><span id="line-19">import java.util.Objects;</span>
 <span class="source-line-no">020</span><span id="line-20"></span>
-<span class="source-line-no">021</span><span id="line-21">import javax.lang.model.element.AnnotationMirror;</span>
-<span class="source-line-no">022</span><span id="line-22">import javax.lang.model.element.AnnotationValue;</span>
-<span class="source-line-no">023</span><span id="line-23">import javax.lang.model.element.ExecutableElement;</span>
-<span class="source-line-no">024</span><span id="line-24">import javax.lang.model.element.QualifiedNameable;</span>
-<span class="source-line-no">025</span><span id="line-25">import javax.lang.model.element.TypeElement;</span>
-<span class="source-line-no">026</span><span id="line-26">import javax.lang.model.element.VariableElement;</span>
-<span class="source-line-no">027</span><span id="line-27"></span>
-<span class="source-line-no">028</span><span id="line-28">import javax.lang.model.type.ArrayType;</span>
-<span class="source-line-no">029</span><span id="line-29">import javax.lang.model.type.DeclaredType;</span>
-<span class="source-line-no">030</span><span id="line-30">import javax.lang.model.type.NoType;</span>
-<span class="source-line-no">031</span><span id="line-31">import javax.lang.model.type.PrimitiveType;</span>
-<span class="source-line-no">032</span><span id="line-32">import javax.lang.model.type.TypeMirror;</span>
-<span class="source-line-no">033</span><span id="line-33"></span>
-<span class="source-line-no">034</span><span id="line-34">import javax.lang.model.util.AbstractAnnotationValueVisitor14;</span>
+<span class="source-line-no">021</span><span id="line-21">import java.util.function.Predicate;</span>
+<span class="source-line-no">022</span><span id="line-22"></span>
+<span class="source-line-no">023</span><span id="line-23">import javax.lang.model.element.AnnotationMirror;</span>
+<span class="source-line-no">024</span><span id="line-24">import javax.lang.model.element.AnnotationValue;</span>
+<span class="source-line-no">025</span><span id="line-25">import javax.lang.model.element.ExecutableElement;</span>
+<span class="source-line-no">026</span><span id="line-26">import javax.lang.model.element.QualifiedNameable;</span>
+<span class="source-line-no">027</span><span id="line-27">import javax.lang.model.element.TypeElement;</span>
+<span class="source-line-no">028</span><span id="line-28">import javax.lang.model.element.VariableElement;</span>
+<span class="source-line-no">029</span><span id="line-29"></span>
+<span class="source-line-no">030</span><span id="line-30">import javax.lang.model.type.ArrayType;</span>
+<span class="source-line-no">031</span><span id="line-31">import javax.lang.model.type.DeclaredType;</span>
+<span class="source-line-no">032</span><span id="line-32">import javax.lang.model.type.NoType;</span>
+<span class="source-line-no">033</span><span id="line-33">import javax.lang.model.type.PrimitiveType;</span>
+<span class="source-line-no">034</span><span id="line-34">import javax.lang.model.type.TypeMirror;</span>
 <span class="source-line-no">035</span><span id="line-35"></span>
-<span class="source-line-no">036</span><span id="line-36">import static javax.lang.model.element.ElementKind.ENUM;</span>
-<span class="source-line-no">037</span><span id="line-37">import static javax.lang.model.element.ElementKind.ENUM_CONSTANT;</span>
-<span class="source-line-no">038</span><span id="line-38"></span>
-<span class="source-line-no">039</span><span id="line-39">import static javax.lang.model.type.TypeKind.ARRAY;</span>
-<span class="source-line-no">040</span><span id="line-40">import static javax.lang.model.type.TypeKind.DECLARED;</span>
-<span class="source-line-no">041</span><span id="line-41">import static javax.lang.model.type.TypeKind.VOID;</span>
-<span class="source-line-no">042</span><span id="line-42"></span>
-<span class="source-line-no">043</span><span id="line-43">import static org.microbean.construct.element.AnnotationMirrors.allAnnotationValues;</span>
+<span class="source-line-no">036</span><span id="line-36">import javax.lang.model.util.AbstractAnnotationValueVisitor14;</span>
+<span class="source-line-no">037</span><span id="line-37"></span>
+<span class="source-line-no">038</span><span id="line-38">import static javax.lang.model.element.ElementKind.ENUM;</span>
+<span class="source-line-no">039</span><span id="line-39">import static javax.lang.model.element.ElementKind.ENUM_CONSTANT;</span>
+<span class="source-line-no">040</span><span id="line-40"></span>
+<span class="source-line-no">041</span><span id="line-41">import static javax.lang.model.type.TypeKind.ARRAY;</span>
+<span class="source-line-no">042</span><span id="line-42">import static javax.lang.model.type.TypeKind.DECLARED;</span>
+<span class="source-line-no">043</span><span id="line-43">import static javax.lang.model.type.TypeKind.VOID;</span>
 <span class="source-line-no">044</span><span id="line-44"></span>
-<span class="source-line-no">045</span><span id="line-45">/**</span>
-<span class="source-line-no">046</span><span id="line-46"> * An {@link AbstractAnnotationValueVisitor14} that determines if the otherwise opaque values {@linkplain</span>
-<span class="source-line-no">047</span><span id="line-47"> * AnnotationValue#getValue() represented} by two {@link AnnotationValue} implementations are to be considered the</span>
-<span class="source-line-no">048</span><span id="line-48"> * &lt;dfn&gt;same&lt;/dfn&gt;.</span>
-<span class="source-line-no">049</span><span id="line-49"> *</span>
-<span class="source-line-no">050</span><span id="line-50"> * &lt;p&gt;Unlike some other annotation-processing-related facilities, the relation represented by this {@link</span>
-<span class="source-line-no">051</span><span id="line-51"> * SameAnnotationValueVisitor} does not require that the values being logically compared originate from {@link</span>
-<span class="source-line-no">052</span><span id="line-52"> * AnnotationValue} instances from the same vendor or toolkit.&lt;/p&gt;</span>
-<span class="source-line-no">053</span><span id="line-53"> *</span>
-<span class="source-line-no">054</span><span id="line-54"> * &lt;p&gt;The second argument passed to {@link #visit(AnnotationValue, Object)} is expected to be either {@code null}, an</span>
-<span class="source-line-no">055</span><span id="line-55"> * {@link AnnotationValue}, or the result of an invocation of an {@link AnnotationValue}'s {@link</span>
-<span class="source-line-no">056</span><span id="line-56"> * AnnotationValue#getValue() getValue()} method.&lt;/p&gt;</span>
-<span class="source-line-no">057</span><span id="line-57"> *</span>
-<span class="source-line-no">058</span><span id="line-58"> * &lt;p&gt;Any two {@link TypeElement}s encountered during traversal are considered equal if their {@linkplain</span>
-<span class="source-line-no">059</span><span id="line-59"> * TypeElement#getQualifiedName() qualified names} have {@linkplain</span>
-<span class="source-line-no">060</span><span id="line-60"> * javax.lang.model.element.Name#contentEquals(CharSequence) equal contents}.&lt;/p&gt;</span>
-<span class="source-line-no">061</span><span id="line-61"> *</span>
-<span class="source-line-no">062</span><span id="line-62"> * &lt;p&gt;Any two {@link VariableElement}s representing enum constants encountered during traversal are considered equal if</span>
-<span class="source-line-no">063</span><span id="line-63"> * their {@linkplain VariableElement#getSimpleName() simple names} have {@linkplain</span>
-<span class="source-line-no">064</span><span id="line-64"> * javax.lang.model.element.Name#contentEquals(CharSequence) equal contents}.&lt;/p&gt;</span>
-<span class="source-line-no">065</span><span id="line-65"> *</span>
-<span class="source-line-no">066</span><span id="line-66"> * @author &lt;a href="https://about.me/lairdnelson" target="_top"&gt;Laird Nelson&lt;/a&gt;</span>
+<span class="source-line-no">045</span><span id="line-45">import static org.microbean.construct.element.AnnotationMirrors.allAnnotationValues;</span>
+<span class="source-line-no">046</span><span id="line-46"></span>
+<span class="source-line-no">047</span><span id="line-47">/**</span>
+<span class="source-line-no">048</span><span id="line-48"> * An {@link AbstractAnnotationValueVisitor14} that determines if the otherwise opaque values {@linkplain</span>
+<span class="source-line-no">049</span><span id="line-49"> * AnnotationValue#getValue() represented} by two {@link AnnotationValue} implementations are to be considered the</span>
+<span class="source-line-no">050</span><span id="line-50"> * &lt;dfn&gt;same&lt;/dfn&gt;.</span>
+<span class="source-line-no">051</span><span id="line-51"> *</span>
+<span class="source-line-no">052</span><span id="line-52"> * &lt;p&gt;This class implements the rules described by the {@link java.lang.annotation.Annotation#equals(Object)} contract,</span>
+<span class="source-line-no">053</span><span id="line-53"> * for want of a more authoritative source. This contract appears to define in a mostly agnostic manner what it means</span>
+<span class="source-line-no">054</span><span id="line-54"> * for two annotations to be "the same".&lt;/p&gt;</span>
+<span class="source-line-no">055</span><span id="line-55"> *</span>
+<span class="source-line-no">056</span><span id="line-56"> * &lt;p&gt;Unlike some other annotation-processing-related facilities, the relation represented by this {@link</span>
+<span class="source-line-no">057</span><span id="line-57"> * SameAnnotationValueVisitor} does not require that the values being logically compared originate from {@link</span>
+<span class="source-line-no">058</span><span id="line-58"> * AnnotationValue} instances from the same vendor or toolkit.&lt;/p&gt;</span>
+<span class="source-line-no">059</span><span id="line-59"> *</span>
+<span class="source-line-no">060</span><span id="line-60"> * &lt;p&gt;The second argument passed to {@link #visit(AnnotationValue, Object)} is expected to be either {@code null}, an</span>
+<span class="source-line-no">061</span><span id="line-61"> * {@link AnnotationValue}, or the result of an invocation of an {@link AnnotationValue}'s {@link</span>
+<span class="source-line-no">062</span><span id="line-62"> * AnnotationValue#getValue() getValue()} method.&lt;/p&gt;</span>
+<span class="source-line-no">063</span><span id="line-63"> *</span>
+<span class="source-line-no">064</span><span id="line-64"> * &lt;p&gt;Any two {@link TypeElement}s encountered during traversal are considered equal if their {@linkplain</span>
+<span class="source-line-no">065</span><span id="line-65"> * TypeElement#getQualifiedName() qualified names} have {@linkplain</span>
+<span class="source-line-no">066</span><span id="line-66"> * javax.lang.model.element.Name#contentEquals(CharSequence) equal contents}.&lt;/p&gt;</span>
 <span class="source-line-no">067</span><span id="line-67"> *</span>
-<span class="source-line-no">068</span><span id="line-68"> * @see AnnotationValue#accept(javax.lang.model.element.AnnotationValueVisitor, Object)</span>
-<span class="source-line-no">069</span><span id="line-69"> *</span>
-<span class="source-line-no">070</span><span id="line-70"> * @see AnnotationMirrors#allAnnotationValues(AnnotationMirror)</span>
-<span class="source-line-no">071</span><span id="line-71"> */</span>
-<span class="source-line-no">072</span><span id="line-72">public final class SameAnnotationValueVisitor extends AbstractAnnotationValueVisitor14&lt;Boolean, Object&gt; {</span>
-<span class="source-line-no">073</span><span id="line-73"></span>
-<span class="source-line-no">074</span><span id="line-74"></span>
-<span class="source-line-no">075</span><span id="line-75">  /*</span>
-<span class="source-line-no">076</span><span id="line-76">   * Constructors.</span>
-<span class="source-line-no">077</span><span id="line-77">   */</span>
-<span class="source-line-no">078</span><span id="line-78"></span>
-<span class="source-line-no">079</span><span id="line-79"></span>
-<span class="source-line-no">080</span><span id="line-80">  /**</span>
-<span class="source-line-no">081</span><span id="line-81">   * Creates a new {@link SameAnnotationValueVisitor}.</span>
-<span class="source-line-no">082</span><span id="line-82">   */</span>
-<span class="source-line-no">083</span><span id="line-83">  public SameAnnotationValueVisitor() {</span>
-<span class="source-line-no">084</span><span id="line-84">    super();</span>
-<span class="source-line-no">085</span><span id="line-85">  }</span>
-<span class="source-line-no">086</span><span id="line-86"></span>
-<span class="source-line-no">087</span><span id="line-87"></span>
-<span class="source-line-no">088</span><span id="line-88">  /*</span>
-<span class="source-line-no">089</span><span id="line-89">   * Instance methods.</span>
-<span class="source-line-no">090</span><span id="line-90">   */</span>
-<span class="source-line-no">091</span><span id="line-91"></span>
+<span class="source-line-no">068</span><span id="line-68"> * &lt;p&gt;Any two {@link VariableElement}s representing enum constants encountered during traversal are considered equal if</span>
+<span class="source-line-no">069</span><span id="line-69"> * they belong to the same enum class and their {@linkplain VariableElement#getSimpleName() simple names} have</span>
+<span class="source-line-no">070</span><span id="line-70"> * {@linkplain javax.lang.model.element.Name#contentEquals(CharSequence) equal contents}.&lt;/p&gt;</span>
+<span class="source-line-no">071</span><span id="line-71"> *</span>
+<span class="source-line-no">072</span><span id="line-72"> * @author &lt;a href="https://about.me/lairdnelson" target="_top"&gt;Laird Nelson&lt;/a&gt;</span>
+<span class="source-line-no">073</span><span id="line-73"> *</span>
+<span class="source-line-no">074</span><span id="line-74"> * @see AnnotationValue#accept(javax.lang.model.element.AnnotationValueVisitor, Object)</span>
+<span class="source-line-no">075</span><span id="line-75"> *</span>
+<span class="source-line-no">076</span><span id="line-76"> * @see AnnotationMirrors#allAnnotationValues(AnnotationMirror)</span>
+<span class="source-line-no">077</span><span id="line-77"> *</span>
+<span class="source-line-no">078</span><span id="line-78"> * @see AnnotationValueHashcodeVisitor</span>
+<span class="source-line-no">079</span><span id="line-79"> *</span>
+<span class="source-line-no">080</span><span id="line-80"> * @see java.lang.annotation.Annotation#equals(Object)</span>
+<span class="source-line-no">081</span><span id="line-81"> */</span>
+<span class="source-line-no">082</span><span id="line-82">public final class SameAnnotationValueVisitor extends AbstractAnnotationValueVisitor14&lt;Boolean, Object&gt; {</span>
+<span class="source-line-no">083</span><span id="line-83"></span>
+<span class="source-line-no">084</span><span id="line-84"></span>
+<span class="source-line-no">085</span><span id="line-85"></span>
+<span class="source-line-no">086</span><span id="line-86">  /*</span>
+<span class="source-line-no">087</span><span id="line-87">   * Instance fields.</span>
+<span class="source-line-no">088</span><span id="line-88">   */</span>
+<span class="source-line-no">089</span><span id="line-89"></span>
+<span class="source-line-no">090</span><span id="line-90"></span>
+<span class="source-line-no">091</span><span id="line-91">  private final Predicate&lt;? super ExecutableElement&gt; p;</span>
 <span class="source-line-no">092</span><span id="line-92"></span>
-<span class="source-line-no">093</span><span id="line-93">  @Override // AbstractAnnotationValueVisitor14</span>
-<span class="source-line-no">094</span><span id="line-94">  public final Boolean visitAnnotation(final AnnotationMirror am0, final Object v1) {</span>
-<span class="source-line-no">095</span><span id="line-95">    return am0 == v1 || am0 != null &amp;&amp; switch (v1) {</span>
-<span class="source-line-no">096</span><span id="line-96">    case null -&gt; false;</span>
-<span class="source-line-no">097</span><span id="line-97">    case AnnotationValue av1 -&gt; this.visitAnnotation(am0, av1.getValue());</span>
-<span class="source-line-no">098</span><span id="line-98">    case AnnotationMirror am1 -&gt; {</span>
-<span class="source-line-no">099</span><span id="line-99">      final Iterator&lt;Entry&lt;ExecutableElement, AnnotationValue&gt;&gt; i0 = allAnnotationValues(am0).entrySet().iterator();</span>
-<span class="source-line-no">100</span><span id="line-100">      final Iterator&lt;Entry&lt;ExecutableElement, AnnotationValue&gt;&gt; i1 = allAnnotationValues(am1).entrySet().iterator();</span>
-<span class="source-line-no">101</span><span id="line-101">      while (i0.hasNext()) {</span>
-<span class="source-line-no">102</span><span id="line-102">        if (!i1.hasNext()) {</span>
-<span class="source-line-no">103</span><span id="line-103">          yield false;</span>
-<span class="source-line-no">104</span><span id="line-104">        }</span>
-<span class="source-line-no">105</span><span id="line-105">        final Entry&lt;ExecutableElement, AnnotationValue&gt; e0 = i0.next();</span>
-<span class="source-line-no">106</span><span id="line-106">        final Entry&lt;ExecutableElement, AnnotationValue&gt; e1 = i1.next();</span>
-<span class="source-line-no">107</span><span id="line-107">        if (!e0.getKey().getSimpleName().contentEquals(e1.getKey().getSimpleName()) ||</span>
-<span class="source-line-no">108</span><span id="line-108">            !this.visit(e0.getValue(), e1.getValue().getValue())) {</span>
-<span class="source-line-no">109</span><span id="line-109">          yield false;</span>
-<span class="source-line-no">110</span><span id="line-110">        }</span>
-<span class="source-line-no">111</span><span id="line-111">      }</span>
-<span class="source-line-no">112</span><span id="line-112">      yield i1.hasNext();</span>
-<span class="source-line-no">113</span><span id="line-113">    }</span>
-<span class="source-line-no">114</span><span id="line-114">    default -&gt; false;</span>
-<span class="source-line-no">115</span><span id="line-115">    };</span>
-<span class="source-line-no">116</span><span id="line-116">  }</span>
-<span class="source-line-no">117</span><span id="line-117"></span>
-<span class="source-line-no">118</span><span id="line-118">  @Override // AbstractAnnotationValueVisitor14</span>
-<span class="source-line-no">119</span><span id="line-119">  public final Boolean visitArray(final List&lt;? extends AnnotationValue&gt; l0, final Object v1) {</span>
-<span class="source-line-no">120</span><span id="line-120">    return l0 == v1 || l0 != null &amp;&amp; switch (v1) {</span>
-<span class="source-line-no">121</span><span id="line-121">    case null -&gt; false;</span>
-<span class="source-line-no">122</span><span id="line-122">    case AnnotationValue av1 -&gt; this.visitArray(l0, av1.getValue());</span>
-<span class="source-line-no">123</span><span id="line-123">    case List&lt;?&gt; l1 -&gt; {</span>
-<span class="source-line-no">124</span><span id="line-124">      final int size = l0.size();</span>
-<span class="source-line-no">125</span><span id="line-125">      if (size != l1.size()) {</span>
-<span class="source-line-no">126</span><span id="line-126">        yield false;</span>
-<span class="source-line-no">127</span><span id="line-127">      }</span>
-<span class="source-line-no">128</span><span id="line-128">      for (int i = 0; i &lt; size; i++) {</span>
-<span class="source-line-no">129</span><span id="line-129">        if (l1.get(i) instanceof AnnotationValue av1 &amp;&amp; this.visit(av1, l0.get(i).getValue())) {</span>
-<span class="source-line-no">130</span><span id="line-130">          continue;</span>
-<span class="source-line-no">131</span><span id="line-131">        }</span>
-<span class="source-line-no">132</span><span id="line-132">        yield false;</span>
-<span class="source-line-no">133</span><span id="line-133">      }</span>
-<span class="source-line-no">134</span><span id="line-134">      yield true;</span>
-<span class="source-line-no">135</span><span id="line-135">    }</span>
-<span class="source-line-no">136</span><span id="line-136">    default -&gt; false;</span>
-<span class="source-line-no">137</span><span id="line-137">    };</span>
-<span class="source-line-no">138</span><span id="line-138">  }</span>
-<span class="source-line-no">139</span><span id="line-139"></span>
-<span class="source-line-no">140</span><span id="line-140">  @Override // AbstractAnnotationValueVisitor14</span>
-<span class="source-line-no">141</span><span id="line-141">  public final Boolean visitBoolean(final boolean b0, final Object v1) {</span>
-<span class="source-line-no">142</span><span id="line-142">    return v1 instanceof AnnotationValue av1 ? this.visitBoolean(b0, av1.getValue()) : Boolean.valueOf(b0).equals(v1);</span>
-<span class="source-line-no">143</span><span id="line-143">  }</span>
-<span class="source-line-no">144</span><span id="line-144"></span>
-<span class="source-line-no">145</span><span id="line-145">  @Override // AbstractAnnotationValueVisitor14</span>
-<span class="source-line-no">146</span><span id="line-146">  public final Boolean visitByte(final byte b0, final Object v1) {</span>
-<span class="source-line-no">147</span><span id="line-147">    return v1 instanceof AnnotationValue av1 ? this.visitByte(b0, av1.getValue()) : Byte.valueOf(b0).equals(v1);</span>
-<span class="source-line-no">148</span><span id="line-148">  }</span>
-<span class="source-line-no">149</span><span id="line-149"></span>
-<span class="source-line-no">150</span><span id="line-150">  @Override // AbstractAnnotationValueVisitor14</span>
-<span class="source-line-no">151</span><span id="line-151">  public final Boolean visitChar(final char c0, final Object v1) {</span>
-<span class="source-line-no">152</span><span id="line-152">    return v1 instanceof AnnotationValue av1 ? this.visitChar(c0, av1.getValue()) : Character.valueOf(c0).equals(v1);</span>
-<span class="source-line-no">153</span><span id="line-153">  }</span>
-<span class="source-line-no">154</span><span id="line-154"></span>
-<span class="source-line-no">155</span><span id="line-155">  @Override // AbstractAnnotationValueVisitor14</span>
-<span class="source-line-no">156</span><span id="line-156">  public final Boolean visitDouble(final double d0, final Object v1) {</span>
-<span class="source-line-no">157</span><span id="line-157">    return v1 instanceof AnnotationValue av1 ? this.visitDouble(d0, av1.getValue()) : Double.valueOf(d0).equals(v1);</span>
-<span class="source-line-no">158</span><span id="line-158">  }</span>
-<span class="source-line-no">159</span><span id="line-159"></span>
-<span class="source-line-no">160</span><span id="line-160">  @Override // AbstractAnnotationValueVisitor14</span>
-<span class="source-line-no">161</span><span id="line-161">  public final Boolean visitEnumConstant(final VariableElement ve0, final Object v1) {</span>
-<span class="source-line-no">162</span><span id="line-162">    return ve0 == v1 || ve0!= null &amp;&amp; switch (v1) {</span>
-<span class="source-line-no">163</span><span id="line-163">    case null -&gt; false;</span>
-<span class="source-line-no">164</span><span id="line-164">    case AnnotationValue av1 -&gt; this.visitEnumConstant(ve0, av1.getValue());</span>
-<span class="source-line-no">165</span><span id="line-165">    case VariableElement ve1 when ve0.getKind() == ENUM_CONSTANT &amp;&amp; ve1.getKind() == ENUM_CONSTANT -&gt; {</span>
-<span class="source-line-no">166</span><span id="line-166">      final TypeElement te0 = (TypeElement)ve0.getEnclosingElement();</span>
-<span class="source-line-no">167</span><span id="line-167">      final TypeElement te1 = (TypeElement)ve1.getEnclosingElement();</span>
-<span class="source-line-no">168</span><span id="line-168">      yield switch (te0.getKind()) {</span>
-<span class="source-line-no">169</span><span id="line-169">      case ENUM -&gt; te1.getKind() == ENUM &amp;&amp; ve0.getSimpleName().contentEquals(ve1.getSimpleName()) &amp;&amp; te0.getQualifiedName().contentEquals(te1.getQualifiedName());</span>
-<span class="source-line-no">170</span><span id="line-170">      default -&gt; false;</span>
-<span class="source-line-no">171</span><span id="line-171">      };</span>
-<span class="source-line-no">172</span><span id="line-172">    }</span>
-<span class="source-line-no">173</span><span id="line-173">    default -&gt; false;</span>
-<span class="source-line-no">174</span><span id="line-174">    };</span>
-<span class="source-line-no">175</span><span id="line-175">  }</span>
-<span class="source-line-no">176</span><span id="line-176"></span>
-<span class="source-line-no">177</span><span id="line-177">  @Override // AbstractAnnotationValueVisitor14</span>
-<span class="source-line-no">178</span><span id="line-178">  public final Boolean visitFloat(final float f0, final Object v1) {</span>
-<span class="source-line-no">179</span><span id="line-179">    return v1 instanceof AnnotationValue av1 ? this.visitFloat(f0, av1.getValue()) : Float.valueOf(f0).equals(v1);</span>
-<span class="source-line-no">180</span><span id="line-180">  }</span>
-<span class="source-line-no">181</span><span id="line-181"></span>
-<span class="source-line-no">182</span><span id="line-182">  @Override // AbstractAnnotationValueVisitor14</span>
-<span class="source-line-no">183</span><span id="line-183">  public final Boolean visitInt(final int i0, final Object v1) {</span>
-<span class="source-line-no">184</span><span id="line-184">    return v1 instanceof AnnotationValue av1 ? this.visitInt(i0, av1.getValue()) : Integer.valueOf(i0).equals(v1);</span>
-<span class="source-line-no">185</span><span id="line-185">  }</span>
-<span class="source-line-no">186</span><span id="line-186"></span>
-<span class="source-line-no">187</span><span id="line-187">  @Override // AbstractAnnotationValueVisitor14</span>
-<span class="source-line-no">188</span><span id="line-188">  public final Boolean visitLong(final long l0, final Object v1) {</span>
-<span class="source-line-no">189</span><span id="line-189">    return v1 instanceof AnnotationValue av1 ? this.visitLong(l0, av1.getValue()) : Long.valueOf(l0).equals(v1);</span>
-<span class="source-line-no">190</span><span id="line-190">  }</span>
-<span class="source-line-no">191</span><span id="line-191"></span>
-<span class="source-line-no">192</span><span id="line-192">  @Override // AbstractAnnotationValueVisitor14</span>
-<span class="source-line-no">193</span><span id="line-193">  public final Boolean visitShort(final short s0, final Object v1) {</span>
-<span class="source-line-no">194</span><span id="line-194">    return v1 instanceof AnnotationValue av1 ? this.visitShort(s0, av1.getValue()) : Short.valueOf(s0).equals(v1);</span>
-<span class="source-line-no">195</span><span id="line-195">  }</span>
-<span class="source-line-no">196</span><span id="line-196"></span>
-<span class="source-line-no">197</span><span id="line-197">  @Override // AbstractAnnotationValueVisitor14</span>
-<span class="source-line-no">198</span><span id="line-198">  public final Boolean visitString(final String s0, final Object v1) {</span>
-<span class="source-line-no">199</span><span id="line-199">    return v1 instanceof AnnotationValue av1 ? this.visitString(s0, av1.getValue()) : Objects.equals(s0, v1);</span>
-<span class="source-line-no">200</span><span id="line-200">  }</span>
-<span class="source-line-no">201</span><span id="line-201"></span>
-<span class="source-line-no">202</span><span id="line-202">  @Override // AbstractAnnotationValueVisitor14</span>
-<span class="source-line-no">203</span><span id="line-203">  public final Boolean visitType(final TypeMirror t0, final Object v1) {</span>
-<span class="source-line-no">204</span><span id="line-204">    return t0 == v1 || v1 != null &amp;&amp; switch (t0) {</span>
-<span class="source-line-no">205</span><span id="line-205">    case null -&gt; false;</span>
-<span class="source-line-no">206</span><span id="line-206">    case AnnotationValue av1 -&gt; this.visitType(t0, av1.getValue());</span>
-<span class="source-line-no">207</span><span id="line-207">    case ArrayType a0 when a0.getKind() == ARRAY -&gt; this.visitArrayType(a0, v1); // e.g. Object[].class</span>
-<span class="source-line-no">208</span><span id="line-208">    case DeclaredType dt0 when dt0.getKind() == DECLARED -&gt; this.visitDeclaredType(dt0, v1); // e.g. Foo.class</span>
-<span class="source-line-no">209</span><span id="line-209">    case PrimitiveType p0 when p0.getKind().isPrimitive() -&gt; this.visitPrimitiveType(p0, v1); // e.g. int.class</span>
-<span class="source-line-no">210</span><span id="line-210">    case NoType n0 when n0.getKind() == VOID -&gt; this.visitNoType(n0, v1); // e.g. void.class</span>
-<span class="source-line-no">211</span><span id="line-211">    default -&gt; t0.equals(v1);</span>
-<span class="source-line-no">212</span><span id="line-212">    };</span>
-<span class="source-line-no">213</span><span id="line-213">  }</span>
-<span class="source-line-no">214</span><span id="line-214"></span>
-<span class="source-line-no">215</span><span id="line-215">  @Override // AbstractAnnotationValueVisitor14</span>
-<span class="source-line-no">216</span><span id="line-216">  public final Boolean visitUnknown(final AnnotationValue av0, final Object v1) {</span>
-<span class="source-line-no">217</span><span id="line-217">    return v1 instanceof AnnotationValue av1 ? this.visitUnknown(av0, av1.getValue()) : Objects.equals(av0, v1);</span>
-<span class="source-line-no">218</span><span id="line-218">  }</span>
-<span class="source-line-no">219</span><span id="line-219"></span>
-<span class="source-line-no">220</span><span id="line-220"></span>
-<span class="source-line-no">221</span><span id="line-221">  /*</span>
-<span class="source-line-no">222</span><span id="line-222">   * Private instance methods.</span>
-<span class="source-line-no">223</span><span id="line-223">   */</span>
-<span class="source-line-no">224</span><span id="line-224"></span>
-<span class="source-line-no">225</span><span id="line-225"></span>
-<span class="source-line-no">226</span><span id="line-226">  private final Boolean visitArrayType(final ArrayType a0, final Object v1) {</span>
-<span class="source-line-no">227</span><span id="line-227">    assert a0.getKind() == ARRAY;</span>
-<span class="source-line-no">228</span><span id="line-228">    assert !(v1 instanceof AnnotationValue);</span>
-<span class="source-line-no">229</span><span id="line-229">    return switch (v1) {</span>
-<span class="source-line-no">230</span><span id="line-230">    case ArrayType a1 when a1.getKind() == ARRAY -&gt; this.visitType(a0.getComponentType(), a1.getComponentType());</span>
-<span class="source-line-no">231</span><span id="line-231">    default -&gt; false;</span>
-<span class="source-line-no">232</span><span id="line-232">    };</span>
+<span class="source-line-no">093</span><span id="line-93"></span>
+<span class="source-line-no">094</span><span id="line-94"></span>
+<span class="source-line-no">095</span><span id="line-95">  /*</span>
+<span class="source-line-no">096</span><span id="line-96">   * Constructors.</span>
+<span class="source-line-no">097</span><span id="line-97">   */</span>
+<span class="source-line-no">098</span><span id="line-98"></span>
+<span class="source-line-no">099</span><span id="line-99"></span>
+<span class="source-line-no">100</span><span id="line-100">  /**</span>
+<span class="source-line-no">101</span><span id="line-101">   * Creates a new {@link SameAnnotationValueVisitor}.</span>
+<span class="source-line-no">102</span><span id="line-102">   *</span>
+<span class="source-line-no">103</span><span id="line-103">   * @see #SameAnnotationValueVisitor(Predicate)</span>
+<span class="source-line-no">104</span><span id="line-104">   */</span>
+<span class="source-line-no">105</span><span id="line-105">  public SameAnnotationValueVisitor() {</span>
+<span class="source-line-no">106</span><span id="line-106">    this(null);</span>
+<span class="source-line-no">107</span><span id="line-107">  }</span>
+<span class="source-line-no">108</span><span id="line-108"></span>
+<span class="source-line-no">109</span><span id="line-109">  /**</span>
+<span class="source-line-no">110</span><span id="line-110">   * Creates a new {@link SameAnnotationValueVisitor}.</span>
+<span class="source-line-no">111</span><span id="line-111">   *</span>
+<span class="source-line-no">112</span><span id="line-112">   * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an</span>
+<span class="source-line-no">113</span><span id="line-113">   * annotation interface element, is to be included in the computation; may be {@code null} in which case it is as if</span>
+<span class="source-line-no">114</span><span id="line-114">   * {@code ()-&gt; true} were supplied instead</span>
+<span class="source-line-no">115</span><span id="line-115">   */</span>
+<span class="source-line-no">116</span><span id="line-116">  public SameAnnotationValueVisitor(final Predicate&lt;? super ExecutableElement&gt; p) {</span>
+<span class="source-line-no">117</span><span id="line-117">    super();</span>
+<span class="source-line-no">118</span><span id="line-118">    this.p = p == null ? ee -&gt; true : p;</span>
+<span class="source-line-no">119</span><span id="line-119">  }</span>
+<span class="source-line-no">120</span><span id="line-120"></span>
+<span class="source-line-no">121</span><span id="line-121"></span>
+<span class="source-line-no">122</span><span id="line-122">  /*</span>
+<span class="source-line-no">123</span><span id="line-123">   * Instance methods.</span>
+<span class="source-line-no">124</span><span id="line-124">   */</span>
+<span class="source-line-no">125</span><span id="line-125"></span>
+<span class="source-line-no">126</span><span id="line-126"></span>
+<span class="source-line-no">127</span><span id="line-127">  @Override // AbstractAnnotationValueVisitor14</span>
+<span class="source-line-no">128</span><span id="line-128">  public final Boolean visitAnnotation(final AnnotationMirror am0, final Object v1) {</span>
+<span class="source-line-no">129</span><span id="line-129">    return am0 == v1 || am0 != null &amp;&amp; switch (v1) {</span>
+<span class="source-line-no">130</span><span id="line-130">    case null -&gt; false;</span>
+<span class="source-line-no">131</span><span id="line-131">    case AnnotationValue av1 -&gt; this.visitAnnotation(am0, av1.getValue());</span>
+<span class="source-line-no">132</span><span id="line-132">    case AnnotationMirror am1 -&gt; {</span>
+<span class="source-line-no">133</span><span id="line-133">      if (!((QualifiedNameable)am0.getAnnotationType().asElement()).getQualifiedName().contentEquals(((QualifiedNameable)am1.getAnnotationType().asElement()).getQualifiedName())) {</span>
+<span class="source-line-no">134</span><span id="line-134">        yield false;</span>
+<span class="source-line-no">135</span><span id="line-135">      }</span>
+<span class="source-line-no">136</span><span id="line-136">      final Iterator&lt;Entry&lt;ExecutableElement, AnnotationValue&gt;&gt; i0 = allAnnotationValues(am0).entrySet().iterator();</span>
+<span class="source-line-no">137</span><span id="line-137">      final Iterator&lt;Entry&lt;ExecutableElement, AnnotationValue&gt;&gt; i1 = allAnnotationValues(am1).entrySet().iterator();</span>
+<span class="source-line-no">138</span><span id="line-138">      while (i0.hasNext()) {</span>
+<span class="source-line-no">139</span><span id="line-139">        if (!i1.hasNext()) {</span>
+<span class="source-line-no">140</span><span id="line-140">          yield false;</span>
+<span class="source-line-no">141</span><span id="line-141">        }</span>
+<span class="source-line-no">142</span><span id="line-142">        final Entry&lt;ExecutableElement, AnnotationValue&gt; e0 = i0.next();</span>
+<span class="source-line-no">143</span><span id="line-143">        final Entry&lt;ExecutableElement, AnnotationValue&gt; e1 = i1.next();</span>
+<span class="source-line-no">144</span><span id="line-144">        final ExecutableElement ee0 = e0.getKey();</span>
+<span class="source-line-no">145</span><span id="line-145">        if (!ee0.getSimpleName().contentEquals(e1.getKey().getSimpleName()) ||</span>
+<span class="source-line-no">146</span><span id="line-146">            this.p.test(ee0) &amp;&amp; !this.visit(e0.getValue(), e1.getValue().getValue())) {</span>
+<span class="source-line-no">147</span><span id="line-147">          yield false;</span>
+<span class="source-line-no">148</span><span id="line-148">        }</span>
+<span class="source-line-no">149</span><span id="line-149">      }</span>
+<span class="source-line-no">150</span><span id="line-150">      yield !i1.hasNext();</span>
+<span class="source-line-no">151</span><span id="line-151">    }</span>
+<span class="source-line-no">152</span><span id="line-152">    default -&gt; false;</span>
+<span class="source-line-no">153</span><span id="line-153">    };</span>
+<span class="source-line-no">154</span><span id="line-154">  }</span>
+<span class="source-line-no">155</span><span id="line-155"></span>
+<span class="source-line-no">156</span><span id="line-156">  @Override // AbstractAnnotationValueVisitor14</span>
+<span class="source-line-no">157</span><span id="line-157">  public final Boolean visitArray(final List&lt;? extends AnnotationValue&gt; l0, final Object v1) {</span>
+<span class="source-line-no">158</span><span id="line-158">    return l0 == v1 || l0 != null &amp;&amp; switch (v1) {</span>
+<span class="source-line-no">159</span><span id="line-159">    case null -&gt; false;</span>
+<span class="source-line-no">160</span><span id="line-160">    case AnnotationValue av1 -&gt; this.visitArray(l0, av1.getValue());</span>
+<span class="source-line-no">161</span><span id="line-161">    case List&lt;?&gt; l1 -&gt; {</span>
+<span class="source-line-no">162</span><span id="line-162">      final int size = l0.size();</span>
+<span class="source-line-no">163</span><span id="line-163">      if (size != l1.size()) {</span>
+<span class="source-line-no">164</span><span id="line-164">        yield false;</span>
+<span class="source-line-no">165</span><span id="line-165">      }</span>
+<span class="source-line-no">166</span><span id="line-166">      for (int i = 0; i &lt; size; i++) {</span>
+<span class="source-line-no">167</span><span id="line-167">        // Yes, order is important (!)</span>
+<span class="source-line-no">168</span><span id="line-168">        if (!(l1.get(i) instanceof AnnotationValue av1) || !this.visit(av1, l0.get(i).getValue())) {</span>
+<span class="source-line-no">169</span><span id="line-169">          yield false;</span>
+<span class="source-line-no">170</span><span id="line-170">        }</span>
+<span class="source-line-no">171</span><span id="line-171">      }</span>
+<span class="source-line-no">172</span><span id="line-172">      yield true;</span>
+<span class="source-line-no">173</span><span id="line-173">    }</span>
+<span class="source-line-no">174</span><span id="line-174">    default -&gt; false;</span>
+<span class="source-line-no">175</span><span id="line-175">    };</span>
+<span class="source-line-no">176</span><span id="line-176">  }</span>
+<span class="source-line-no">177</span><span id="line-177"></span>
+<span class="source-line-no">178</span><span id="line-178">  @Override // AbstractAnnotationValueVisitor14</span>
+<span class="source-line-no">179</span><span id="line-179">  public final Boolean visitBoolean(final boolean b0, final Object v1) {</span>
+<span class="source-line-no">180</span><span id="line-180">    return switch (v1) {</span>
+<span class="source-line-no">181</span><span id="line-181">    case null -&gt; false;</span>
+<span class="source-line-no">182</span><span id="line-182">    case AnnotationValue av1 -&gt; this.visitBoolean(b0, av1.getValue());</span>
+<span class="source-line-no">183</span><span id="line-183">    case Boolean b1 -&gt; b0 &amp;&amp; b1.booleanValue();</span>
+<span class="source-line-no">184</span><span id="line-184">    default -&gt; false;</span>
+<span class="source-line-no">185</span><span id="line-185">    };</span>
+<span class="source-line-no">186</span><span id="line-186">  }</span>
+<span class="source-line-no">187</span><span id="line-187"></span>
+<span class="source-line-no">188</span><span id="line-188">  @Override // AbstractAnnotationValueVisitor14</span>
+<span class="source-line-no">189</span><span id="line-189">  public final Boolean visitByte(final byte b0, final Object v1) {</span>
+<span class="source-line-no">190</span><span id="line-190">    return switch (v1) {</span>
+<span class="source-line-no">191</span><span id="line-191">    case null -&gt; false;</span>
+<span class="source-line-no">192</span><span id="line-192">    case AnnotationValue av1 -&gt; this.visitByte(b0, av1.getValue());</span>
+<span class="source-line-no">193</span><span id="line-193">    case Byte b1 -&gt; b0 == b1.byteValue();</span>
+<span class="source-line-no">194</span><span id="line-194">    default -&gt; false;</span>
+<span class="source-line-no">195</span><span id="line-195">    };</span>
+<span class="source-line-no">196</span><span id="line-196">  }</span>
+<span class="source-line-no">197</span><span id="line-197"></span>
+<span class="source-line-no">198</span><span id="line-198">  @Override // AbstractAnnotationValueVisitor14</span>
+<span class="source-line-no">199</span><span id="line-199">  public final Boolean visitChar(final char c0, final Object v1) {</span>
+<span class="source-line-no">200</span><span id="line-200">    return switch (v1) {</span>
+<span class="source-line-no">201</span><span id="line-201">    case null -&gt; false;</span>
+<span class="source-line-no">202</span><span id="line-202">    case AnnotationValue av1 -&gt; this.visitChar(c0, av1.getValue());</span>
+<span class="source-line-no">203</span><span id="line-203">    case Character c1 -&gt; c0 == c1.charValue();</span>
+<span class="source-line-no">204</span><span id="line-204">    default -&gt; false;</span>
+<span class="source-line-no">205</span><span id="line-205">    };</span>
+<span class="source-line-no">206</span><span id="line-206">  }</span>
+<span class="source-line-no">207</span><span id="line-207"></span>
+<span class="source-line-no">208</span><span id="line-208">  @Override // AbstractAnnotationValueVisitor14</span>
+<span class="source-line-no">209</span><span id="line-209">  public final Boolean visitDouble(final double d0, final Object v1) {</span>
+<span class="source-line-no">210</span><span id="line-210">    return v1 instanceof AnnotationValue av1 ? this.visitDouble(d0, av1.getValue()) : Double.valueOf(d0).equals(v1);</span>
+<span class="source-line-no">211</span><span id="line-211">  }</span>
+<span class="source-line-no">212</span><span id="line-212"></span>
+<span class="source-line-no">213</span><span id="line-213">  @Override // AbstractAnnotationValueVisitor14</span>
+<span class="source-line-no">214</span><span id="line-214">  public final Boolean visitEnumConstant(final VariableElement ve0, final Object v1) {</span>
+<span class="source-line-no">215</span><span id="line-215">    return ve0 == v1 || ve0!= null &amp;&amp; switch (v1) {</span>
+<span class="source-line-no">216</span><span id="line-216">    case null -&gt; false;</span>
+<span class="source-line-no">217</span><span id="line-217">    case AnnotationValue av1 -&gt; this.visitEnumConstant(ve0, av1.getValue());</span>
+<span class="source-line-no">218</span><span id="line-218">    case VariableElement ve1 when ve0.getKind() == ENUM_CONSTANT &amp;&amp; ve1.getKind() == ENUM_CONSTANT -&gt; {</span>
+<span class="source-line-no">219</span><span id="line-219">      final TypeElement te0 = (TypeElement)ve0.getEnclosingElement();</span>
+<span class="source-line-no">220</span><span id="line-220">      final TypeElement te1 = (TypeElement)ve1.getEnclosingElement();</span>
+<span class="source-line-no">221</span><span id="line-221">      yield switch (te0.getKind()) {</span>
+<span class="source-line-no">222</span><span id="line-222">      case ENUM -&gt; te1.getKind() == ENUM &amp;&amp; ve0.getSimpleName().contentEquals(ve1.getSimpleName()) &amp;&amp; te0.getQualifiedName().contentEquals(te1.getQualifiedName());</span>
+<span class="source-line-no">223</span><span id="line-223">      default -&gt; false;</span>
+<span class="source-line-no">224</span><span id="line-224">      };</span>
+<span class="source-line-no">225</span><span id="line-225">    }</span>
+<span class="source-line-no">226</span><span id="line-226">    default -&gt; false;</span>
+<span class="source-line-no">227</span><span id="line-227">    };</span>
+<span class="source-line-no">228</span><span id="line-228">  }</span>
+<span class="source-line-no">229</span><span id="line-229"></span>
+<span class="source-line-no">230</span><span id="line-230">  @Override // AbstractAnnotationValueVisitor14</span>
+<span class="source-line-no">231</span><span id="line-231">  public final Boolean visitFloat(final float f0, final Object v1) {</span>
+<span class="source-line-no">232</span><span id="line-232">    return v1 instanceof AnnotationValue av1 ? this.visitFloat(f0, av1.getValue()) : Float.valueOf(f0).equals(v1);</span>
 <span class="source-line-no">233</span><span id="line-233">  }</span>
 <span class="source-line-no">234</span><span id="line-234"></span>
-<span class="source-line-no">235</span><span id="line-235">  private final Boolean visitDeclaredType(final DeclaredType dt0, final Object v1) {</span>
-<span class="source-line-no">236</span><span id="line-236">    assert dt0.getKind() == DECLARED;</span>
-<span class="source-line-no">237</span><span id="line-237">    assert !(v1 instanceof AnnotationValue);</span>
-<span class="source-line-no">238</span><span id="line-238">    return switch (v1) {</span>
-<span class="source-line-no">239</span><span id="line-239">    case DeclaredType dt1 when dt1.getKind() == DECLARED -&gt; ((QualifiedNameable)dt0.asElement()).getQualifiedName().contentEquals((((QualifiedNameable)dt1.asElement()).getQualifiedName()));</span>
-<span class="source-line-no">240</span><span id="line-240">    default -&gt; false;</span>
-<span class="source-line-no">241</span><span id="line-241">    };</span>
-<span class="source-line-no">242</span><span id="line-242">  }</span>
-<span class="source-line-no">243</span><span id="line-243"></span>
-<span class="source-line-no">244</span><span id="line-244">  private final Boolean visitNoType(final NoType n0, final Object v1) {</span>
-<span class="source-line-no">245</span><span id="line-245">    assert n0.getKind() == VOID;</span>
-<span class="source-line-no">246</span><span id="line-246">    assert !(v1 instanceof AnnotationValue);</span>
+<span class="source-line-no">235</span><span id="line-235">  @Override // AbstractAnnotationValueVisitor14</span>
+<span class="source-line-no">236</span><span id="line-236">  public final Boolean visitInt(final int i0, final Object v1) {</span>
+<span class="source-line-no">237</span><span id="line-237">    return switch (v1) {</span>
+<span class="source-line-no">238</span><span id="line-238">    case null -&gt; false;</span>
+<span class="source-line-no">239</span><span id="line-239">    case AnnotationValue av1 -&gt; this.visitInt(i0, av1.getValue());</span>
+<span class="source-line-no">240</span><span id="line-240">    case Integer i1 -&gt; i0 == i1.intValue();</span>
+<span class="source-line-no">241</span><span id="line-241">    default -&gt; false;</span>
+<span class="source-line-no">242</span><span id="line-242">    };</span>
+<span class="source-line-no">243</span><span id="line-243">  }</span>
+<span class="source-line-no">244</span><span id="line-244"></span>
+<span class="source-line-no">245</span><span id="line-245">  @Override // AbstractAnnotationValueVisitor14</span>
+<span class="source-line-no">246</span><span id="line-246">  public final Boolean visitLong(final long l0, final Object v1) {</span>
 <span class="source-line-no">247</span><span id="line-247">    return switch (v1) {</span>
-<span class="source-line-no">248</span><span id="line-248">    case NoType n1 -&gt; n1.getKind() == VOID;</span>
-<span class="source-line-no">249</span><span id="line-249">    default -&gt; false;</span>
-<span class="source-line-no">250</span><span id="line-250">    };</span>
-<span class="source-line-no">251</span><span id="line-251">  }</span>
-<span class="source-line-no">252</span><span id="line-252"></span>
-<span class="source-line-no">253</span><span id="line-253">  private final Boolean visitPrimitiveType(final PrimitiveType p0, final Object v1) {</span>
-<span class="source-line-no">254</span><span id="line-254">    assert p0.getKind().isPrimitive();</span>
-<span class="source-line-no">255</span><span id="line-255">    assert !(v1 instanceof AnnotationValue);</span>
-<span class="source-line-no">256</span><span id="line-256">    return switch (v1) {</span>
-<span class="source-line-no">257</span><span id="line-257">    case PrimitiveType p1 -&gt; p1.getKind() == p0.getKind();</span>
-<span class="source-line-no">258</span><span id="line-258">    default -&gt; false;</span>
-<span class="source-line-no">259</span><span id="line-259">    };</span>
-<span class="source-line-no">260</span><span id="line-260">  }</span>
-<span class="source-line-no">261</span><span id="line-261"></span>
-<span class="source-line-no">262</span><span id="line-262">}</span>
+<span class="source-line-no">248</span><span id="line-248">    case null -&gt; false;</span>
+<span class="source-line-no">249</span><span id="line-249">    case AnnotationValue av1 -&gt; this.visitLong(l0, av1.getValue());</span>
+<span class="source-line-no">250</span><span id="line-250">    case Long l1 -&gt; l0 == l1.longValue();</span>
+<span class="source-line-no">251</span><span id="line-251">    default -&gt; false;</span>
+<span class="source-line-no">252</span><span id="line-252">    };</span>
+<span class="source-line-no">253</span><span id="line-253">  }</span>
+<span class="source-line-no">254</span><span id="line-254"></span>
+<span class="source-line-no">255</span><span id="line-255">  @Override // AbstractAnnotationValueVisitor14</span>
+<span class="source-line-no">256</span><span id="line-256">  public final Boolean visitShort(final short s0, final Object v1) {</span>
+<span class="source-line-no">257</span><span id="line-257">    return switch (v1) {</span>
+<span class="source-line-no">258</span><span id="line-258">    case null -&gt; false;</span>
+<span class="source-line-no">259</span><span id="line-259">    case AnnotationValue av1 -&gt; this.visitShort(s0, av1.getValue());</span>
+<span class="source-line-no">260</span><span id="line-260">    case Short s1 -&gt; s0 == s1.shortValue();</span>
+<span class="source-line-no">261</span><span id="line-261">    default -&gt; false;</span>
+<span class="source-line-no">262</span><span id="line-262">    };</span>
+<span class="source-line-no">263</span><span id="line-263">  }</span>
+<span class="source-line-no">264</span><span id="line-264"></span>
+<span class="source-line-no">265</span><span id="line-265">  @Override // AbstractAnnotationValueVisitor14</span>
+<span class="source-line-no">266</span><span id="line-266">  public final Boolean visitString(final String s0, final Object v1) {</span>
+<span class="source-line-no">267</span><span id="line-267">    return v1 instanceof AnnotationValue av1 ? this.visitString(s0, av1.getValue()) : Objects.equals(s0, v1);</span>
+<span class="source-line-no">268</span><span id="line-268">  }</span>
+<span class="source-line-no">269</span><span id="line-269"></span>
+<span class="source-line-no">270</span><span id="line-270">  @Override // AbstractAnnotationValueVisitor14</span>
+<span class="source-line-no">271</span><span id="line-271">  public final Boolean visitType(final TypeMirror t0, final Object v1) {</span>
+<span class="source-line-no">272</span><span id="line-272">    return t0 == v1 || v1 != null &amp;&amp; switch (t0) {</span>
+<span class="source-line-no">273</span><span id="line-273">    case null -&gt; false;</span>
+<span class="source-line-no">274</span><span id="line-274">    case ArrayType a0 when a0.getKind() == ARRAY -&gt; this.privateVisitArrayType(a0, v1); // e.g. Object[].class</span>
+<span class="source-line-no">275</span><span id="line-275">    case DeclaredType dt0 when dt0.getKind() == DECLARED -&gt; this.privateVisitDeclaredType(dt0, v1); // e.g. Foo.class</span>
+<span class="source-line-no">276</span><span id="line-276">    case PrimitiveType p0 when p0.getKind().isPrimitive() -&gt; this.privateVisitPrimitiveType(p0, v1); // e.g. int.class</span>
+<span class="source-line-no">277</span><span id="line-277">    case NoType n0 when n0.getKind() == VOID -&gt; this.privateVisitNoType(n0, v1); // e.g. void.class</span>
+<span class="source-line-no">278</span><span id="line-278">    default -&gt; t0.equals(v1);</span>
+<span class="source-line-no">279</span><span id="line-279">    };</span>
+<span class="source-line-no">280</span><span id="line-280">  }</span>
+<span class="source-line-no">281</span><span id="line-281"></span>
+<span class="source-line-no">282</span><span id="line-282"></span>
+<span class="source-line-no">283</span><span id="line-283">  /*</span>
+<span class="source-line-no">284</span><span id="line-284">   * Private instance methods.</span>
+<span class="source-line-no">285</span><span id="line-285">   */</span>
+<span class="source-line-no">286</span><span id="line-286"></span>
+<span class="source-line-no">287</span><span id="line-287"></span>
+<span class="source-line-no">288</span><span id="line-288">  private final Boolean privateVisitArrayType(final ArrayType a0, final Object v1) {</span>
+<span class="source-line-no">289</span><span id="line-289">    assert a0.getKind() == ARRAY;</span>
+<span class="source-line-no">290</span><span id="line-290">    return switch (v1) {</span>
+<span class="source-line-no">291</span><span id="line-291">    case AnnotationValue av1 -&gt; this.privateVisitArrayType(a0, av1.getValue());</span>
+<span class="source-line-no">292</span><span id="line-292">    case ArrayType a1 when a1.getKind() == ARRAY -&gt; this.visitType(a0.getComponentType(), a1.getComponentType());</span>
+<span class="source-line-no">293</span><span id="line-293">    default -&gt; false;</span>
+<span class="source-line-no">294</span><span id="line-294">    };</span>
+<span class="source-line-no">295</span><span id="line-295">  }</span>
+<span class="source-line-no">296</span><span id="line-296"></span>
+<span class="source-line-no">297</span><span id="line-297">  private final Boolean privateVisitDeclaredType(final DeclaredType dt0, final Object v1) {</span>
+<span class="source-line-no">298</span><span id="line-298">    assert dt0.getKind() == DECLARED;</span>
+<span class="source-line-no">299</span><span id="line-299">    return switch (v1) {</span>
+<span class="source-line-no">300</span><span id="line-300">    case AnnotationValue av1 -&gt; this.privateVisitDeclaredType(dt0, av1.getValue());</span>
+<span class="source-line-no">301</span><span id="line-301">    case DeclaredType dt1 when dt1.getKind() == DECLARED -&gt; ((QualifiedNameable)dt0.asElement()).getQualifiedName().contentEquals((((QualifiedNameable)dt1.asElement()).getQualifiedName()));</span>
+<span class="source-line-no">302</span><span id="line-302">    default -&gt; false;</span>
+<span class="source-line-no">303</span><span id="line-303">    };</span>
+<span class="source-line-no">304</span><span id="line-304">  }</span>
+<span class="source-line-no">305</span><span id="line-305"></span>
+<span class="source-line-no">306</span><span id="line-306">  private final Boolean privateVisitNoType(final NoType n0, final Object v1) {</span>
+<span class="source-line-no">307</span><span id="line-307">    assert n0.getKind() == VOID;</span>
+<span class="source-line-no">308</span><span id="line-308">    return switch (v1) {</span>
+<span class="source-line-no">309</span><span id="line-309">    case AnnotationValue av1 -&gt; this.privateVisitNoType(n0, av1.getValue());</span>
+<span class="source-line-no">310</span><span id="line-310">    case NoType n1 -&gt; n1.getKind() == VOID;</span>
+<span class="source-line-no">311</span><span id="line-311">    default -&gt; false;</span>
+<span class="source-line-no">312</span><span id="line-312">    };</span>
+<span class="source-line-no">313</span><span id="line-313">  }</span>
+<span class="source-line-no">314</span><span id="line-314"></span>
+<span class="source-line-no">315</span><span id="line-315">  private final Boolean privateVisitPrimitiveType(final PrimitiveType p0, final Object v1) {</span>
+<span class="source-line-no">316</span><span id="line-316">    assert p0.getKind().isPrimitive();</span>
+<span class="source-line-no">317</span><span id="line-317">    return switch (v1) {</span>
+<span class="source-line-no">318</span><span id="line-318">    case AnnotationValue av1 -&gt; this.privateVisitPrimitiveType(p0, av1.getValue());</span>
+<span class="source-line-no">319</span><span id="line-319">    case PrimitiveType p1 -&gt; p1.getKind() == p0.getKind();</span>
+<span class="source-line-no">320</span><span id="line-320">    default -&gt; false;</span>
+<span class="source-line-no">321</span><span id="line-321">    };</span>
+<span class="source-line-no">322</span><span id="line-322">  }</span>
+<span class="source-line-no">323</span><span id="line-323"></span>
+<span class="source-line-no">324</span><span id="line-324">}</span>
 
 
 
