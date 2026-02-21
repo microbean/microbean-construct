@@ -188,6 +188,28 @@ public final class AnnotationMirrors {
    *
    * @param a a non-{@code null} {@link AnnotationMirror}
    *
+   * @return {@code true} if and only if the supplied {@link Collection} of {@link AnnotationMirror}s contains an {@link
+   * AnnotationMirror} that is {@linkplain #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate) the same} as
+   * the supplied {@link AnnotationMirror}
+   *
+   * @exception NullPointerException if {@code c} or {@code a} is {@code null}
+   *
+   * @see #contains(collection, AnnotationMirror, Predicate)
+   */
+  public static final boolean contains(final Collection<? extends AnnotationMirror> c,
+                                       final AnnotationMirror a) {
+    return contains(c, a, null);
+  }
+
+  /**
+   * Returns {@code true} if and only if the supplied {@link Collection} of {@link AnnotationMirror}s contains an {@link
+   * AnnotationMirror} that is {@linkplain #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate) the same} as
+   * the supplied {@link AnnotationMirror}.
+   *
+   * @param c a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
+   *
+   * @param a a non-{@code null} {@link AnnotationMirror}
+   *
    * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an
    * annotation element, is to be included in comparison operations; may be {@code null} in which case it is as if
    * {@code e -> true} were supplied instead
@@ -199,13 +221,12 @@ public final class AnnotationMirrors {
    * @exception NullPointerException if {@code c} or {@code a} is {@code null}
    *
    * @see #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate)
+   *
+   * @see #containsAll(collection, Collection, Predicate)
    */
   public static final boolean contains(final Collection<? extends AnnotationMirror> c,
                                        final AnnotationMirror a,
                                        final Predicate<? super ExecutableElement> p) {
-    if (c.isEmpty()) {
-      return false;
-    }
     for (final AnnotationMirror ca : c) {
       if (sameAnnotation(ca, a, p)) {
         return true;
@@ -215,7 +236,27 @@ public final class AnnotationMirrors {
   }
 
   /**
-   * Returns {@code true} if and only if {@code c0} contains {@linkplain #sameAnnotation(AnnotationMirror,
+   * Returns {@code true} if and only if {@code c0} contains all {@linkplain #sameAnnotation(AnnotationMirror,
+   * AnnotationMirror, Predicate) the same} {@link AnnotationMirror}s as are found in {@code c1},
+   *
+   * @param c0 a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
+   *
+   * @param c1 a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
+   *
+   * @return {@code true} if and only if {@code c0} contains all {@linkplain #sameAnnotation(AnnotationMirror,
+   * AnnotationMirror, Predicate) the same} {@link AnnotationMirror}s as are found in {@code c1}
+   *
+   * @exception NullPointerException if either {@code c0} or {@code c1} is {@code null}
+   *
+   * @see #containsAll(Collection, Collection, Predicate)
+   */
+  public static final boolean containsAll(final Collection<? extends AnnotationMirror> c0,
+                                          final Collection<? extends AnnotationMirror> c1) {
+    return containsAll(c0, c1, null);
+  }
+
+  /**
+   * Returns {@code true} if and only if {@code c0} contains all {@linkplain #sameAnnotation(AnnotationMirror,
    * AnnotationMirror, Predicate) the same} {@link AnnotationMirror}s as are found in {@code c1},
    *
    * @param c0 a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
@@ -226,10 +267,12 @@ public final class AnnotationMirrors {
    * annotation element, is to be included in comparison operations; may be {@code null} in which case it is as if
    * {@code e -> true} were supplied instead
    *
-   * @return {@code true} if and only if {@code c0} contains {@linkplain #sameAnnotation(AnnotationMirror,
+   * @return {@code true} if and only if {@code c0} contains all {@linkplain #sameAnnotation(AnnotationMirror,
    * AnnotationMirror, Predicate) the same} {@link AnnotationMirror}s as are found in {@code c1}
    *
    * @exception NullPointerException if either {@code c0} or {@code c1} is {@code null}
+   *
+   * @see #contains(Collection, AnnotationMirror, Predicate)
    *
    * @see #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate)
    */
@@ -239,14 +282,10 @@ public final class AnnotationMirrors {
     if (c0.size() < c1.size()) {
       return false;
     }
-    OUTER_LOOP:
-    for (final AnnotationMirror a0 : c0) {
-      for (final AnnotationMirror a1 : c1) {
-        if (sameAnnotation(a0, a1, p)) {
-          continue OUTER_LOOP;
-        }
+    for (final AnnotationMirror a1 : c1) {
+      if (!contains(c0, a1, p)) {
+        return false;
       }
-      return false;
     }
     return true;
   }
@@ -488,7 +527,7 @@ public final class AnnotationMirrors {
    * @return {@code true} if the supplied {@link AnnotationMirror}s represent the same (otherwise opaque) annotation;
    * {@code false} otherwise
    *
-   * @see #sameAnnotation(AnnotationMirror, AnnotationMirror)
+   * @see #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate)
    */
   public static final boolean sameAnnotation(final AnnotationMirror am0, final AnnotationMirror am1) {
     return sameAnnotation(am0, am1, null);
@@ -529,6 +568,28 @@ public final class AnnotationMirrors {
    *
    * @param c1 a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
    *
+   * @return {@code true} if {@code c0} has all the {@linkplain #sameAnnotation(AnnotationMirror, AnnotationMirror,
+   * Predicate) same annotations} as {@code c1}, and if {@code c1} has all the {@linkplain
+   * #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate) same annotations} as {@code c0}
+   *
+   * @exception NullPointerException if either {@code c0} or {@code c1} is {@code null}
+   *
+   * @see #sameAnnotations(Collection, Collection, Predicate)
+   */
+  public static final boolean sameAnnotations(final Collection<? extends AnnotationMirror> c0,
+                                              final Collection<? extends AnnotationMirror> c1) {
+    return sameAnnotations(c0, c1, null);
+  }
+
+  /**
+   * Returns {@code true} if {@code c0} has all the {@linkplain #sameAnnotation(AnnotationMirror, AnnotationMirror,
+   * Predicate) same annotations} as {@code c1}, and if {@code c1} has all the {@linkplain
+   * #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate) same annotations} as {@code c0}.
+   *
+   * @param c0 a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
+   *
+   * @param c1 a non-{@code null} {@link Collection} of {@link AnnotationMirror}s
+   *
    * @param p a {@link Predicate} that returns {@code true} if a given {@link ExecutableElement}, representing an
    * annotation interface element, is to be included in the computation; may be {@code null} in which case it is as if
    * {@code e -> true} were supplied instead
@@ -538,6 +599,8 @@ public final class AnnotationMirrors {
    * #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate) same annotations} as {@code c0}
    *
    * @exception NullPointerException if either {@code c0} or {@code c1} is {@code null}
+   *
+   * @see #containsAll(Collection, Collection, Predicate)
    *
    * @see #sameAnnotation(AnnotationMirror, AnnotationMirror, Predicate)
    */

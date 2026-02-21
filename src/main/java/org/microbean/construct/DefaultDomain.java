@@ -13,11 +13,8 @@
  */
 package org.microbean.construct;
 
-import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
-import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
-import java.lang.constant.MethodHandleDesc;
 
 import java.util.List;
 import java.util.Objects;
@@ -53,6 +50,8 @@ import org.microbean.construct.element.UniversalElement;
 import org.microbean.construct.type.UniversalType;
 
 import static java.lang.constant.ConstantDescs.BSM_INVOKE;
+
+import static java.lang.constant.MethodHandleDesc.ofConstructor;
 
 /**
  * A {@linkplain Domain domain of valid Java constructs} that can be used at annotation processing time or at runtime.
@@ -268,10 +267,12 @@ public class DefaultDomain implements Constable, Domain {
   }
 
   @Override // Constable
-  public Optional<? extends ConstantDesc> describeConstable() {
+  public Optional<DynamicConstantDesc<DefaultDomain>> describeConstable() {
     return
-      Optional.of(DynamicConstantDesc.of(BSM_INVOKE,
-                                         MethodHandleDesc.ofConstructor(ClassDesc.of(this.getClass().getName()))));
+      Optional.of(DynamicConstantDesc.ofNamed(BSM_INVOKE,
+                                              this.getClass().getSimpleName(),
+                                              this.getClass().describeConstable().orElseThrow(),
+                                              ofConstructor(this.getClass().describeConstable().orElseThrow())));
   }
 
   @Override // Domain
