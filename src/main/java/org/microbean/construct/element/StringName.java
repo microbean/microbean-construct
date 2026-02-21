@@ -113,14 +113,16 @@ public final record StringName(String value, PrimordialDomain domain) implements
   }
 
   @Override // Constable
-  public final Optional<? extends ConstantDesc> describeConstable() {
+  public final Optional<DynamicConstantDesc<StringName>> describeConstable() {
     return (this.domain() instanceof Constable c ? c.describeConstable() : Optional.<ConstantDesc>empty())
-      .map(domainDesc -> DynamicConstantDesc.of(BSM_INVOKE,
-                                                MethodHandleDesc.ofConstructor(ClassDesc.of(this.getClass().getName()),
-                                                                               ClassDesc.of(CharSequence.class.getName()),
-                                                                               ClassDesc.of(PrimordialDomain.class.getName())),
-                                                this.value,
-                                                domainDesc));
+      .map(domainDesc -> DynamicConstantDesc.ofNamed(BSM_INVOKE,
+                                                     this.value,
+                                                     this.getClass().describeConstable().orElseThrow(),
+                                                     MethodHandleDesc.ofConstructor(this.getClass().describeConstable().orElseThrow(),
+                                                                                    CharSequence.class.describeConstable().orElseThrow(),
+                                                                                    PrimordialDomain.class.describeConstable().orElseThrow()),
+                                                     this.value,
+                                                     domainDesc));
   }
 
   @Override // Record

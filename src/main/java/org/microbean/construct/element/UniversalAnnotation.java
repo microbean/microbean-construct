@@ -13,7 +13,6 @@
  */
 package org.microbean.construct.element;
 
-import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
@@ -123,18 +122,22 @@ public final class UniversalAnnotation implements AnnotationMirror, Constable {
   }
 
   @Override // Constable
-  public Optional<? extends ConstantDesc> describeConstable() {
-    return this.domain instanceof Constable c0 ? c0.describeConstable() : Optional.<ConstantDesc>empty()
-      .flatMap(primordialDomainDesc -> this.delegate() instanceof Constable c1 ? c1.describeConstable() : Optional.<ConstantDesc>empty()
-               .map(delegateDesc -> DynamicConstantDesc.of(BSM_INVOKE,
-                                                           ofMethod(STATIC,
-                                                                    ClassDesc.of(this.getClass().getName()),
-                                                                    "of",
-                                                                    MethodTypeDesc.of(ClassDesc.of(this.getClass().getName()),
-                                                                                      ClassDesc.of(AnnotationMirror.class.getName()),
-                                                                                      ClassDesc.of(PrimordialDomain.class.getName()))),
-                                                           delegateDesc,
-                                                           primordialDomainDesc)));
+  public final Optional<DynamicConstantDesc<UniversalAnnotation>> describeConstable() {
+    // TODO: this.delegate() is never going to be a Constable. It's debatable whether this class should implement
+    // Constable at all.
+    return (this.domain instanceof Constable c0 ? c0.describeConstable() : Optional.<ConstantDesc>empty())
+      .flatMap(primordialDomainDesc -> (this.delegate() instanceof Constable c1 ? c1.describeConstable() : Optional.<ConstantDesc>empty())
+               .map(delegateDesc -> DynamicConstantDesc.ofNamed(BSM_INVOKE,
+                                                                this.getAnnotationType().asElement().getSimpleName().toString(),
+                                                                UniversalAnnotation.class.describeConstable().orElseThrow(),
+                                                                ofMethod(STATIC,
+                                                                         UniversalAnnotation.class.describeConstable().orElseThrow(),
+                                                                         "of",
+                                                                         MethodTypeDesc.of(UniversalAnnotation.class.describeConstable().orElseThrow(),
+                                                                                           AnnotationMirror.class.describeConstable().orElseThrow(),
+                                                                                           PrimordialDomain.class.describeConstable().orElseThrow())),
+                                                                delegateDesc,
+                                                                primordialDomainDesc)));
   }
 
   /**

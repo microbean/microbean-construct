@@ -29,6 +29,7 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
 
 import javax.lang.model.type.DeclaredType;
@@ -41,6 +42,8 @@ import static java.lang.constant.ConstantDescs.CD_Map;
 import static java.lang.constant.MethodHandleDesc.ofConstructor;
 
 import static java.util.Collections.unmodifiableMap;
+
+import static java.util.HashMap.newHashMap;
 
 import static java.util.LinkedHashMap.newLinkedHashMap;
 
@@ -152,6 +155,7 @@ public final class SyntheticAnnotationMirror implements AnnotationMirror, Consta
    *
    * @exception NullPointerException if {@code a} is {@code null}
    */
+  // (Copy constructor.)
   public SyntheticAnnotationMirror(final AnnotationMirror a) {
     super();
     this.annotationTypeElement = new SyntheticAnnotationTypeElement((TypeElement)a.getAnnotationType().asElement());
@@ -184,17 +188,19 @@ public final class SyntheticAnnotationMirror implements AnnotationMirror, Consta
 
 
   @Override // Constable
-  public final Optional<? extends ConstantDesc> describeConstable() {
-    return this.annotationTypeElement instanceof Constable c ? c.describeConstable() : Optional.<ConstantDesc>empty()
-      .flatMap(elementDesc -> Constables.describe(this.elementValues,
-                                                  SyntheticAnnotationMirror::describeExecutableElement,
+  public final Optional<DynamicConstantDesc<SyntheticAnnotationMirror>> describeConstable() {
+    return (this.annotationTypeElement instanceof Constable c ? c.describeConstable() : Optional.<ConstantDesc>empty())
+      .flatMap(elementDesc -> Constables.describe(this.toSyntheticValues(),
+                                                  String::describeConstable,
                                                   SyntheticAnnotationMirror::describeAnnotationValue)
-               .map(valuesDesc -> DynamicConstantDesc.of(BSM_INVOKE,
-                                                         ofConstructor(ClassDesc.of(this.getClass().getName()),
-                                                                       ClassDesc.of(TypeElement.class.getName()),
-                                                                       CD_Map),
-                                                         elementDesc,
-                                                         valuesDesc)));
+               .map(valuesDesc -> DynamicConstantDesc.ofNamed(BSM_INVOKE,
+                                                              this.getAnnotationType().asElement().getSimpleName().toString(), // supposed to be unqualified, I guess
+                                                              this.getClass().describeConstable().orElseThrow(),
+                                                              ofConstructor(this.getClass().describeConstable().orElseThrow(),
+                                                                            TypeElement.class.describeConstable().orElseThrow(),
+                                                                            CD_Map),
+                                                              elementDesc,
+                                                              valuesDesc)));
   }
 
   @Override // AnnotationMirror
@@ -212,27 +218,31 @@ public final class SyntheticAnnotationMirror implements AnnotationMirror, Consta
     return "@" + this.annotationTypeElement.toString(); // TODO: not anywhere near good enough
   }
 
+  // Called by describeConstable().
+  private final Map<? extends String, ?> toSyntheticValues() {
+    if (this.elementValues.isEmpty()) {
+      return Map.of();
+    }
+    final Map<String, Object> rv = newHashMap(this.elementValues.size());
+    for (final Entry<? extends ExecutableElement, ? extends AnnotationValue> e : this.elementValues.entrySet()) {
+      rv.put(e.getKey().getSimpleName().toString(), e.getValue().getValue());
+    }
+    return rv;
+  }
+
 
   /*
    * Static methods.
    */
 
 
+  // Called by describeConstable().
   private static final Optional<? extends ConstantDesc> describeAnnotationValue(final Object v) {
     return switch (v) {
     case null -> Optional.empty(); // deliberately not Optional.of(NULL); annotation values cannot be null
     case Constable c -> c.describeConstable();
     case ConstantDesc cd -> Optional.of(cd);
     case List<?> l -> Constables.describe(l, e -> e instanceof Constable c ? c.describeConstable() : Optional.empty());
-    default -> Optional.empty();
-    };
-  }
-
-  private static final Optional<? extends ConstantDesc> describeExecutableElement(final ExecutableElement e) {
-    return switch (e) {
-    case null -> throw new IllegalStateException();
-    case Constable c -> c.describeConstable();
-    case ConstantDesc cd -> Optional.of(cd);
     default -> Optional.empty();
     };
   }

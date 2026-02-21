@@ -218,21 +218,23 @@ public abstract sealed class UniversalConstruct<T extends AnnotatedConstruct>
   }
 
   @Override // Constable
-  public final Optional<? extends ConstantDesc> describeConstable() {
+  public final Optional<DynamicConstantDesc<T>> describeConstable() {
     final PrimordialDomain primordialDomain = this.domain();
     if (domain instanceof Domain d && d instanceof Constable dc) {
       final T delegate = this.delegate();
       final List<AnnotationMirror> annotations = this.annotations; // volatile read; may be null and that's OK
       return Constables.describe(delegate, d)
         .flatMap(delegateDesc -> Constables.describe(annotations)
-                 .map(annosDesc -> DynamicConstantDesc.of(BSM_INVOKE,
-                                                          ofConstructor(ClassDesc.of(this.getClass().getName()),
-                                                                        CD_List,
-                                                                        ClassDesc.of(delegate instanceof TypeMirror ? TypeMirror.class.getName() : Element.class.getName()),
-                                                                        ClassDesc.of(PrimordialDomain.class.getName())),
-                                                          annosDesc,
-                                                          delegateDesc,
-                                                          dc.describeConstable().orElseThrow())));
+                 .map(annosDesc -> DynamicConstantDesc.ofNamed(BSM_INVOKE,
+                                                               this.getClass().getSimpleName(),
+                                                               this.getClass().describeConstable().orElseThrow(),
+                                                               ofConstructor(this.getClass().describeConstable().orElseThrow(),
+                                                                             CD_List,
+                                                                             (delegate instanceof TypeMirror ? TypeMirror.class : Element.class).describeConstable().orElseThrow(),
+                                                                             PrimordialDomain.class.describeConstable().orElseThrow()),
+                                                               annosDesc,
+                                                               delegateDesc,
+                                                               dc.describeConstable().orElseThrow())));
     }
     return Optional.empty();
   }

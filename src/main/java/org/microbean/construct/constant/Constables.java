@@ -1,6 +1,6 @@
 /* -*- mode: Java; c-basic-offset: 2; indent-tabs-mode: nil; coding: utf-8-unix -*-
  *
- * Copyright © 2024 microBean™.
+ * Copyright © 2024–2026 microBean™.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -81,6 +81,7 @@ import static org.microbean.construct.constant.ConstantDescs.CD_TypeKind;
 import static org.microbean.construct.constant.ConstantDescs.CD_TypeParameterElement;
 import static org.microbean.construct.constant.ConstantDescs.CD_TypeMirror;
 import static org.microbean.construct.constant.ConstantDescs.CD_TypeVariable;
+import static org.microbean.construct.constant.ConstantDescs.CD_VariableElement;
 import static org.microbean.construct.constant.ConstantDescs.CD_WildcardType;
 
 /**
@@ -119,7 +120,7 @@ public final class Constables {
     default -> (d instanceof Constable c ? c.describeConstable() : Optional.<ConstantDesc>empty())
       .map(domainDesc -> DynamicConstantDesc.of(BSM_INVOKE,
                                                 ofMethod(VIRTUAL,
-                                                         ClassDesc.of(Domain.class.getName()),
+                                                         Domain.class.describeConstable().orElseThrow(),
                                                          "name",
                                                          MethodTypeDesc.of(CD_Name,
                                                                            CD_CharSequence)),
@@ -218,7 +219,7 @@ public final class Constables {
         final ConstantDesc[] args = new ConstantDesc[5 + parameterCount];
         args[0] =
           ofMethod(VIRTUAL,
-                   ClassDesc.of(Domain.class.getName()),
+                   Domain.class.describeConstable().orElseThrow(),
                    "executableElement",
                    MethodTypeDesc.of(CD_ExecutableElement,
                                      CD_TypeElement,
@@ -271,7 +272,7 @@ public final class Constables {
     default -> describe(e.getQualifiedName(), d) // getQualifiedName() does not cause symbol completion
       .map(nameDesc -> DynamicConstantDesc.of(BSM_INVOKE,
                                               ofMethod(VIRTUAL,
-                                                       ClassDesc.of(Domain.class.getName()),
+                                                       Domain.class.describeConstable().orElseThrow(),
                                                        "moduleElement",
                                                        MethodTypeDesc.of(CD_ModuleElement,
                                                                          CD_CharSequence)),
@@ -300,7 +301,7 @@ public final class Constables {
     default -> describe(e.getQualifiedName(), d) // getQualifiedName() does not cause symbol completion
       .map(nameDesc -> DynamicConstantDesc.of(BSM_INVOKE,
                                               ofMethod(VIRTUAL,
-                                                       ClassDesc.of(Domain.class.getName()),
+                                                       Domain.class.describeConstable().orElseThrow(),
                                                        "packageElement",
                                                        MethodTypeDesc.of(CD_PackageElement,
                                                                          CD_CharSequence)),
@@ -329,7 +330,7 @@ public final class Constables {
     default -> describe(e.getQualifiedName(), d) // getQualifiedName() does not cause symbol completion
       .map(nameDesc -> DynamicConstantDesc.of(BSM_INVOKE,
                                               ofMethod(VIRTUAL,
-                                                       ClassDesc.of(Domain.class.getName()),
+                                                       Domain.class.describeConstable().orElseThrow(),
                                                        "typeElement",
                                                        MethodTypeDesc.of(CD_TypeElement,
                                                                          CD_CharSequence)),
@@ -361,7 +362,7 @@ public final class Constables {
           .flatMap(parameterizableDesc -> describe(e.getSimpleName(), d)
                    .map(nameDesc -> DynamicConstantDesc.of(BSM_INVOKE,
                                                            ofMethod(VIRTUAL,
-                                                                    ClassDesc.of(Domain.class.getName()),
+                                                                    Domain.class.describeConstable().orElseThrow(),
                                                                     "typeParameterElement",
                                                                     MethodTypeDesc.of(CD_TypeParameterElement,
                                                                                       CD_Parameterizable,
@@ -396,7 +397,7 @@ public final class Constables {
         yield describe((TypeElement)e.getEnclosingElement(), d)
           .map(executableDesc -> DynamicConstantDesc.of(BSM_INVOKE,
                                                         ofMethod(VIRTUAL,
-                                                                 ClassDesc.of(Domain.class.getName()),
+                                                                 Domain.class.describeConstable().orElseThrow(),
                                                                  "recordComponentElement",
                                                                  MethodTypeDesc.of(CD_RecordComponentElement,
                                                                                    CD_ExecutableElement)),
@@ -430,11 +431,13 @@ public final class Constables {
           .flatMap(nameDesc -> describe(e.getEnclosingElement(), d)
                    .map(enclosingElementDesc -> DynamicConstantDesc.of(BSM_INVOKE,
                                                                        ofMethod(VIRTUAL,
-                                                                                ClassDesc.of(Domain.class.getName()),
+                                                                                Domain.class.describeConstable().orElseThrow(),
                                                                                 "variableElement",
-                                                                                MethodTypeDesc.of(CD_Element,
+                                                                                MethodTypeDesc.of(CD_VariableElement,
+                                                                                                  CD_Element,
                                                                                                   CD_CharSequence)),
                                                                        ((Constable)d).describeConstable().orElseThrow(),
+                                                                       enclosingElementDesc,
                                                                        nameDesc)));
       }
     }
@@ -498,7 +501,7 @@ public final class Constables {
         yield describe(t.getComponentType(), d)
           .map(componentTypeDesc -> DynamicConstantDesc.of(BSM_INVOKE,
                                                            ofMethod(VIRTUAL,
-                                                                    ClassDesc.of(Domain.class.getName()),
+                                                                    Domain.class.describeConstable().orElseThrow(),
                                                                     "arrayTypeOf",
                                                                     MethodTypeDesc.of(CD_ArrayType,
                                                                                       CD_TypeMirror)),
@@ -540,7 +543,7 @@ public final class Constables {
           final TypeMirror enclosingType = t.getEnclosingType();
           // Call
           args[0] = ofMethod(VIRTUAL,
-                             ClassDesc.of(Domain.class.getName()),
+                             Domain.class.describeConstable().orElseThrow(),
                              "declaredType",
                              MethodTypeDesc.of(CD_DeclaredType,
                                                CD_DeclaredType,
@@ -597,7 +600,7 @@ public final class Constables {
         yield t.getKind().describeConstable()
           .map(typeKindDesc -> DynamicConstantDesc.of(BSM_INVOKE,
                                                       ofMethod(VIRTUAL,
-                                                               ClassDesc.of(Domain.class.getName()),
+                                                               Domain.class.describeConstable().orElseThrow(),
                                                                "noType",
                                                                MethodTypeDesc.of(CD_NoType,
                                                                                  CD_TypeKind)),
@@ -628,7 +631,7 @@ public final class Constables {
     default -> (d instanceof Constable c ? c.describeConstable() : Optional.<ConstantDesc>empty())
       .map(domainDesc -> DynamicConstantDesc.of(BSM_INVOKE,
                                                 ofMethod(VIRTUAL,
-                                                         ClassDesc.of(Domain.class.getName()),
+                                                         Domain.class.describeConstable().orElseThrow(),
                                                          "nullType",
                                                          MethodTypeDesc.of(CD_NullType)),
                                                 domainDesc));
@@ -661,7 +664,7 @@ public final class Constables {
         yield t.getKind().describeConstable()
           .map(typeKindDesc -> DynamicConstantDesc.of(BSM_INVOKE,
                                                       ofMethod(VIRTUAL,
-                                                               ClassDesc.of(Domain.class.getName()),
+                                                               Domain.class.describeConstable().orElseThrow(),
                                                                "primitiveType",
                                                                MethodTypeDesc.of(CD_PrimitiveType,
                                                                                  CD_TypeKind)),
@@ -703,7 +706,7 @@ public final class Constables {
         final String name = d.toString(e.getSimpleName());
         yield Optional.of(DynamicConstantDesc.of(BSM_INVOKE,
                                                  ofMethod(VIRTUAL,
-                                                          ClassDesc.of(Domain.class.getName()),
+                                                          Domain.class.describeConstable().orElseThrow(),
                                                           "typeVariable",
                                                           MethodTypeDesc.of(CD_TypeVariable,
                                                                             CD_Parameterizable,
@@ -740,7 +743,7 @@ public final class Constables {
                    .flatMap(extendsBoundDesc -> describe(t.getSuperBound(), d)
                             .map(superBoundDesc -> DynamicConstantDesc.of(BSM_INVOKE,
                                                                           ofMethod(VIRTUAL,
-                                                                                   ClassDesc.of(Domain.class.getName()),
+                                                                                   Domain.class.describeConstable().orElseThrow(),
                                                                                    "wildcardType",
                                                                                    MethodTypeDesc.of(CD_WildcardType,
                                                                                                      CD_TypeMirror,
@@ -754,10 +757,8 @@ public final class Constables {
   }
 
   /**
-   * Returns a nominal descriptor for the supplied {@link List}, or an {@linkplain Optional#empty() empty} {@link
-   * Optional} if the supplied {@link List} cannot be described.
-   *
-   * @param <E> the supplied {@code list}'s element type
+   * Returns a non-{@code null} nominal descriptor for the supplied {@link List}, or an {@linkplain Optional#empty()
+   * empty} {@link Optional} if the supplied {@link List} cannot be described.
    *
    * @param list a {@link List} to be described; may be {@code null}; if non-{@code null} <strong>must be immutable and
    * must not contain {@code null} elements</strong> or undefined behavior will result
@@ -766,10 +767,10 @@ public final class Constables {
    *
    * @see #describe(List, Function)
    */
-  public static final <E> Optional<? extends ConstantDesc> describe(final List<? extends E> list) {
+  public static final Optional<? extends ConstantDesc> describe(final List<?> list) {
     return describe(list, e -> e instanceof Constable c ? c.describeConstable() : Optional.empty());
   }
-  
+
   /**
    * Returns a nominal descriptor for the supplied {@link List}, or an {@linkplain Optional#empty() empty} {@link
    * Optional} if the supplied {@link List} cannot be described.
@@ -814,14 +815,14 @@ public final class Constables {
         // After 10 parameters, List.of() falls back to varargs.
         ofMethodTypeDesc = MethodTypeDesc.of(CD_List, CD_Object.arrayType());
       }
-      final ConstantDesc[] args = new ConstantDesc[++size];
+      final ConstantDesc[] args = new ConstantDesc[size + 1];
       args[0] = ofMethod(INTERFACE_STATIC, CD_List, "of", ofMethodTypeDesc);
-      for (int i = 1; i < size; i++) {
+      for (int i = 0; i < size; i++) {
         final ConstantDesc eDesc = f.apply(list.get(i)).orElse(null);
         if (eDesc == null) {
           yield Optional.empty();
         }
-        args[i] = eDesc;
+        args[i + 1] = eDesc;
       }
       yield Optional.of(DynamicConstantDesc.of(BSM_INVOKE, args));
     }
@@ -879,7 +880,7 @@ public final class Constables {
         // After 20 parameters, Map.of() falls back to varargs.
         ofMethodTypeDesc = MethodTypeDesc.of(CD_Map, CD_Object.arrayType());
       }
-      final ConstantDesc[] args = new ConstantDesc[++size];
+      final ConstantDesc[] args = new ConstantDesc[size + 1];
       args[0] = ofMethod(INTERFACE_STATIC, CD_Map, "of", ofMethodTypeDesc);
       int i = 1;
       for (final Entry<? extends K, ? extends V> e : map.entrySet()) {
@@ -891,9 +892,8 @@ public final class Constables {
         if (vDesc == null) {
           yield Optional.empty();
         }
-        args[i] = kDesc;
-        args[++i] = vDesc;
-        ++i;
+        args[i++] = kDesc;
+        args[i++] = vDesc;
       }
       yield Optional.of(DynamicConstantDesc.of(BSM_INVOKE, args));
     }

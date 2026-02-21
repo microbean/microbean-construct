@@ -29,7 +29,7 @@ import javax.lang.model.element.Name;
 import static java.lang.constant.ConstantDescs.BSM_INVOKE;
 import static java.lang.constant.ConstantDescs.CD_String;
 
-import static java.lang.constant.DirectMethodHandleDesc.Kind.STATIC;
+import static java.lang.constant.MethodHandleDesc.ofConstructor;
 
 import static java.util.Objects.requireNonNull;
 
@@ -114,12 +114,12 @@ public final class SyntheticName implements Constable, Name {
   @Override // Constable
   public final Optional<DynamicConstantDesc<SyntheticName>> describeConstable() {
     return
-      Optional.of(DynamicConstantDesc.of(BSM_INVOKE,
-                                         MethodHandleDesc.ofMethod(STATIC,
-                                                                   ClassDesc.of(this.getClass().getName()),
-                                                                   "of",
-                                                                   MethodTypeDesc.of(CD_String)),
-                                         this.value));
+      Optional.of(DynamicConstantDesc.ofNamed(BSM_INVOKE,
+                                              this.value,
+                                              this.getClass().describeConstable().orElseThrow(),
+                                              ofConstructor(this.getClass().describeConstable().orElseThrow(),
+                                                            CD_String),
+                                              this.value));
   }
 
   @Override // Object

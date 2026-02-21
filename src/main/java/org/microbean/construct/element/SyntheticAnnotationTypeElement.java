@@ -15,9 +15,14 @@ package org.microbean.construct.element;
 
 import java.lang.annotation.Annotation;
 
+import java.lang.constant.Constable;
+import java.lang.constant.ConstantDesc;
+import java.lang.constant.DynamicConstantDesc;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -44,7 +49,14 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.TypeVisitor;
 
+import org.microbean.construct.constant.Constables;
+
 import org.microbean.construct.type.NoneType;
+
+import static java.lang.constant.ConstantDescs.BSM_INVOKE;
+import static java.lang.constant.ConstantDescs.CD_List;
+
+import static java.lang.constant.MethodHandleDesc.ofConstructor;
 
 import static java.util.Collections.unmodifiableList;
 
@@ -70,7 +82,7 @@ import static org.microbean.construct.element.AnnotationMirrors.validAnnotationI
  *
  * @see SyntheticAnnotationMirror
  */
-public final class SyntheticAnnotationTypeElement implements TypeElement {
+public final class SyntheticAnnotationTypeElement implements Constable, TypeElement {
 
 
   /*
@@ -299,6 +311,7 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
    * @exception IllegalArgumentException if the supplied {@link TypeElement}'s {@link TypeElement#getKind() getKind()}
    * method does not return {@link javax.lang.model.element.ElementKind#ANNOTATION_TYPE}
    */
+  // (Copy constructor.)
   public SyntheticAnnotationTypeElement(final TypeElement e) {
     super();
     if (e.getKind() != ANNOTATION_TYPE) {
@@ -348,6 +361,7 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
    *
    * @see SyntheticAnnotationMirror
    */
+  // (Canonical.)
   public SyntheticAnnotationTypeElement(final List<? extends AnnotationMirror> annotationMirrors,
                                         final SyntheticName fullyQualifiedName,
                                         final List<? extends SyntheticAnnotationElement> elements) {
@@ -357,7 +371,7 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
     final int i = fqn.lastIndexOf('.');
     this.sn = i >= 0 ? new SyntheticName(fqn.substring(i + 1)) : fullyQualifiedName;
     this.fqn = fullyQualifiedName;
-    this.type = new Type();
+    this.type = new Type(); // inner class on purpose
     if (elements.isEmpty()) {
       this.elements = List.of();
     } else {
@@ -383,6 +397,22 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
   @Override // TypeElement (Element)
   public final TypeMirror asType() {
     return this.type;
+  }
+
+  @Override // Constable
+  public final Optional<DynamicConstantDesc<SyntheticAnnotationTypeElement>> describeConstable() {
+    return Constables.describe(this.annotationMirrors)
+      .flatMap(amsDesc -> Constables.describe(InternalAnnotationElement.toSyntheticAnnotationElements(this.elements))
+               .map(elementsDesc -> DynamicConstantDesc.ofNamed(BSM_INVOKE,
+                                                                this.getSimpleName().toString(),
+                                                                this.getClass().describeConstable().orElseThrow(),
+                                                                ofConstructor(this.getClass().describeConstable().orElseThrow(),
+                                                                              CD_List,
+                                                                              SyntheticName.class.describeConstable().orElseThrow(),
+                                                                              CD_List),
+                                                                amsDesc,
+                                                                this.fqn.describeConstable().orElseThrow(),
+                                                                elementsDesc)));
   }
 
   @Override // TypeElement (AnnotatedConstruct)
@@ -879,6 +909,23 @@ public final class SyntheticAnnotationTypeElement implements TypeElement {
     @Override // ExecutableElement
     public final boolean isVarArgs() {
       return false;
+    }
+
+
+    /*
+     * Static methods.
+     */
+
+
+    private static List<SyntheticAnnotationElement> toSyntheticAnnotationElements(final List<? extends InternalAnnotationElement> iaes) {
+      if (iaes.isEmpty()) {
+        return List.of();
+      }
+      final List<SyntheticAnnotationElement> saes = new ArrayList<>(iaes.size());
+      for (final InternalAnnotationElement iae : iaes) {
+        saes.add(new SyntheticAnnotationElement(iae.annotationMirrors, iae.t, iae.name, iae.defaultValue));
+      }
+      return unmodifiableList(saes);
     }
 
 

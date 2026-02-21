@@ -28,6 +28,8 @@ import javax.lang.model.element.VariableElement;
 
 import javax.lang.model.type.TypeMirror;
 
+import org.microbean.construct.constant.Constables;
+
 import static java.lang.constant.ConstantDescs.BSM_INVOKE;
 import static java.lang.constant.ConstantDescs.CD_Object;
 
@@ -114,12 +116,19 @@ public final class SyntheticAnnotationValue implements AnnotationValue, Constabl
   }
 
   @Override // Constable
-  public final Optional<? extends ConstantDesc> describeConstable() {
-    return this.value instanceof Constable c ? c.describeConstable() : Optional.<ConstantDesc>empty()
-      .map(valueDesc -> DynamicConstantDesc.of(BSM_INVOKE,
-                                               ofConstructor(ClassDesc.of(this.getClass().getName()),
-                                                             CD_Object),
-                                               valueDesc));
+  public final Optional<DynamicConstantDesc<SyntheticAnnotationValue>> describeConstable() {
+    final Optional<? extends ConstantDesc> valueDescOptional = switch (this.value) {
+    case Constable c -> c.describeConstable();
+    case ConstantDesc cd -> Optional.of(cd);
+    case List<?> l -> Constables.describe(l);
+    default -> Optional.<ConstantDesc>empty();
+    };
+    return valueDescOptional.map(valueDesc -> DynamicConstantDesc.ofNamed(BSM_INVOKE,
+                                                                          this.getClass().getSimpleName(),
+                                                                          this.getClass().describeConstable().orElseThrow(),
+                                                                          ofConstructor(this.getClass().describeConstable().orElseThrow(),
+                                                                                        CD_Object),
+                                                                          valueDesc));
   }
 
   @Override // Object

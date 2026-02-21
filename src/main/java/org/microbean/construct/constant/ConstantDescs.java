@@ -53,6 +53,8 @@ final class ConstantDescs {
 
   static final ClassDesc CD_TypeVariable = ClassDesc.of("javax.lang.model.type.TypeVariable");
 
+  static final ClassDesc CD_VariableElement = ClassDesc.of("javax.lang.model.element.VariableElement");
+  
   static final ClassDesc CD_WildcardType = ClassDesc.of("javax.lang.model.type.WildcardType");
 
   private ConstantDescs() {
