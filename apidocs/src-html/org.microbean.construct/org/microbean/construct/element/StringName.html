@@ -126,77 +126,79 @@
 <span class="source-line-no">113</span><span id="line-113">  }</span>
 <span class="source-line-no">114</span><span id="line-114"></span>
 <span class="source-line-no">115</span><span id="line-115">  @Override // Constable</span>
-<span class="source-line-no">116</span><span id="line-116">  public final Optional&lt;? extends ConstantDesc&gt; describeConstable() {</span>
+<span class="source-line-no">116</span><span id="line-116">  public final Optional&lt;DynamicConstantDesc&lt;StringName&gt;&gt; describeConstable() {</span>
 <span class="source-line-no">117</span><span id="line-117">    return (this.domain() instanceof Constable c ? c.describeConstable() : Optional.&lt;ConstantDesc&gt;empty())</span>
-<span class="source-line-no">118</span><span id="line-118">      .map(domainDesc -&gt; DynamicConstantDesc.of(BSM_INVOKE,</span>
-<span class="source-line-no">119</span><span id="line-119">                                                MethodHandleDesc.ofConstructor(ClassDesc.of(this.getClass().getName()),</span>
-<span class="source-line-no">120</span><span id="line-120">                                                                               ClassDesc.of(CharSequence.class.getName()),</span>
-<span class="source-line-no">121</span><span id="line-121">                                                                               ClassDesc.of(PrimordialDomain.class.getName())),</span>
-<span class="source-line-no">122</span><span id="line-122">                                                this.value,</span>
-<span class="source-line-no">123</span><span id="line-123">                                                domainDesc));</span>
-<span class="source-line-no">124</span><span id="line-124">  }</span>
-<span class="source-line-no">125</span><span id="line-125"></span>
-<span class="source-line-no">126</span><span id="line-126">  @Override // Record</span>
-<span class="source-line-no">127</span><span id="line-127">  public final boolean equals(final Object other) {</span>
-<span class="source-line-no">128</span><span id="line-128">    return this == other || switch (other) {</span>
-<span class="source-line-no">129</span><span id="line-129">    case null -&gt; false;</span>
-<span class="source-line-no">130</span><span id="line-130">    case StringName sn when this.getClass() == sn.getClass() -&gt; Objects.equals(this.value, sn.value);</span>
-<span class="source-line-no">131</span><span id="line-131">    default -&gt; false;</span>
-<span class="source-line-no">132</span><span id="line-132">    };</span>
-<span class="source-line-no">133</span><span id="line-133">  }</span>
-<span class="source-line-no">134</span><span id="line-134"></span>
-<span class="source-line-no">135</span><span id="line-135">  @Override // Record</span>
-<span class="source-line-no">136</span><span id="line-136">  public final int hashCode() {</span>
-<span class="source-line-no">137</span><span id="line-137">    return this.value.hashCode();</span>
-<span class="source-line-no">138</span><span id="line-138">  }</span>
-<span class="source-line-no">139</span><span id="line-139"></span>
-<span class="source-line-no">140</span><span id="line-140">  @Override // Name (CharSequence)</span>
-<span class="source-line-no">141</span><span id="line-141">  public final boolean isEmpty() {</span>
-<span class="source-line-no">142</span><span id="line-142">    return this.value.isEmpty();</span>
-<span class="source-line-no">143</span><span id="line-143">  }</span>
-<span class="source-line-no">144</span><span id="line-144"></span>
-<span class="source-line-no">145</span><span id="line-145">  @Override // Name (CharSequence)</span>
-<span class="source-line-no">146</span><span id="line-146">  public final int length() {</span>
-<span class="source-line-no">147</span><span id="line-147">    return this.value.length();</span>
-<span class="source-line-no">148</span><span id="line-148">  }</span>
-<span class="source-line-no">149</span><span id="line-149"></span>
-<span class="source-line-no">150</span><span id="line-150">  @Override // Name (CharSequence)</span>
-<span class="source-line-no">151</span><span id="line-151">  public final CharSequence subSequence(final int start, final int end) {</span>
-<span class="source-line-no">152</span><span id="line-152">    return this.value.subSequence(start, end);</span>
-<span class="source-line-no">153</span><span id="line-153">  }</span>
-<span class="source-line-no">154</span><span id="line-154"></span>
-<span class="source-line-no">155</span><span id="line-155">  @Override // Name (CharSequence)</span>
-<span class="source-line-no">156</span><span id="line-156">  public final String toString() {</span>
-<span class="source-line-no">157</span><span id="line-157">    return this.value;</span>
-<span class="source-line-no">158</span><span id="line-158">  }</span>
-<span class="source-line-no">159</span><span id="line-159"></span>
-<span class="source-line-no">160</span><span id="line-160"></span>
-<span class="source-line-no">161</span><span id="line-161">  /*</span>
-<span class="source-line-no">162</span><span id="line-162">   * Static methods.</span>
-<span class="source-line-no">163</span><span id="line-163">   */</span>
-<span class="source-line-no">164</span><span id="line-164"></span>
-<span class="source-line-no">165</span><span id="line-165"></span>
-<span class="source-line-no">166</span><span id="line-166">  /**</span>
-<span class="source-line-no">167</span><span id="line-167">   * Returns a {@link StringName} whose {@link #value()} method will return a {@link String} {@linkplain</span>
-<span class="source-line-no">168</span><span id="line-168">   * String#equals(Object) equal to} the {@linkplain PrimordialDomain#toString(CharSequence) &lt;code&gt;String&lt;/code&gt;</span>
-<span class="source-line-no">169</span><span id="line-169">   * conversion of} the supplied {@link CharSequence}, and whose {@link #domain()} method will return a {@link</span>
-<span class="source-line-no">170</span><span id="line-170">   * PrimordialDomain} {@linkplain #equals(Object) equal to} the supplied {@link PrimordialDomain}.</span>
-<span class="source-line-no">171</span><span id="line-171">   *</span>
-<span class="source-line-no">172</span><span id="line-172">   * @param cs a {@link CharSequence}; must not be {@code null}</span>
+<span class="source-line-no">118</span><span id="line-118">      .map(domainDesc -&gt; DynamicConstantDesc.ofNamed(BSM_INVOKE,</span>
+<span class="source-line-no">119</span><span id="line-119">                                                     this.value,</span>
+<span class="source-line-no">120</span><span id="line-120">                                                     this.getClass().describeConstable().orElseThrow(),</span>
+<span class="source-line-no">121</span><span id="line-121">                                                     MethodHandleDesc.ofConstructor(this.getClass().describeConstable().orElseThrow(),</span>
+<span class="source-line-no">122</span><span id="line-122">                                                                                    CharSequence.class.describeConstable().orElseThrow(),</span>
+<span class="source-line-no">123</span><span id="line-123">                                                                                    PrimordialDomain.class.describeConstable().orElseThrow()),</span>
+<span class="source-line-no">124</span><span id="line-124">                                                     this.value,</span>
+<span class="source-line-no">125</span><span id="line-125">                                                     domainDesc));</span>
+<span class="source-line-no">126</span><span id="line-126">  }</span>
+<span class="source-line-no">127</span><span id="line-127"></span>
+<span class="source-line-no">128</span><span id="line-128">  @Override // Record</span>
+<span class="source-line-no">129</span><span id="line-129">  public final boolean equals(final Object other) {</span>
+<span class="source-line-no">130</span><span id="line-130">    return this == other || switch (other) {</span>
+<span class="source-line-no">131</span><span id="line-131">    case null -&gt; false;</span>
+<span class="source-line-no">132</span><span id="line-132">    case StringName sn when this.getClass() == sn.getClass() -&gt; Objects.equals(this.value, sn.value);</span>
+<span class="source-line-no">133</span><span id="line-133">    default -&gt; false;</span>
+<span class="source-line-no">134</span><span id="line-134">    };</span>
+<span class="source-line-no">135</span><span id="line-135">  }</span>
+<span class="source-line-no">136</span><span id="line-136"></span>
+<span class="source-line-no">137</span><span id="line-137">  @Override // Record</span>
+<span class="source-line-no">138</span><span id="line-138">  public final int hashCode() {</span>
+<span class="source-line-no">139</span><span id="line-139">    return this.value.hashCode();</span>
+<span class="source-line-no">140</span><span id="line-140">  }</span>
+<span class="source-line-no">141</span><span id="line-141"></span>
+<span class="source-line-no">142</span><span id="line-142">  @Override // Name (CharSequence)</span>
+<span class="source-line-no">143</span><span id="line-143">  public final boolean isEmpty() {</span>
+<span class="source-line-no">144</span><span id="line-144">    return this.value.isEmpty();</span>
+<span class="source-line-no">145</span><span id="line-145">  }</span>
+<span class="source-line-no">146</span><span id="line-146"></span>
+<span class="source-line-no">147</span><span id="line-147">  @Override // Name (CharSequence)</span>
+<span class="source-line-no">148</span><span id="line-148">  public final int length() {</span>
+<span class="source-line-no">149</span><span id="line-149">    return this.value.length();</span>
+<span class="source-line-no">150</span><span id="line-150">  }</span>
+<span class="source-line-no">151</span><span id="line-151"></span>
+<span class="source-line-no">152</span><span id="line-152">  @Override // Name (CharSequence)</span>
+<span class="source-line-no">153</span><span id="line-153">  public final CharSequence subSequence(final int start, final int end) {</span>
+<span class="source-line-no">154</span><span id="line-154">    return this.value.subSequence(start, end);</span>
+<span class="source-line-no">155</span><span id="line-155">  }</span>
+<span class="source-line-no">156</span><span id="line-156"></span>
+<span class="source-line-no">157</span><span id="line-157">  @Override // Name (CharSequence)</span>
+<span class="source-line-no">158</span><span id="line-158">  public final String toString() {</span>
+<span class="source-line-no">159</span><span id="line-159">    return this.value;</span>
+<span class="source-line-no">160</span><span id="line-160">  }</span>
+<span class="source-line-no">161</span><span id="line-161"></span>
+<span class="source-line-no">162</span><span id="line-162"></span>
+<span class="source-line-no">163</span><span id="line-163">  /*</span>
+<span class="source-line-no">164</span><span id="line-164">   * Static methods.</span>
+<span class="source-line-no">165</span><span id="line-165">   */</span>
+<span class="source-line-no">166</span><span id="line-166"></span>
+<span class="source-line-no">167</span><span id="line-167"></span>
+<span class="source-line-no">168</span><span id="line-168">  /**</span>
+<span class="source-line-no">169</span><span id="line-169">   * Returns a {@link StringName} whose {@link #value()} method will return a {@link String} {@linkplain</span>
+<span class="source-line-no">170</span><span id="line-170">   * String#equals(Object) equal to} the {@linkplain PrimordialDomain#toString(CharSequence) &lt;code&gt;String&lt;/code&gt;</span>
+<span class="source-line-no">171</span><span id="line-171">   * conversion of} the supplied {@link CharSequence}, and whose {@link #domain()} method will return a {@link</span>
+<span class="source-line-no">172</span><span id="line-172">   * PrimordialDomain} {@linkplain #equals(Object) equal to} the supplied {@link PrimordialDomain}.</span>
 <span class="source-line-no">173</span><span id="line-173">   *</span>
-<span class="source-line-no">174</span><span id="line-174">   * @param domain a {@link PrimordialDomain}; must not be {@code null}</span>
+<span class="source-line-no">174</span><span id="line-174">   * @param cs a {@link CharSequence}; must not be {@code null}</span>
 <span class="source-line-no">175</span><span id="line-175">   *</span>
-<span class="source-line-no">176</span><span id="line-176">   * @return a {@link StringName}; never {@code null}</span>
+<span class="source-line-no">176</span><span id="line-176">   * @param domain a {@link PrimordialDomain}; must not be {@code null}</span>
 <span class="source-line-no">177</span><span id="line-177">   *</span>
-<span class="source-line-no">178</span><span id="line-178">   * @exception NullPointerException if either argument is {@code null}</span>
+<span class="source-line-no">178</span><span id="line-178">   * @return a {@link StringName}; never {@code null}</span>
 <span class="source-line-no">179</span><span id="line-179">   *</span>
-<span class="source-line-no">180</span><span id="line-180">   * @see PrimordialDomain#toString(CharSequence)</span>
-<span class="source-line-no">181</span><span id="line-181">   */</span>
-<span class="source-line-no">182</span><span id="line-182">  public static final StringName of(final CharSequence cs, final PrimordialDomain domain) {</span>
-<span class="source-line-no">183</span><span id="line-183">    return cs instanceof StringName sn ? sn : new StringName(domain.toString(cs), domain);</span>
-<span class="source-line-no">184</span><span id="line-184">  }</span>
-<span class="source-line-no">185</span><span id="line-185"></span>
-<span class="source-line-no">186</span><span id="line-186">}</span>
+<span class="source-line-no">180</span><span id="line-180">   * @exception NullPointerException if either argument is {@code null}</span>
+<span class="source-line-no">181</span><span id="line-181">   *</span>
+<span class="source-line-no">182</span><span id="line-182">   * @see PrimordialDomain#toString(CharSequence)</span>
+<span class="source-line-no">183</span><span id="line-183">   */</span>
+<span class="source-line-no">184</span><span id="line-184">  public static final StringName of(final CharSequence cs, final PrimordialDomain domain) {</span>
+<span class="source-line-no">185</span><span id="line-185">    return cs instanceof StringName sn ? sn : new StringName(domain.toString(cs), domain);</span>
+<span class="source-line-no">186</span><span id="line-186">  }</span>
+<span class="source-line-no">187</span><span id="line-187"></span>
+<span class="source-line-no">188</span><span id="line-188">}</span>
 
 
 
